@@ -56,6 +56,9 @@ struct SyncView: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Button(viewModel.isRunning ? "Syncing…" : "Sync Check") {
+                    guard PathUtil.existsDir(codexRoot), PathUtil.existsDir(claudeRoot) else {
+                        return
+                    }
                     Task {
                         await viewModel.run(
                             codexRoot: codexRoot,
@@ -69,6 +72,13 @@ struct SyncView: View {
                 }
                 .disabled(viewModel.isRunning)
                 .accessibilityLabel(viewModel.isRunning ? "Syncing" : "Start sync check")
+
+                if !PathUtil.existsDir(codexRoot) || !PathUtil.existsDir(claudeRoot) {
+                    Label("Roots not set", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.system(.callout, design: .rounded))
+                        .accessibilityLabel("Roots not set or invalid")
+                }
 
                 Toggle("Recursive", isOn: $recursive)
                     .toggleStyle(.switch)

@@ -45,6 +45,11 @@ let package = Package(
             resources: [
                 .process("Fixtures")
             ]
+        ),
+        .testTarget(
+            name: "SkillsInspectorTests",
+            dependencies: ["SkillsInspector", "SkillsCore"],
+            resources: []
         )
     ],
     swiftLanguageModes: [.v6]

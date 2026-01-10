@@ -102,7 +102,7 @@ struct SyncDetailView: View {
             Spacer()
         }
         .padding()
-        .task { await loadFiles() }
+        .task(id: selection) { await loadFiles() }
         .alert("Confirm Copy Operation", isPresented: $showingCopyConfirmation) {
             Button("Cancel", role: .cancel) {
                 pendingCopyOperation = nil

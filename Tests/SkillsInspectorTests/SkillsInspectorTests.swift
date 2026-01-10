@@ -1,0 +1,509 @@
+import XCTest
+@testable import SkillsCore
+@testable import SkillsInspector
+
+@MainActor
+final class InspectorViewModelTests: XCTestCase {
+    var sut: InspectorViewModel!
+    var tempDirectory: URL!
+
+    override func setUp() async throws {
+        try await super.setUp()
+        sut = InspectorViewModel()
+        tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("ViewModelTests_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+    }
+
+    override func tearDown() async throws {
+        sut = nil
+        try? FileManager.default.removeItem(at: tempDirectory)
+        try await super.tearDown()
+    }
+
+    // MARK: - Initialization Tests
+
+    func testInitializesWithDefaultRoots() {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let expectedCodex = home.appendingPathComponent(".codex/skills", isDirectory: true)
+        let expectedClaude = home.appendingPathComponent(".claude/skills", isDirectory: true)
+
+        XCTAssertEqual(sut.codexRoot, expectedCodex)
+        XCTAssertEqual(sut.claudeRoot, expectedClaude)
+        XCTAssertFalse(sut.isScanning)
+        XCTAssertTrue(sut.findings.isEmpty)
+        XCTAssertNil(sut.lastScanAt)
+        XCTAssertNil(sut.lastScanDuration)
+        XCTAssertEqual(sut.scanProgress, 0)
+        XCTAssertEqual(sut.filesScanned, 0)
+        XCTAssertEqual(sut.totalFiles, 0)
+    }
+
+    // MARK: - Scan Cancellation Tests
+
+    func testScanCancellationStopsProcessing() async throws {
+        // Setup: Create a structure with multiple files to scan
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        // Create several valid skill files
+        for i in 1...5 {
+            let skillDir = codexRoot.appendingPathComponent("skill\(i)", isDirectory: true)
+            try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+            let skillFile = skillDir.appendingPathComponent("SKILL.md")
+            try """
+            ---
+            name: skill\(i)
+            description: Test skill \(i)
+            ---
+            """.write(to: skillFile, atomically: true, encoding: .utf8)
+        }
+
+        sut.codexRoot = codexRoot
+        sut.claudeRoot = claudeRoot
+        sut.recursive = true
+
+        // Start scan
+        let scanTask = Task {
+            await sut.scan()
+        }
+
+        // Wait a bit then cancel
+        try await Task.sleep(nanoseconds: 10_000_000) // 0.01 seconds
+        sut.cancelScan()
+
+        await scanTask.value
+
+        // Verify scan was cancelled and state reset
+        XCTAssertFalse(sut.isScanning, "isScanning should be false after cancellation")
+        XCTAssertNil(sut.scanTask, "scanTask should be nil after cancellation")
+    }
+
+    func testConsecutiveScansDoNotInterfere() async throws {
+        // Setup: Create skill files
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        let skillDir = codexRoot.appendingPathComponent("test-skill", isDirectory: true)
+        try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+        let skillFile = skillDir.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: test-skill
+        description: A test skill
+        ---
+        """.write(to: skillFile, atomically: true, encoding: .utf8)
+
+        sut.codexRoot = codexRoot
+        sut.claudeRoot = claudeRoot
+
+        // First scan
+        await sut.scan()
+        let firstFindings = sut.findings
+        let firstScanTime = sut.lastScanAt
+
+        // Small delay to ensure timestamps differ
+        try await Task.sleep(nanoseconds: 10_000_000)
+
+        // Second scan
+        await sut.scan()
+        let secondFindings = sut.findings
+        let secondScanTime = sut.lastScanAt
+
+        // Verify state consistency
+        XCTAssertEqual(firstFindings.count, secondFindings.count, "Should have same number of findings")
+        XCTAssertNotEqual(firstScanTime, secondScanTime, "Timestamps should differ")
+        XCTAssertFalse(sut.isScanning, "Should not be scanning after completion")
+    }
+
+    // MARK: - Progress Reporting Tests
+
+    func testScanProgressUpdatesDuringScan() async throws {
+        // Create skill files for scanning
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+
+        // Create multiple skill files to observe progress
+        for i in 1...3 {
+            let skillDir = codexRoot.appendingPathComponent("skill\(i)", isDirectory: true)
+            try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+            let skillFile = skillDir.appendingPathComponent("SKILL.md")
+            try """
+            ---
+            name: skill\(i)
+            description: Test skill \(i)
+            ---
+            """.write(to: skillFile, atomically: true, encoding: .utf8)
+        }
+
+        sut.codexRoot = codexRoot
+        sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+
+        // Track progress values
+        var progressValues: [Double] = []
+        var filesScannedValues: [Int] = []
+
+        let progressTask = Task {
+            await sut.scan()
+        }
+
+        // Sample progress during scan
+        for _ in 0..<10 {
+            await MainActor.run {
+                progressValues.append(sut.scanProgress)
+                filesScannedValues.append(sut.filesScanned)
+            }
+            try? await Task.sleep(nanoseconds: 1_000_000) // 0.001 seconds
+        }
+
+        await progressTask.value
+
+        // Verify final state
+        await MainActor.run {
+            XCTAssertEqual(sut.scanProgress, 1.0, "Progress should be 1.0 after completion")
+            XCTAssertEqual(sut.filesScanned, sut.totalFiles, "filesScanned should equal totalFiles")
+            XCTAssertEqual(sut.totalFiles, 3, "Should have scanned 3 files")
+        }
+    }
+
+    // MARK: - Scan Duration Tests
+
+    func testScanDurationIsRecorded() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+
+        let skillDir = codexRoot.appendingPathComponent("test", isDirectory: true)
+        try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+        let skillFile = skillDir.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: test
+        description: test
+        ---
+        """.write(to: skillFile, atomically: true, encoding: .utf8)
+
+        sut.codexRoot = codexRoot
+        sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+
+        await sut.scan()
+
+        XCTAssertNotNil(sut.lastScanDuration, "Duration should be recorded")
+        XCTAssertGreaterThan(sut.lastScanDuration!, 0, "Duration should be positive")
+    }
+
+    // MARK: - Findings Sorting Tests
+
+    func testFindingsAreSortedBySeverityThenAgentThenPath() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+
+        // Create multiple skills with different severities
+        for (name, _) in [("c-skill", "codex"), ("a-skill", "codex"), ("b-skill", "claude")] {
+            let skillDir = codexRoot.appendingPathComponent(name, isDirectory: true)
+            try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+            let skillFile = skillDir.appendingPathComponent("SKILL.md")
+            try """
+            ---
+            name: \(name)
+            description: test
+            ---
+            """.write(to: skillFile, atomically: true, encoding: .utf8)
+        }
+
+        sut.codexRoot = codexRoot
+        sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        sut.recursive = true
+
+        await sut.scan()
+
+        // Verify findings are sorted
+        var previousSeverity: String?
+        var previousAgent: String?
+        var previousPath: String?
+
+        for finding in sut.findings {
+            if let prev = previousSeverity {
+                // Within same severity, should be sorted by agent
+                if finding.severity.rawValue == prev {
+                    if let prevAgent = previousAgent {
+                        if finding.agent.rawValue == prevAgent {
+                            // Within same agent, should be sorted by path
+                            if let prevPath = previousPath {
+                                XCTAssertTrue(finding.fileURL.path >= prevPath, "Should be sorted by path within same agent")
+                            }
+                        }
+                    }
+                }
+            }
+            previousSeverity = finding.severity.rawValue
+            previousAgent = finding.agent.rawValue
+            previousPath = finding.fileURL.path
+        }
+    }
+
+    // MARK: - Error Handling Tests
+
+    func testScanWithInvalidRootReturnsEmptyFindings() async {
+        let nonExistent = tempDirectory.appendingPathComponent("does-not-exist", isDirectory: true)
+
+        sut.codexRoot = nonExistent
+        sut.claudeRoot = nonExistent
+
+        await sut.scan()
+
+        XCTAssertTrue(sut.findings.isEmpty, "Should have no findings for non-existent roots")
+        XCTAssertFalse(sut.isScanning, "Should not be scanning")
+        XCTAssertNotNil(sut.lastScanAt, "Should have recorded scan time")
+    }
+
+    func testScanWithUnreadableFilesCreatesErrorFindings() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+
+        let skillDir = codexRoot.appendingPathComponent("bad-skill", isDirectory: true)
+        try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+        let skillFile = skillDir.appendingPathComponent("SKILL.md")
+
+        // Create an empty file (invalid SKILL.md)
+        try Data().write(to: skillFile)
+
+        sut.codexRoot = codexRoot
+        sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+
+        await sut.scan()
+
+        // Should have error findings
+        let errors = sut.findings.filter { $0.severity == .error }
+        XCTAssertTrue(errors.count > 0, "Should have error findings for unreadable/invalid files")
+    }
+}
+
+// MARK: - SyncViewModel Tests
+
+@MainActor
+final class SyncViewModelTests: XCTestCase {
+    var sut: SyncViewModel!
+    var tempDirectory: URL!
+
+    override func setUp() async throws {
+        try await super.setUp()
+        sut = SyncViewModel()
+        tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("SyncVMTests_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+    }
+
+    override func tearDown() async throws {
+        sut = nil
+        try? FileManager.default.removeItem(at: tempDirectory)
+        try await super.tearDown()
+    }
+
+    // MARK: - Initialization Tests
+
+    func testInitializesWithEmptyReport() {
+        XCTAssertTrue(sut.report.onlyInCodex.isEmpty)
+        XCTAssertTrue(sut.report.onlyInClaude.isEmpty)
+        XCTAssertTrue(sut.report.differentContent.isEmpty)
+        XCTAssertFalse(sut.isRunning)
+        XCTAssertNil(sut.selection)
+    }
+
+    // MARK: - Run Tests
+
+    func testRunDetectsOnlyInCodex() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        // Create skill only in codex
+        let codexSkill = codexRoot.appendingPathComponent("only-codex", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexSkill, withIntermediateDirectories: true)
+        let codexFile = codexSkill.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: only-codex
+        description: Only in codex
+        ---
+        """.write(to: codexFile, atomically: true, encoding: .utf8)
+
+        await sut.run(
+            codexRoot: codexRoot,
+            claudeRoot: claudeRoot,
+            recursive: false,
+            maxDepth: nil,
+            excludes: [],
+            excludeGlobs: []
+        )
+
+        XCTAssertEqual(sut.report.onlyInCodex, ["only-codex"])
+        XCTAssertTrue(sut.report.onlyInClaude.isEmpty)
+        XCTAssertTrue(sut.report.differentContent.isEmpty)
+        XCTAssertFalse(sut.isRunning)
+    }
+
+    func testRunDetectsOnlyInClaude() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        // Create skill only in claude
+        let claudeSkill = claudeRoot.appendingPathComponent("only-claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: claudeSkill, withIntermediateDirectories: true)
+        let claudeFile = claudeSkill.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: only-claude
+        description: Only in claude
+        ---
+        """.write(to: claudeFile, atomically: true, encoding: .utf8)
+
+        await sut.run(
+            codexRoot: codexRoot,
+            claudeRoot: claudeRoot,
+            recursive: false,
+            maxDepth: nil,
+            excludes: [],
+            excludeGlobs: []
+        )
+
+        XCTAssertTrue(sut.report.onlyInCodex.isEmpty)
+        XCTAssertEqual(sut.report.onlyInClaude, ["only-claude"])
+        XCTAssertTrue(sut.report.differentContent.isEmpty)
+        XCTAssertFalse(sut.isRunning)
+    }
+
+    func testRunDetectsDifferentContent() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        // Create same skill with different content
+        let codexSkill = codexRoot.appendingPathComponent("different", isDirectory: true)
+        let claudeSkill = claudeRoot.appendingPathComponent("different", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexSkill, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeSkill, withIntermediateDirectories: true)
+
+        try """
+        ---
+        name: different
+        description: version 1
+        ---
+        """.write(to: codexSkill.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+
+        try """
+        ---
+        name: different
+        description: version 2
+        ---
+        """.write(to: claudeSkill.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+
+        await sut.run(
+            codexRoot: codexRoot,
+            claudeRoot: claudeRoot,
+            recursive: false,
+            maxDepth: nil,
+            excludes: [],
+            excludeGlobs: []
+        )
+
+        XCTAssertTrue(sut.report.onlyInCodex.isEmpty)
+        XCTAssertTrue(sut.report.onlyInClaude.isEmpty)
+        XCTAssertEqual(sut.report.differentContent, ["different"])
+        XCTAssertFalse(sut.isRunning)
+    }
+
+    // MARK: - Selection Tests
+
+    func testSelectionCanBeUpdated() {
+        sut.selection = .onlyCodex("test")
+        XCTAssertEqual(sut.selection, .onlyCodex("test"))
+
+        sut.selection = .onlyClaude("test2")
+        XCTAssertEqual(sut.selection, .onlyClaude("test2"))
+
+        sut.selection = .different("test3")
+        XCTAssertEqual(sut.selection, .different("test3"))
+
+        sut.selection = nil
+        XCTAssertNil(sut.selection)
+    }
+
+    // MARK: - Recursive Scan Tests
+
+    func testRunWithRecursiveFindsNestedSkills() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        // Create nested skill directory
+        let nested = codexRoot.appendingPathComponent("level1/level2", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let nestedFile = nested.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: nested
+        description: Nested skill
+        ---
+        """.write(to: nestedFile, atomically: true, encoding: .utf8)
+
+        await sut.run(
+            codexRoot: codexRoot,
+            claudeRoot: claudeRoot,
+            recursive: true,
+            maxDepth: nil,
+            excludes: [],
+            excludeGlobs: []
+        )
+
+        XCTAssertEqual(sut.report.onlyInCodex, ["nested"])
+    }
+
+    // MARK: - Exclude Tests
+
+    func testRunWithExcludesSkipsDirectories() async throws {
+        let codexRoot = tempDirectory.appendingPathComponent("codex", isDirectory: true)
+        let claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
+
+        // Create skill in excluded directory
+        let excluded = codexRoot.appendingPathComponent("excluded-dir", isDirectory: true)
+        try FileManager.default.createDirectory(at: excluded, withIntermediateDirectories: true)
+        let excludedFile = excluded.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: excluded
+        description: Should be excluded
+        ---
+        """.write(to: excludedFile, atomically: true, encoding: .utf8)
+
+        // Create skill in non-excluded directory
+        let included = codexRoot.appendingPathComponent("included", isDirectory: true)
+        try FileManager.default.createDirectory(at: included, withIntermediateDirectories: true)
+        let includedFile = included.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: included
+        description: Should be included
+        ---
+        """.write(to: includedFile, atomically: true, encoding: .utf8)
+
+        await sut.run(
+            codexRoot: codexRoot,
+            claudeRoot: claudeRoot,
+            recursive: true,
+            maxDepth: nil,
+            excludes: ["excluded-dir"],
+            excludeGlobs: []
+        )
+
+        XCTAssertEqual(sut.report.onlyInCodex, ["included"])
+    }
+}
