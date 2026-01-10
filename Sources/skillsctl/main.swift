@@ -6,7 +6,7 @@ struct SkillsCtl: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "skillsctl",
         abstract: "Scan/validate/sync Codex + Claude SKILL.md directories.",
-        subcommands: [Scan.self, SyncCheck.self]
+        subcommands: [Scan.self, SyncCheck.self, Index.self]
     )
 }
 
@@ -128,6 +128,100 @@ struct Scan: ParsableCommand {
         let errors = filtered.filter { $0.severity == .error }
         if !errors.isEmpty {
             throw ExitCode(1)
+        }
+    }
+
+    struct Index: ParsableCommand {
+        static let configuration = CommandConfiguration(abstract: "Generate a Skills.md index from skill roots")
+
+        @Option(name: .customLong("codex"), help: "Codex skills root (default: ~/.codex/skills)")
+        var codexPath: String = "~/.codex/skills"
+
+        @Option(name: .customLong("claude"), help: "Claude skills root (default: ~/.claude/skills)")
+        var claudePath: String = "~/.claude/skills"
+
+        @Option(name: .customLong("repo"), help: "Repo root; scans <repo>/.codex/skills and <repo>/.claude/skills")
+        var repoPath: String?
+
+        @Option(name: .customLong("include"), help: "codex|claude|both (default both)")
+        var include: String = "both"
+
+        @Flag(name: .customLong("recursive"), help: "Recursively search for SKILL.md")
+        var recursive: Bool = false
+
+        @Option(name: .customLong("max-depth"), help: "Maximum recursion depth")
+        var maxDepth: Int?
+
+        @Option(name: .customLong("exclude"), parsing: .upToNextOption, help: "Directory names to exclude")
+        var excludes: [String] = []
+
+        @Option(name: .customLong("exclude-glob"), parsing: .upToNextOption, help: "Glob patterns to exclude")
+        var excludeGlobs: [String] = []
+
+        @Option(name: .customLong("out"), help: "Output path (default Skills.md)")
+        var outPath: String = "Skills.md"
+
+        @Option(name: .customLong("bump"), help: "none|patch|minor|major (default none)")
+        var bump: String = "none"
+
+        @Flag(name: .customLong("write"), help: "Write file instead of printing preview")
+        var write: Bool = false
+
+        func run() throws {
+            let includeMode = IndexInclude(rawValue: include) ?? .both
+            let bumpMode = IndexBump(rawValue: bump) ?? .none
+
+            let resolvedRoots = roots(fromRepo: repoPath, codexPath: codexPath, claudePath: claudePath)
+
+            let entries = SkillIndexer.generate(
+                codexRoot: resolvedRoots.codex,
+                claudeRoot: resolvedRoots.claude,
+                include: includeMode,
+                recursive: recursive,
+                maxDepth: maxDepth,
+                excludes: excludes,
+                excludeGlobs: excludeGlobs
+            )
+
+            let existingVersion = readExistingVersion(outPath: outPath)
+            let (version, markdown) = SkillIndexer.renderMarkdown(
+                entries: entries,
+                existingVersion: existingVersion,
+                bump: bumpMode,
+                changelogNote: "Index generated with skillsctl"
+            )
+
+            if write {
+                let url = URL(fileURLWithPath: PathUtil.expandTilde(outPath))
+                try markdown.write(to: url, atomically: true, encoding: .utf8)
+                print("Wrote \(entries.count) skills to \(url.path) (v\(version))")
+            } else {
+                print(markdown)
+            }
+        }
+
+        private func readExistingVersion(outPath: String) -> String? {
+            let url = URL(fileURLWithPath: PathUtil.expandTilde(outPath))
+            guard FileManager.default.fileExists(atPath: url.path),
+                  let text = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+            let lines = text.split(whereSeparator: \ .isNewline)
+            for line in lines {
+                if line.hasPrefix("version:") {
+                    return line.replacingOccurrences(of: "version:", with: "").trimmingCharacters(in: .whitespaces)
+                }
+            }
+            return nil
+        }
+
+        private func roots(fromRepo repoPath: String?, codexPath: String, claudePath: String) -> (codex: URL?, claude: URL?) {
+            if let repoPath {
+                let repoURL = PathUtil.urlFromPath(repoPath)
+                return (
+                    repoURL.appendingPathComponent(".codex/skills", isDirectory: true),
+                    repoURL.appendingPathComponent(".claude/skills", isDirectory: true)
+                )
+            }
+            return (PathUtil.urlFromPath(codexPath), PathUtil.urlFromPath(claudePath))
         }
     }
 
