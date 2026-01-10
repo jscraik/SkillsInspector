@@ -37,6 +37,12 @@ public struct BaselineEntry: Codable, Hashable, Sendable {
     public let ruleID: String
     public let file: String
     public let agent: String?
+    
+    public init(ruleID: String, file: String, agent: String? = nil) {
+        self.ruleID = ruleID
+        self.file = file
+        self.agent = agent
+    }
 }
 
 public struct IgnoreRule: Codable, Hashable, Sendable {

@@ -26,6 +26,7 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
     public let message: String
     public let line: Int?
     public let column: Int?
+    public var suggestedFix: SuggestedFix?
 
     public init(
         ruleID: RuleID,
@@ -34,7 +35,8 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
         fileURL: URL,
         message: String,
         line: Int? = nil,
-        column: Int? = nil
+        column: Int? = nil,
+        suggestedFix: SuggestedFix? = nil
     ) {
         self.ruleID = ruleID
         self.severity = severity
@@ -43,6 +45,7 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
         self.message = message
         self.line = line
         self.column = column
+        self.suggestedFix = suggestedFix
     }
 }
 

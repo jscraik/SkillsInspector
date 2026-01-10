@@ -102,6 +102,8 @@ final class InspectorViewModelTests: XCTestCase {
 
         // First scan
         await sut.scan()
+        // Wait for MainActor state updates to complete
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let firstFindings = sut.findings
         let firstScanTime = sut.lastScanAt
 
@@ -110,6 +112,8 @@ final class InspectorViewModelTests: XCTestCase {
 
         // Second scan
         await sut.scan()
+        // Wait for MainActor state updates to complete
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let secondFindings = sut.findings
         let secondScanTime = sut.lastScanAt
 
@@ -189,6 +193,8 @@ final class InspectorViewModelTests: XCTestCase {
         sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
 
         await sut.scan()
+        // Wait for MainActor state updates to complete
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
 
         XCTAssertNotNil(sut.lastScanDuration, "Duration should be recorded")
         XCTAssertGreaterThan(sut.lastScanDuration!, 0, "Duration should be positive")
@@ -246,13 +252,15 @@ final class InspectorViewModelTests: XCTestCase {
 
     // MARK: - Error Handling Tests
 
-    func testScanWithInvalidRootReturnsEmptyFindings() async {
+    func testScanWithInvalidRootReturnsEmptyFindings() async throws {
         let nonExistent = tempDirectory.appendingPathComponent("does-not-exist", isDirectory: true)
 
         sut.codexRoot = nonExistent
         sut.claudeRoot = nonExistent
 
         await sut.scan()
+        // Wait for MainActor state updates to complete
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
 
         XCTAssertTrue(sut.findings.isEmpty, "Should have no findings for non-existent roots")
         XCTAssertFalse(sut.isScanning, "Should not be scanning")
@@ -274,6 +282,8 @@ final class InspectorViewModelTests: XCTestCase {
         sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
 
         await sut.scan()
+        // Wait for MainActor state updates to complete
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
 
         // Should have error findings
         let errors = sut.findings.filter { $0.severity == .error }

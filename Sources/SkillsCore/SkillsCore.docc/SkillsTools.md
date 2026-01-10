@@ -1,10 +1,10 @@
 # ``SkillsCore``
 
-Validate and reconcile Codex/Claude skill trees (`SKILL.md`) with a single, testable engine.
+Check and reconcile Codex/Claude skill trees (`SKILL.md`) with a single, testable engine.
 
 ## Overview
 
-`SkillsCore` powers the `skillsctl` CLI, the `SkillsInspector` SwiftUI app, and the `SkillsLintPlugin` SwiftPM command plugin. It scans skill roots, validates required frontmatter, enforces Codex/Claude naming rules, detects symlink issues, and reports findings in JSON for CI consumption.
+`SkillsCore` powers the `skillsctl` CLI, the SwiftUI macOS app now branded as **sTools** (executable target name `SkillsInspector`), and the `SkillsLintPlugin` SwiftPM command plugin. It scans skill roots, validates required frontmatter, enforces Codex/Claude naming rules, detects symlink issues, and reports findings in JSON for CI consumption.
 
 ### Main features
 - **Scanning & validation**: required frontmatter, name/description presence, length/pattern rules per ecosystem, symlink checks.
@@ -54,4 +54,3 @@ Use ``SyncChecker/byName(codexRoot:claudeRoot:recursive:excludeDirNames:excludeG
 
 ### Utilities
 - ``PathUtil/glob(_:matches:)``
-

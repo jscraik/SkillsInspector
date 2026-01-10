@@ -1,12 +1,12 @@
 import Foundation
 
-public enum IndexInclude: String, CaseIterable {
+public enum IndexInclude: String, CaseIterable, Sendable {
     case codex
     case claude
     case both
 }
 
-public enum IndexBump: String {
+public enum IndexBump: String, Sendable {
     case none
     case patch
     case minor

@@ -9,11 +9,12 @@ let package = Package(
     products: [
         .library(name: "SkillsCore", targets: ["SkillsCore"]),
         .executable(name: "skillsctl", targets: ["skillsctl"]),
-        .executable(name: "SkillsInspector", targets: ["SkillsInspector"]),
+        .executable(name: "sTools", targets: ["SkillsInspector"]),
         .plugin(name: "SkillsLintPlugin", targets: ["SkillsLintPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
+        .package(url: "https://github.com/gonzalezreal/swift-markdown-ui.git", from: "2.4.1")
     ],
     targets: [
         .target(
@@ -29,7 +30,15 @@ let package = Package(
         ),
         .executableTarget(
             name: "SkillsInspector",
-            dependencies: ["SkillsCore"]
+            dependencies: [
+                "SkillsCore",
+                .product(name: "MarkdownUI", package: "swift-markdown-ui")
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-default-isolation", "MainActor"]),
+                .unsafeFlags(["-strict-concurrency=complete"]),
+                .unsafeFlags(["-warn-concurrency"])
+            ]
         ),
         .plugin(
             name: "SkillsLintPlugin",

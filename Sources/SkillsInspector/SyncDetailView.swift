@@ -22,86 +22,200 @@ struct SyncDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(skillName).font(.title3).bold()
-            switch selection {
-            case .onlyCodex:
-                Text("Present only in Codex.")
-            case .onlyClaude:
-                Text("Present only in Claude.")
-            case .different:
-                Text("Content differs between Codex and Claude.")
-            }
-            if let statusMessage {
-                Text(statusMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            if isDifferent {
-                ScrollView {
-                    Text(diffText.isEmpty ? "Diff unavailable" : diffText)
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(8)
-                        .background(.thinMaterial)
-                        .cornerRadius(8)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Header
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: headerIcon)
+                            .foregroundStyle(headerColor)
+                            .font(.title2)
+                        Text(headerLabel)
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(headerColor)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(headerColor.opacity(0.15))
+                            .cornerRadius(4)
+                    }
+                    
+                    Text(skillName)
+                        .font(.title3)
+                        .fontWeight(.medium)
+                    
+                    Text(headerDescription)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
                 }
-                .frame(maxHeight: 200)
-            }
-            if isLoading {
-                ProgressView("Loading...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding()
-            } else if let loadError {
-                Text(loadError).foregroundStyle(.red)
-            } else {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading) {
-                        Text("Codex").font(.headline)
-                        ScrollView {
-                            Text(codexContent.isEmpty ? "Not available" : codexContent)
-                                .font(.system(.body, design: .monospaced))
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        if isDifferent {
-                            Button("Copy Codex → Claude (with backup)") {
-                                pendingCopyOperation = CopyOperation(
-                                    from: codexFile,
-                                    to: claudeFile,
-                                    direction: "Codex → Claude"
-                                )
-                                showingCopyConfirmation = true
+                
+                if let statusMessage {
+                    HStack(spacing: 6) {
+                        Image(systemName: "info.circle")
+                        Text(statusMessage)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.blue.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                
+                if isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading files...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 200)
+                } else if let loadError {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle")
+                        Text(loadError)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.red.opacity(0.1))
+                    .cornerRadius(8)
+                } else if codexContent.isEmpty && claudeContent.isEmpty {
+                    EmptyStateView(
+                        icon: "sidebar.right",
+                        title: "No Content",
+                        message: "Unable to load skill files."
+                    )
+                } else {
+                    // Diff view for different content
+                    if isDifferent {
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Diff")
+                                    .font(.headline)
+                                Spacer()
+                                Button {
+                                    #if os(macOS)
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(diffText, forType: .string)
+                                    #endif
+                                } label: {
+                                    Label("Copy", systemImage: "doc.on.doc")
+                                        .font(.caption)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(diffText.isEmpty)
                             }
-                            .disabled(isLoading)
+                            
+                            ScrollView {
+                                Text(diffText.isEmpty ? "Diff unavailable" : diffText)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(12)
+                            }
+                            .frame(height: 200)
+                            .background(.tertiary.opacity(0.1))
+                            .cornerRadius(8)
                         }
                     }
-                    VStack(alignment: .leading) {
-                        Text("Claude").font(.headline)
-                        ScrollView {
-                            Text(claudeContent.isEmpty ? "Not available" : claudeContent)
-                                .font(.system(.body, design: .monospaced))
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        if isDifferent {
-                            Button("Copy Claude → Codex (with backup)") {
-                                pendingCopyOperation = CopyOperation(
-                                    from: claudeFile,
-                                    to: codexFile,
-                                    direction: "Claude → Codex"
-                                )
-                                showingCopyConfirmation = true
+                    
+                    Divider()
+                    
+                    // Side-by-side content comparison
+                    HStack(alignment: .top, spacing: 16) {
+                        // Codex column
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "cpu")
+                                    .foregroundStyle(.blue)
+                                Text("Codex")
+                                    .font(.headline)
+                                Spacer()
+                                Text("\(codexContent.split(separator: "\n").count) lines")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
                             }
-                            .disabled(isLoading)
+                            
+                            ScrollView {
+                                Text(codexContent.isEmpty ? "Not available" : codexContent)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(12)
+                            }
+                            .frame(maxHeight: 300)
+                            .background(.tertiary.opacity(0.05))
+                            .cornerRadius(8)
+                            
+                            if isDifferent && !codexContent.isEmpty {
+                                Button {
+                                    pendingCopyOperation = CopyOperation(
+                                        from: codexFile,
+                                        to: claudeFile,
+                                        direction: "Codex → Claude"
+                                    )
+                                    showingCopyConfirmation = true
+                                } label: {
+                                    Label("Copy to Claude", systemImage: "arrow.right")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(isLoading)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Claude column
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "brain")
+                                    .foregroundStyle(.purple)
+                                Text("Claude")
+                                    .font(.headline)
+                                Spacer()
+                                Text("\(claudeContent.split(separator: "\n").count) lines")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            ScrollView {
+                                Text(claudeContent.isEmpty ? "Not available" : claudeContent)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(12)
+                            }
+                            .frame(maxHeight: 300)
+                            .background(.tertiary.opacity(0.05))
+                            .cornerRadius(8)
+                            
+                            if isDifferent && !claudeContent.isEmpty {
+                                Button {
+                                    pendingCopyOperation = CopyOperation(
+                                        from: claudeFile,
+                                        to: codexFile,
+                                        direction: "Claude → Codex"
+                                    )
+                                    showingCopyConfirmation = true
+                                } label: {
+                                    Label("Copy to Codex", systemImage: "arrow.left")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(isLoading)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }
-            Spacer()
+            .padding(20)
         }
-        .padding()
         .task(id: selection) { await loadFiles() }
         .alert("Confirm Copy Operation", isPresented: $showingCopyConfirmation) {
             Button("Cancel", role: .cancel) {
@@ -109,7 +223,7 @@ struct SyncDetailView: View {
             }
             Button("Copy with Backup", role: .destructive) {
                 if let op = pendingCopyOperation {
-                    Task.detached(priority: .userInitiated) {
+                    Task(priority: .userInitiated) {
                         await performCopy(from: op.from, to: op.to)
                     }
                 }
@@ -119,6 +233,41 @@ struct SyncDetailView: View {
             if let op = pendingCopyOperation {
                 Text("This will copy \(op.direction). A backup of the destination file will be created with a .bak extension.\n\nDestination: \(op.to.lastPathComponent)")
             }
+        }
+    }
+    
+    private var headerIcon: String {
+        switch selection {
+        case .onlyCodex: return "doc.badge.plus"
+        case .onlyClaude: return "doc.badge.plus"
+        case .different: return "doc.badge.gearshape"
+        }
+    }
+    
+    private var headerColor: Color {
+        switch selection {
+        case .onlyCodex: return .blue
+        case .onlyClaude: return .purple
+        case .different: return .orange
+        }
+    }
+    
+    private var headerLabel: String {
+        switch selection {
+        case .onlyCodex: return "ONLY IN CODEX"
+        case .onlyClaude: return "ONLY IN CLAUDE"
+        case .different: return "DIFFERENT CONTENT"
+        }
+    }
+    
+    private var headerDescription: String {
+        switch selection {
+        case .onlyCodex:
+            return "This skill exists only in Codex and is missing from Claude."
+        case .onlyClaude:
+            return "This skill exists only in Claude and is missing from Codex."
+        case .different:
+            return "This skill exists in both locations but has different content."
         }
     }
 
@@ -142,7 +291,8 @@ struct SyncDetailView: View {
         let codexURL = codexFile
         let claudeURL = claudeFile
 
-        let (codex, claude, codexErr, claudeErr) = await Task.detached(priority: .userInitiated) { () -> (String, String, String?, String?) in
+        let (codex, claude, codexErr, claudeErr) = await Task(priority: .userInitiated) { () -> (String, String, String?, String?) in
+            if Task.isCancelled { return ("", "", nil, nil) }
             let codexResult: (String, String?) = {
                 guard FileManager.default.fileExists(atPath: codexURL.path) else {
                     return ("", nil)
@@ -167,6 +317,7 @@ struct SyncDetailView: View {
 
             return (codexResult.0, claudeResult.0, codexResult.1, claudeResult.1)
         }.value
+        if Task.isCancelled { return }
 
         await MainActor.run {
             isLoading = false
@@ -193,28 +344,33 @@ struct SyncDetailView: View {
             isLoading = true
         }
 
-        let result = await Task.detached(priority: .userInitiated) { () -> CopyResult in
+        let result = await Task(priority: .userInitiated) { () -> CopyResult in
+            if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
             guard FileManager.default.fileExists(atPath: from.path) else {
                 return CopyResult(success: false, message: "Source missing: \(from.lastPathComponent)")
             }
 
             do {
+                if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
                 let data = try Data(contentsOf: from)
                 let dir = to.deletingLastPathComponent()
                 try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
                 if FileManager.default.fileExists(atPath: to.path) {
+                    if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
                     let backup = to.appendingPathExtension("bak")
                     try? FileManager.default.removeItem(at: backup)
                     try FileManager.default.copyItem(at: to, to: backup)
                 }
 
+                if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
                 try data.write(to: to, options: .atomic)
                 return CopyResult(success: true, message: "Copied \(from.lastPathComponent) → \(to.lastPathComponent)")
             } catch {
                 return CopyResult(success: false, message: "Copy failed: \(error.localizedDescription)")
             }
         }.value
+        if Task.isCancelled { return }
 
         await MainActor.run {
             isLoading = false

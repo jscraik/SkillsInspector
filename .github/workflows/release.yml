@@ -1,0 +1,41 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+jobs:
+    build:
+        runs-on: macos-26
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Swift
+              uses: swift-actions/setup-swift@v2
+              with:
+                  swift-version: "6.2"
+
+            - name: Build Release (Universal)
+              run: |
+                  swift build -c release --arch arm64
+                  swift build -c release --arch x86_64
+
+            - name: Package App
+              run: |
+                  chmod +x ./Scripts/package_app.sh
+                  ARCHES="arm64 x86_64" SIGNING_MODE=adhoc ./Scripts/package_app.sh release
+
+            - name: Create ZIP
+              run: |
+                  source version.env
+                  ditto -c -k --keepParent sInspect.app "sInspect-${MARKETING_VERSION}.zip"
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: sInspect-*.zip
+                  generate_release_notes: true
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

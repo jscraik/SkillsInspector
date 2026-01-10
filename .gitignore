@@ -2,6 +2,14 @@
 .build/
 .swiftpm/
 DerivedData/
+*.app/
+*.xcodeproj/
+*.xcworkspace/
+
+# Generated files
+Icon.icns
+Icon.png
+Package.resolved
 
 # macOS
 .DS_Store

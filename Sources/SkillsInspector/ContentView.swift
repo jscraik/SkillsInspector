@@ -4,6 +4,7 @@ import SkillsCore
 struct ContentView: View {
     @StateObject private var viewModel = InspectorViewModel()
     @StateObject private var syncVM = SyncViewModel()
+    @StateObject private var indexVM = IndexViewModel()
     @State private var mode: AppMode = .validate
     @State private var severityFilter: Severity? = nil
     @State private var agentFilter: AgentKind? = nil
@@ -23,16 +24,23 @@ struct ContentView: View {
                     agentFilter: $agentFilter,
                     searchText: $searchText
                 )
+            case .stats:
+                StatsView(viewModel: viewModel)
             case .sync:
                 SyncView(
                     viewModel: syncVM,
-                    codexRoot: viewModel.codexRoot,
+                    codexRoot: viewModel.codexRoots.first ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/skills"),
                     claudeRoot: viewModel.claudeRoot
                 )
             case .index:
-                IndexPlaceholderView()
+                IndexView(
+                    viewModel: indexVM,
+                    codexRoots: viewModel.codexRoots,
+                    claudeRoot: viewModel.claudeRoot
+                )
             }
         }
+        .navigationSplitViewColumnWidth(ideal: 240)
         .alert("Invalid Root Directory", isPresented: $showingRootError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -42,73 +50,104 @@ struct ContentView: View {
 
     private var sidebar: some View {
         List(selection: $mode) {
-            Section("Mode") {
+            Section {
                 NavigationLink(value: AppMode.validate) {
                     Label("Validate", systemImage: "checkmark.circle")
-                        .accessibilityLabel("Validate mode")
                 }
+                .padding(.leading, 4)
+                NavigationLink(value: AppMode.stats) {
+                    Label("Statistics", systemImage: "chart.bar.fill")
+                }
+                .padding(.leading, 4)
                 NavigationLink(value: AppMode.sync) {
                     Label("Sync", systemImage: "arrow.2.squarepath")
-                        .accessibilityLabel("Sync mode")
                 }
+                .padding(.leading, 4)
                 NavigationLink(value: AppMode.index) {
                     Label("Index", systemImage: "doc.text")
-                        .accessibilityLabel("Index mode")
                 }
+                .padding(.leading, 4)
+            } header: {
+                Text("Mode")
+                    .padding(.leading, 4)
             }
 
-            Section("Workspace") {
-                RootRow(
-                    title: "Codex root",
-                    url: viewModel.codexRoot,
-                    onPick: { url in
-                        if validateRoot(url) {
-                            viewModel.codexRoot = url
-                        }
+            Section {
+                ForEach(Array(viewModel.codexRoots.enumerated()), id: \.offset) { _, url in
+                    HStack(spacing: 6) {
+                        Image(systemName: "folder.fill")
+                            .foregroundStyle(.orange)
+                            .frame(width: 16)
+                        Text(url.path.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))
+                            .font(.system(.caption, design: .monospaced))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        Spacer()
+                        Image(systemName: FileManager.default.fileExists(atPath: url.path) ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundStyle(FileManager.default.fileExists(atPath: url.path) ? .green : .red)
+                            .font(.caption2)
                     }
-                )
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Codex root directory")
-
-                RootRow(
-                    title: "Claude root",
-                    url: viewModel.claudeRoot,
-                    onPick: { url in
-                        if validateRoot(url) {
-                            viewModel.claudeRoot = url
-                        }
-                    }
-                )
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Claude root directory")
-
+                    .padding(.leading, 4)
+                }
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "folder.fill")
+                        .foregroundStyle(.purple)
+                        .frame(width: 16)
+                    Text(viewModel.claudeRoot.path.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))
+                        .font(.system(.caption, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Spacer()
+                    Image(systemName: FileManager.default.fileExists(atPath: viewModel.claudeRoot.path) ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundStyle(FileManager.default.fileExists(atPath: viewModel.claudeRoot.path) ? .green : .red)
+                        .font(.caption2)
+                }
+                .padding(.leading, 4)
+            } header: {
+                Text("Scan Roots")
+                    .padding(.leading, 4)
+            }
+            
+            Section {
                 Toggle("Recursive", isOn: $viewModel.recursive)
                     .toggleStyle(.switch)
-                    .accessibilityLabel("Recursive scan")
-                    .accessibilityHint("Include subdirectories when scanning")
+                    .padding(.leading, 4)
+            } header: {
+                Text("Options")
+                    .padding(.leading, 4)
             }
 
             if mode == .validate {
-                Section("Filters") {
-                    Picker("Severity", selection: $severityFilter) {
+                Section {
+                    Picker(selection: $severityFilter) {
                         Text("All").tag(Severity?.none)
-                        Text("Errors").tag(Severity?.some(.error))
-                        Text("Warnings").tag(Severity?.some(.warning))
+                        Text("Error").tag(Severity?.some(.error))
+                        Text("Warning").tag(Severity?.some(.warning))
                         Text("Info").tag(Severity?.some(.info))
+                    } label: {
+                        Label("Severity", systemImage: "exclamationmark.triangle")
                     }
-                    .accessibilityLabel("Filter by severity")
+                    .pickerStyle(.menu)
+                    .padding(.leading, 4)
 
-                    Picker("Agent", selection: $agentFilter) {
+                    Picker(selection: $agentFilter) {
                         Text("All").tag(AgentKind?.none)
                         Text("Codex").tag(AgentKind?.some(.codex))
                         Text("Claude").tag(AgentKind?.some(.claude))
+                    } label: {
+                        Label("Agent", systemImage: "person.2")
                     }
-                    .accessibilityLabel("Filter by agent type")
+                    .pickerStyle(.menu)
+                    .padding(.leading, 4)
+                } header: {
+                    Text("Filters")
+                        .padding(.leading, 4)
                 }
             }
         }
         .listStyle(.sidebar)
-        .accessibilityLabel("Sidebar navigation")
+        .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 350)
     }
 
     private func validateRoot(_ url: URL) -> Bool {

@@ -1,0 +1,23 @@
+name: Brand Check
+
+on:
+  push:
+    paths:
+      - 'README.md'
+      - 'brand/**'
+      - 'Scripts/brand_check.sh'
+      - '.github/workflows/brand-check.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'brand/**'
+      - 'Scripts/brand_check.sh'
+      - '.github/workflows/brand-check.yml'
+
+jobs:
+  brand-check:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run brand check
+        run: Scripts/brand_check.sh

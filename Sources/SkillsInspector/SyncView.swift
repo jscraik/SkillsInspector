@@ -22,7 +22,7 @@ final class SyncViewModel: ObservableObject {
         excludeGlobs: [String]
     ) async {
         isRunning = true
-        let result = await Task.detached(priority: .userInitiated) {
+        let result = await Task(priority: .userInitiated) {
             if Task.isCancelled { return SyncReport() }
             let codexScan = ScanRoot(agent: .codex, rootURL: codexRoot, recursive: recursive, maxDepth: maxDepth)
             let claudeScan = ScanRoot(agent: .claude, rootURL: claudeRoot, recursive: recursive, maxDepth: maxDepth)
@@ -53,15 +53,14 @@ struct SyncView: View {
     @State private var excludeGlobInput: String = ""
 
     var body: some View {
+        let rootsValid = PathUtil.existsDir(codexRoot) && PathUtil.existsDir(claudeRoot)
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Button(viewModel.isRunning ? "Syncing…" : "Sync Check") {
-                    guard PathUtil.existsDir(codexRoot), PathUtil.existsDir(claudeRoot) else {
-                        return
-                    }
-                    Task {
-                        await viewModel.run(
-                            codexRoot: codexRoot,
+        HStack(spacing: 16) {
+            Button {
+                guard rootsValid else { return }
+                Task {
+                    await viewModel.run(
+                        codexRoot: codexRoot,
                             claudeRoot: claudeRoot,
                             recursive: recursive,
                             maxDepth: maxDepth,
@@ -69,79 +68,232 @@ struct SyncView: View {
                             excludeGlobs: parsedGlobExcludes
                         )
                     }
+                } label: {
+                    Label(viewModel.isRunning ? "Syncing…" : "Sync", systemImage: "arrow.triangle.2.circlepath")
                 }
-                .disabled(viewModel.isRunning)
-                .accessibilityLabel(viewModel.isRunning ? "Syncing" : "Start sync check")
+                .disabled(viewModel.isRunning || !rootsValid)
+                .buttonStyle(.borderedProminent)
 
-                if !PathUtil.existsDir(codexRoot) || !PathUtil.existsDir(claudeRoot) {
-                    Label("Roots not set", systemImage: "exclamationmark.triangle.fill")
+                if !rootsValid {
+                    Label("Set roots in sidebar", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
-                        .font(.system(.callout, design: .rounded))
-                        .accessibilityLabel("Roots not set or invalid")
+                        .font(.caption)
                 }
 
-                Toggle("Recursive", isOn: $recursive)
-                    .toggleStyle(.switch)
-                    .accessibilityLabel("Recursive scan")
-                    .accessibilityHint("Include subdirectories when comparing skills")
+                Toggle(isOn: $recursive) {
+                    Text("Recursive")
+                        .fixedSize()
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(!rootsValid || viewModel.isRunning)
 
-                TextField("Max depth", value: $maxDepth, format: .number)
-                    .frame(width: 80)
-                    .accessibilityLabel("Maximum scan depth")
-
-                TextField("Excludes (comma)", text: $excludeInput)
-                    .frame(width: 200)
-                    .accessibilityLabel("Directory names to exclude")
-
-                TextField("Glob excludes (comma)", text: $excludeGlobInput)
-                    .frame(width: 200)
-                    .accessibilityLabel("Glob patterns to exclude")
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    Text("Depth:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("", value: $maxDepth, format: .number)
+                        .frame(width: 50)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(!rootsValid || viewModel.isRunning)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.bar)
+            
+            HStack(spacing: 16) {
+                HStack(spacing: 4) {
+                    Text("Excludes:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("dir1, dir2", text: $excludeInput)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 200)
+                        .disabled(viewModel.isRunning)
+                }
+                
+                HStack(spacing: 4) {
+                    Text("Globs:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("*.tmp, test_*", text: $excludeGlobInput)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 200)
+                        .disabled(viewModel.isRunning)
+                }
 
                 Spacer()
             }
-            .padding(8)
-            .background(.thickMaterial)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.bar)
+            .font(.system(size: DesignTokens.Typography.BodySmall.size, weight: .regular))
 
-            NavigationSplitView {
-                List(selection: $viewModel.selection) {
-                    Section("Only in Codex") {
-                        ForEach(viewModel.report.onlyInCodex, id: \.self) { name in
-                            Text(name)
-                                .tag(SyncViewModel.SyncSelection.onlyCodex(name))
-                                .accessibilityLabel("Skill: \(name)")
+            HStack(spacing: 0) {
+                // Sync results list (fixed width, non-resizable)
+                Group {
+                    if viewModel.isRunning {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                            Text("Syncing...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                    }
-                    .accessibilityLabel("Skills only in Codex")
-
-                    Section("Only in Claude") {
-                        ForEach(viewModel.report.onlyInClaude, id: \.self) { name in
-                            Text(name)
-                                .tag(SyncViewModel.SyncSelection.onlyClaude(name))
-                                .accessibilityLabel("Skill: \(name)")
-                        }
-                    }
-                    .accessibilityLabel("Skills only in Claude")
-
-                    Section("Different content") {
-                        ForEach(viewModel.report.differentContent, id: \.self) { name in
-                            Text(name)
-                                .tag(SyncViewModel.SyncSelection.different(name))
-                                .accessibilityLabel("Skill: \(name)")
-                        }
-                    }
-                    .accessibilityLabel("Skills with different content")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if viewModel.report.onlyInCodex.isEmpty && 
+                              viewModel.report.onlyInClaude.isEmpty && 
+                              viewModel.report.differentContent.isEmpty {
+                        EmptyStateView(
+                            icon: "arrow.triangle.2.circlepath",
+                            title: "Ready to Sync",
+                            message: rootsValid ? "Press Sync to compare Codex and Claude skills." : "Configure valid roots in the sidebar to begin.",
+                            action: rootsValid ? {
+                                Task {
+                                    await viewModel.run(
+                                        codexRoot: codexRoot,
+                                        claudeRoot: claudeRoot,
+                                        recursive: recursive,
+                                        maxDepth: maxDepth,
+                                        excludes: parsedExcludes,
+                                        excludeGlobs: parsedGlobExcludes
+                                    )
+                                }
+                            } : nil,
+                            actionLabel: "Sync Now"
+                        )
+                    } else {
+                        syncResultsList
                 }
-                .listStyle(.inset)
-                .accessibilityLabel("Sync results list")
-            } detail: {
-                if let selection = viewModel.selection {
-                    SyncDetailView(selection: selection, codexRoot: codexRoot, claudeRoot: claudeRoot)
-                } else {
-                    Text("Select a skill to view details")
-                        .foregroundStyle(.secondary)
+            }
+            .frame(minWidth: 280, idealWidth: 340, maxWidth: 440)
+            
+            Divider()
+                
+                // Detail panel (flexible)
+                Group {
+                    if let selection = viewModel.selection {
+                        SyncDetailView(selection: selection, codexRoot: codexRoot, claudeRoot: claudeRoot)
+                    } else {
+                        emptyDetailState
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+    
+    private var syncResultsList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                if !viewModel.report.onlyInCodex.isEmpty {
+                    sectionHeader(title: "Only in Codex", count: viewModel.report.onlyInCodex.count, icon: "cpu", tint: .blue)
+                    ForEach(viewModel.report.onlyInCodex, id: \.self) { name in
+                        syncCard(
+                            title: name,
+                            icon: "doc.badge.plus",
+                            tint: .blue,
+                            selection: .onlyCodex(name)
+                        )
+                    }
+                }
+
+                if !viewModel.report.onlyInClaude.isEmpty {
+                    sectionHeader(title: "Only in Claude", count: viewModel.report.onlyInClaude.count, icon: "brain", tint: .purple)
+                    ForEach(viewModel.report.onlyInClaude, id: \.self) { name in
+                        syncCard(
+                            title: name,
+                            icon: "doc.badge.plus",
+                            tint: .purple,
+                            selection: .onlyClaude(name)
+                        )
+                    }
+                }
+
+                if !viewModel.report.differentContent.isEmpty {
+                    sectionHeader(title: "Different content", count: viewModel.report.differentContent.count, icon: "doc.badge.gearshape", tint: .orange)
+                    ForEach(viewModel.report.differentContent, id: \.self) { name in
+                        syncCard(
+                            title: name,
+                            icon: "doc.badge.gearshape",
+                            tint: .orange,
+                            selection: .different(name)
+                        )
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+        .onAppear {
+            if viewModel.selection == nil {
+                if let first = viewModel.report.onlyInCodex.first {
+                    viewModel.selection = .onlyCodex(first)
+                } else if let first = viewModel.report.onlyInClaude.first {
+                    viewModel.selection = .onlyClaude(first)
+                } else if let first = viewModel.report.differentContent.first {
+                    viewModel.selection = .different(first)
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func sectionHeader(title: String, count: Int, icon: String, tint: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(tint)
+            Text(title)
+                .font(.system(size: DesignTokens.Typography.Heading3.size, weight: DesignTokens.Typography.Heading3.weight))
+            Text("(\(count))")
+                .font(.system(size: DesignTokens.Typography.BodySmall.size, weight: DesignTokens.Typography.BodySmall.weight))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private func syncCard(title: String, icon: String, tint: Color, selection: SyncViewModel.SyncSelection) -> some View {
+        Button {
+            viewModel.selection = selection
+        } label: {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(tint.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Image(systemName: icon)
+                            .foregroundStyle(tint)
+                            .font(.caption)
+                    )
+                Text(title)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                Spacer()
+                if viewModel.selection == selection {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(tint)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .cardStyle(selected: viewModel.selection == selection, tint: tint)
+    }
+    
+    private var emptyDetailState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "sidebar.right")
+                .font(.system(size: 40))
+                .foregroundStyle(.tertiary)
+            Text("Select a skill to view details")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            Text("Click a skill from the list to compare content")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var parsedExcludes: [String] {
