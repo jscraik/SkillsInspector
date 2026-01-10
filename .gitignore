@@ -1,0 +1,12 @@
+# SwiftPM build artifacts
+.build/
+.swiftpm/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Local agent/IDE metadata
+.claude/
+.vscode/
+.idea/

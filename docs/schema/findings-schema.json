@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skillsctl scan output",
+  "type": "object",
+  "required": ["schemaVersion", "toolVersion", "generatedAt", "scanned", "errors", "warnings", "findings"],
+  "properties": {
+    "schemaVersion": { "type": "string", "enum": ["1"] },
+    "toolVersion": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "scanned": { "type": "integer", "minimum": 0 },
+    "errors": { "type": "integer", "minimum": 0 },
+    "warnings": { "type": "integer", "minimum": 0 },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ruleID", "severity", "agent", "file", "message"],
+        "properties": {
+          "ruleID": { "type": "string" },
+          "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+          "agent": { "type": "string", "enum": ["codex", "claude"] },
+          "file": { "type": "string" },
+          "message": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "column": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

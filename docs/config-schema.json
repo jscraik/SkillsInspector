@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skillsctl config schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "type": "integer", "enum": [1] },
+    "scan": {
+      "type": "object",
+      "properties": {
+        "recursive": { "type": "boolean" },
+        "maxDepth": { "type": ["integer", "null"], "minimum": 0 },
+        "excludes": { "type": "array", "items": { "type": "string" } },
+        "excludeGlobs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "strict": { "type": "boolean" },
+        "codexSymlinkSeverity": { "type": "string", "enum": ["error", "warning", "info"] },
+        "claudeSymlinkSeverity": { "type": "string", "enum": ["error", "warning", "info"] }
+      },
+      "additionalProperties": false
+    },
+    "sync": {
+      "type": "object",
+      "properties": {
+        "aliases": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

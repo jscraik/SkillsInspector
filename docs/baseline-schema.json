@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skillsctl baseline schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "type": "integer", "enum": [1] },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ruleID", "file"],
+        "properties": {
+          "ruleID": { "type": "string" },
+          "file": { "type": "string" },
+          "agent": { "type": "string", "enum": ["codex", "claude"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["schemaVersion", "findings"],
+  "additionalProperties": false
+}
