@@ -238,36 +238,6 @@ struct ValidateView: View {
         .buttonStyle(.plain)
         .help("\(severity.rawValue.capitalized): \(count) findings")
     }
-                
-                HStack(spacing: DesignTokens.Spacing.hair) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(errors > 0 ? DesignTokens.Colors.Status.error : DesignTokens.Colors.Icon.secondary)
-                    Text("\(errors)")
-                }
-                .font(.callout)
-                .help("Errors")
-                
-                HStack(spacing: DesignTokens.Spacing.hair) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(warnings > 0 ? DesignTokens.Colors.Status.warning : DesignTokens.Colors.Icon.secondary)
-                    Text("\(warnings)")
-                }
-                .font(.callout)
-                .help("Warnings")
-            }
-            
-            if let dur = viewModel.lastScanDuration {
-                Text(String(format: "%.2fs", dur))
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .help("Scan duration")
-            }
-        }
-        .padding(.horizontal, DesignTokens.Spacing.xxs)
-        .padding(.vertical, DesignTokens.Spacing.xxxs)
-        .background(glassBarStyle(tint: DesignTokens.Colors.Accent.blue.opacity(0.05)))
-        .font(.system(size: DesignTokens.Typography.BodySmall.size, weight: .regular))
-    }
 
     private var content: some View {
         let filtered = filteredFindings(viewModel.findings)

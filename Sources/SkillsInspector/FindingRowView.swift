@@ -121,29 +121,6 @@ struct FindingRowView: View {
         .accessibilityLabel("\(finding.severity.rawValue): \(finding.message)")
         .accessibilityHint("In \(finding.fileURL.lastPathComponent)\(finding.line.map { ", line \($0)" } ?? "")")
     }
-                    Image(systemName: "doc")
-                        .font(.caption2)
-                    Text(finding.fileURL.lastPathComponent)
-                        .fontWeight(.medium)
-                    if let line = finding.line {
-                        Text(":\(line)")
-                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
-                    }
-                }
-                .font(.system(.caption2, design: .monospaced))
-                .foregroundStyle(DesignTokens.Colors.Text.secondary)
-            }
-        }
-        .padding(.vertical, DesignTokens.Spacing.hair + DesignTokens.Spacing.micro)
-        .scaleEffect(isHovered && !reduceMotion ? 1.01 : 1.0)
-        .animation(reduceMotion ? .none : .easeInOut(duration: 0.15), value: isHovered)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(finding.severity.rawValue): \(finding.message)")
-        .accessibilityHint("In \(finding.fileURL.lastPathComponent)")
-    }
 }
 
 #Preview("Finding Row - Error") {

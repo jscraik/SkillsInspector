@@ -96,7 +96,7 @@ struct EmptyStateView: View {
                 Button(actionLabel) {
                     action()
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.customGlassProminent)
                 .controlSize(.large)
             }
         }
@@ -578,16 +578,6 @@ extension View {
 enum RectCorner {
     case topLeft, topRight, bottomLeft, bottomRight
     case allCorners
-    
-    var nsRectCorner: NSRectCorner {
-        switch self {
-        case .topLeft: return .topLeft
-        case .topRight: return .topRight
-        case .bottomLeft: return .bottomLeft
-        case .bottomRight: return .bottomRight
-        case .allCorners: return [.topLeft, .topRight, .bottomLeft, .bottomRight]
-        }
-    }
 }
 
 struct RoundedCorner: Shape {
@@ -597,10 +587,39 @@ struct RoundedCorner: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        let topLeft = corners == .allCorners || corners == .topLeft
-        let topRight = corners == .allCorners || corners == .topRight
-        let bottomLeft = corners == .allCorners || corners == .bottomLeft
-        let bottomRight = corners == .allCorners || corners == .bottomRight
+        // Use switch instead of equality comparisons to avoid actor isolation issues
+        let topLeft: Bool
+        let topRight: Bool
+        let bottomLeft: Bool
+        let bottomRight: Bool
+        
+        switch corners {
+        case .allCorners:
+            topLeft = true
+            topRight = true
+            bottomLeft = true
+            bottomRight = true
+        case .topLeft:
+            topLeft = true
+            topRight = false
+            bottomLeft = false
+            bottomRight = false
+        case .topRight:
+            topLeft = false
+            topRight = true
+            bottomLeft = false
+            bottomRight = false
+        case .bottomLeft:
+            topLeft = false
+            topRight = false
+            bottomLeft = true
+            bottomRight = false
+        case .bottomRight:
+            topLeft = false
+            topRight = false
+            bottomLeft = false
+            bottomRight = true
+        }
         
         let tlRadius = topLeft ? radius : 0
         let trRadius = topRight ? radius : 0
@@ -634,11 +653,11 @@ struct RoundedCorner: Shape {
 }
 
 extension ButtonStyle where Self == GlassButtonStyle {
-    static var glass: GlassButtonStyle { GlassButtonStyle() }
+    static var customGlass: GlassButtonStyle { GlassButtonStyle() }
 }
 
 extension ButtonStyle where Self == GlassProminentButtonStyle {
-    static var glassProminent: GlassProminentButtonStyle { GlassProminentButtonStyle() }
+    static var customGlassProminent: GlassProminentButtonStyle { GlassProminentButtonStyle() }
 }
 
 #Preview("Empty State") {

@@ -440,7 +440,7 @@ struct IndexView: View {
                         Label("Copy", systemImage: "doc.on.doc")
                             .captionText()
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.customGlass)
                     .controlSize(.small)
                     
                     Button {

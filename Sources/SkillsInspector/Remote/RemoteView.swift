@@ -18,7 +18,7 @@ struct RemoteView: View {
                     } label: {
                         Label("Refresh", systemImage: "arrow.clockwise")
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.customGlass)
                 }
             }
             .padding(.horizontal, DesignTokens.Spacing.xxs)

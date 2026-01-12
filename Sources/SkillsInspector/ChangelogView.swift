@@ -139,8 +139,7 @@ struct ChangelogView: View {
                             MarkdownPreviewView(content: changelogPreview)
                                 .padding(DesignTokens.Spacing.xs)
                                 .background(
-                                    RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
-                                        .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: DesignTokens.Colors.Accent.blue.opacity(0.03)))
+                                    glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: DesignTokens.Colors.Accent.blue.opacity(0.03))
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)

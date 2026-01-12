@@ -38,7 +38,7 @@ struct StatsView: View {
                                     .captionText()
                                     .foregroundStyle(DesignTokens.Colors.Accent.blue)
                             }
-                            .buttonStyle(.glass)
+                            .buttonStyle(.customGlass)
                             .controlSize(.small)
                             .accessibilityLabel("Clear all filters")
                         }
@@ -142,8 +142,7 @@ struct StatsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DesignTokens.Spacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
-                .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: color.opacity(0.06)))
+            glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: color.opacity(0.06))
         )
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
@@ -174,8 +173,7 @@ struct StatsView: View {
         }
         .padding(DesignTokens.Spacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
-                .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: tint.opacity(0.04)))
+            glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: tint.opacity(0.04))
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
@@ -411,8 +409,7 @@ struct StatsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(DesignTokens.Spacing.xl)
         .background(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.xl, style: .continuous)
-                .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.xl, tint: DesignTokens.Colors.Accent.blue.opacity(0.03)))
+            glassPanelStyle(cornerRadius: DesignTokens.Radius.xl, tint: DesignTokens.Colors.Accent.blue.opacity(0.03))
         )
     }
 }

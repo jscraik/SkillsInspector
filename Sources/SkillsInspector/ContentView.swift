@@ -1,7 +1,7 @@
 import SwiftUI
 import SkillsCore
 
-struct ContentView: View {
+struct LegacyContentView: View {
     @StateObject private var viewModel = InspectorViewModel()
     @StateObject private var syncVM = SyncViewModel()
     @StateObject private var indexVM = IndexViewModel()
@@ -407,7 +407,6 @@ struct ContentView: View {
         .environment(\.defaultMinListRowHeight, 36)
         .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 340)
         .scrollIndicators(.visible)
-        .listRowSpacing(DesignTokens.Spacing.hair)
     }
 
     private func applyRootChange(index: Int, newURL: URL, isClaude: Bool, allowAppend: Bool = false) {
@@ -557,3 +556,6 @@ struct RootRow: View {
         return panel.runModal() == .OK ? panel.url : nil
     }
 }
+
+// Alias for backward compatibility
+typealias ContentView = LegacyContentView

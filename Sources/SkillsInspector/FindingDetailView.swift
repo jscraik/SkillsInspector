@@ -419,7 +419,7 @@ struct FindingDetailView: View {
                 } primaryAction: {
                     FindingActions.openInEditor(finding.fileURL, line: finding.line)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.customGlass)
                 .controlSize(.large)
                 
                 HStack(spacing: 8) {
@@ -429,7 +429,7 @@ struct FindingDetailView: View {
                         Label("Show in Finder", systemImage: "folder")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.customGlass)
                     
                     Button {
                         addToBaseline()
@@ -437,7 +437,7 @@ struct FindingDetailView: View {
                         Label("Add to Baseline", systemImage: "checkmark.circle")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.customGlassProminent)
                 }
             }
         }

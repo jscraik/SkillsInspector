@@ -100,6 +100,9 @@ public enum DesignTokens {
         public static let card = ShadowSpec(radius: 16, x: 0, y: 4, color: Color.black.opacity(0.05))
         public static let subtle = ShadowSpec(radius: 8, x: 0, y: 2, color: Color.black.opacity(0.03))
         public static let elevated = ShadowSpec(radius: 24, x: 0, y: 8, color: Color.black.opacity(0.08))
+        public static let pip = ShadowSpec(radius: 16, x: 0, y: 4, color: Color.black.opacity(0.05))
+        public static let pill = ShadowSpec(radius: 22, x: 0, y: 10, color: Color.black.opacity(0.04))
+        public static let close = ShadowSpec(radius: 8, x: 0, y: 4, color: Color.black.opacity(0.16))
     }
     
     public enum Layout {
@@ -107,10 +110,6 @@ public enum DesignTokens {
         public static let sidebarIdealWidth: CGFloat = 260
         public static let sidebarMaxWidth: CGFloat = 340
         public static let minRowHeight: CGFloat = 36
-    }
-        public static let pip = ShadowSpec(radius: 16, x: 0, y: 4, color: Color.black.opacity(0.05))
-        public static let pill = ShadowSpec(radius: 22, x: 0, y: 10, color: Color.black.opacity(0.04))
-        public static let close = ShadowSpec(radius: 8, x: 0, y: 4, color: Color.black.opacity(0.16))
     }
 
     public struct ShadowSpec {
@@ -174,44 +173,4 @@ private extension NSColor {
     }
 }
 #endif
-
-// MARK: - Typography View Extensions
-
-public extension View {
-    func heading1() -> some View {
-        self.font(.system(size: DesignTokens.Typography.Heading1.size,
-                         weight: DesignTokens.Typography.Heading1.weight))
-            .tracking(DesignTokens.Typography.Heading1.tracking)
-    }
-    
-    func heading2() -> some View {
-        self.font(.system(size: DesignTokens.Typography.Heading2.size,
-                         weight: DesignTokens.Typography.Heading2.weight))
-            .tracking(DesignTokens.Typography.Heading2.tracking)
-    }
-    
-    func heading3() -> some View {
-        self.font(.system(size: DesignTokens.Typography.Heading3.size,
-                         weight: DesignTokens.Typography.Heading3.weight))
-            .tracking(DesignTokens.Typography.Heading3.tracking)
-    }
-    
-    func bodyText(emphasis: Bool = false) -> some View {
-        self.font(.system(size: DesignTokens.Typography.Body.size,
-                         weight: emphasis ? DesignTokens.Typography.Body.emphasis : DesignTokens.Typography.Body.weight))
-            .tracking(DesignTokens.Typography.Body.tracking)
-    }
-    
-    func bodySmall(emphasis: Bool = false) -> some View {
-        self.font(.system(size: DesignTokens.Typography.BodySmall.size,
-                         weight: emphasis ? DesignTokens.Typography.BodySmall.emphasis : DesignTokens.Typography.BodySmall.weight))
-            .tracking(DesignTokens.Typography.BodySmall.tracking)
-    }
-    
-    func captionText(emphasis: Bool = false) -> some View {
-        self.font(.system(size: DesignTokens.Typography.Caption.size,
-                         weight: emphasis ? DesignTokens.Typography.Caption.emphasis : DesignTokens.Typography.Caption.weight))
-            .tracking(DesignTokens.Typography.Caption.tracking)
-    }
-}
 

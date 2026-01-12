@@ -245,5 +245,4 @@ struct SkillIndexRowView: View {
         .background(color.opacity(0.12))
         .cornerRadius(DesignTokens.Radius.sm)
     }
-    }
 }
