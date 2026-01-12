@@ -1,0 +1,62 @@
+name: Build & Attach sTools DMG
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-dmg:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install Sparkle
+        run: brew install sparkle
+
+      - name: Build release
+        run: swift build -c release --product sTools
+
+      - name: Stage app bundle
+        run: bin/stage-app.sh .build/release/sTools .build/release/sTools.app
+
+      - name: Apply icon
+        run: bin/postbuild-icon.sh .build/release/sTools.app
+
+      - name: Configure Sparkle
+        if: ${{ secrets.SPARKLE_FEED_URL != '' }}
+        run: bin/configure-sparkle.sh .build/release/sTools.app "${{ secrets.SPARKLE_FEED_URL }}" "${{ secrets.SPARKLE_PUBLIC_KEY }}"
+
+      - name: Create DMG
+        run: bin/make-dmg.sh .build/release/sTools.app sTools-macos.dmg
+
+      - name: Sign Update & Generate Appcast
+        if: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+        run: |
+          mkdir dist
+          cp sTools-macos.dmg dist/
+          
+          echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" > private_key.txt
+          /opt/homebrew/bin/generate_appcast --ed-key-file private_key.txt dist/
+          rm private_key.txt
+          
+          cp dist/appcast.xml .
+          # Note: sTools-macos.dmg in dist/ is now signed? 
+          # No, generate_appcast signs the item and puts the signature IN the appcast. 
+          # It does NOT modify the DMG.
+          
+      - name: Checksum
+        run: shasum -a 256 sTools-macos.dmg > sTools-macos.dmg.sha256
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sTools-macos.dmg
+            sTools-macos.dmg.sha256
+            appcast.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

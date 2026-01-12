@@ -513,49 +513,7 @@ struct LegacyContentView: View {
     }
 }
 
-struct RootRow: View {
-    let title: String
-    let url: URL
-    let onPick: (URL) -> Void
 
-    var body: some View {
-        HStack(spacing: 8) {
-            Button("Select") {
-                if let picked = pickFolder() {
-                    onPick(picked)
-                }
-            }
-            .accessibilityLabel("Select \(title) folder")
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Text(url.path)
-                .font(.system(.caption, design: .monospaced))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .foregroundStyle(.primary)
-            Spacer()
-        }
-    }
-
-    private func pickFolder() -> URL? {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.showsHiddenFiles = true
-        panel.canCreateDirectories = false
-        panel.title = "Select Skills Root Directory"
-        panel.prompt = "Select"
-        panel.message = "Choose the root directory containing skill folders (SKILL.md files)"
-
-        return panel.runModal() == .OK ? panel.url : nil
-    }
-}
 
 // Alias for backward compatibility
 typealias ContentView = LegacyContentView

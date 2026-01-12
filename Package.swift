@@ -14,7 +14,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
-        .package(url: "https://github.com/gonzalezreal/swift-markdown-ui.git", from: "2.4.1")
+        .package(url: "https://github.com/gonzalezreal/swift-markdown-ui.git", from: "2.4.1"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
     ],
     targets: [
         .target(
@@ -32,7 +33,8 @@ let package = Package(
             name: "SkillsInspector",
             dependencies: [
                 "SkillsCore",
-                .product(name: "MarkdownUI", package: "swift-markdown-ui")
+                .product(name: "MarkdownUI", package: "swift-markdown-ui"),
+                .product(name: "Sparkle", package: "Sparkle")
             ],
             swiftSettings: [
                 .unsafeFlags(["-default-isolation", "MainActor"]),

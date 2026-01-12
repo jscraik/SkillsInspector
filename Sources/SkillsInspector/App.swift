@@ -4,6 +4,8 @@ import SkillsCore
 
 @main
 struct sToolsApp: App {
+    @StateObject private var updater = Updater()
+
     init() {
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -16,6 +18,12 @@ struct sToolsApp: App {
         }
         .defaultSize(width: 1280, height: 800)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    updater.checkForUpdates()
+                }
+            }
+
             CommandGroup(replacing: .newItem) {
                 // No new document in this app
             }
