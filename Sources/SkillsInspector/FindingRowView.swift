@@ -8,46 +8,119 @@ struct FindingRowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            // Severity indicator
-            Image(systemName: finding.severity.icon)
-                .foregroundStyle(finding.severity.color)
-                .font(.caption)
-                .frame(width: 16)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                // Header: rule ID, agent, and fix badge
-                HStack(spacing: 6) {
-                    Text(finding.ruleID)
-                        .font(.system(.caption, design: .monospaced))
-                        .fontWeight(.medium)
-                    
-                    Text("•")
-                        .foregroundStyle(DesignTokens.Colors.Text.tertiary)
-                    
-                    Label(finding.agent.rawValue, systemImage: finding.agent.icon)
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
+            // Header row with severity, rule ID, and agent
+            HStack(alignment: .center, spacing: DesignTokens.Spacing.xxxs) {
+                // Severity indicator with enhanced styling
+                Image(systemName: finding.severity.icon)
+                    .foregroundStyle(finding.severity.color)
+                    .font(.callout)
+                    .frame(width: 20, height: 20)
+                    .background(finding.severity.color.opacity(0.15))
+                    .clipShape(Circle())
+                
+                // Rule ID with monospace font
+                Text(finding.ruleID)
+                    .font(.system(.caption, design: .monospaced))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(DesignTokens.Colors.Text.primary)
+                    .padding(.horizontal, DesignTokens.Spacing.hair)
+                    .padding(.vertical, DesignTokens.Spacing.micro)
+                    .background(DesignTokens.Colors.Background.secondary.opacity(0.6))
+                    .cornerRadius(DesignTokens.Radius.sm - 2)
+                
+                Spacer()
+                
+                // Agent badge with improved styling
+                HStack(spacing: DesignTokens.Spacing.hair) {
+                    Image(systemName: finding.agent.icon)
                         .font(.caption2)
-                        .foregroundStyle(finding.agent.color)
-                    
-                    // Fix available badge
-                    if let fix = finding.suggestedFix {
-                        Label(fix.automated ? "Auto-fix" : "Fix", systemImage: fix.automated ? "wand.and.stars" : "wrench")
+                    Text(finding.agent.displayName)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(finding.agent.color)
+                .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                .padding(.vertical, DesignTokens.Spacing.hair)
+                .background(finding.agent.color.opacity(0.12))
+                .cornerRadius(DesignTokens.Radius.sm)
+                
+                // Fix available badge
+                if let fix = finding.suggestedFix {
+                    HStack(spacing: DesignTokens.Spacing.hair) {
+                        Image(systemName: fix.automated ? "wand.and.stars" : "wrench")
                             .font(.caption2)
-                            .foregroundStyle(DesignTokens.Colors.Accent.blue)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(DesignTokens.Colors.Accent.blue.opacity(0.1))
-                            .cornerRadius(3)
+                        Text(fix.automated ? "Auto" : "Fix")
+                            .font(.caption2)
+                            .fontWeight(.medium)
                     }
+                    .foregroundStyle(DesignTokens.Colors.Accent.blue)
+                    .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                    .padding(.vertical, DesignTokens.Spacing.hair)
+                    .background(DesignTokens.Colors.Accent.blue.opacity(0.12))
+                    .cornerRadius(DesignTokens.Radius.sm)
+                }
+            }
+            
+            // Message with better typography
+            Text(finding.message)
+                .font(.callout)
+                .fontWeight(.regular)
+                .foregroundStyle(DesignTokens.Colors.Text.primary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            // File location with enhanced styling
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
+                Image(systemName: "doc.text")
+                    .font(.caption2)
+                    .foregroundStyle(DesignTokens.Colors.Icon.secondary)
+                
+                Text(finding.fileURL.lastPathComponent)
+                    .font(.system(.caption, design: .monospaced))
+                    .fontWeight(.medium)
+                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                
+                if let line = finding.line {
+                    Text(":")
+                        .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                    Text("\(line)")
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(DesignTokens.Colors.Accent.blue)
+                        .fontWeight(.medium)
                 }
                 
-                // Message
-                Text(finding.message)
-                    .font(.callout)
-                    .lineLimit(2)
+                Spacer()
                 
-                // File path
-                HStack(spacing: 4) {
+                // File path truncated
+                let pathComponents = finding.fileURL.pathComponents
+                if pathComponents.count > 2 {
+                    Text("…/\(pathComponents.suffix(2).joined(separator: "/"))")
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(.horizontal, DesignTokens.Spacing.xxs)
+        .padding(.vertical, DesignTokens.Spacing.xxxs)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                .fill(finding.severity.color.opacity(isHovered ? 0.08 : 0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                .stroke(finding.severity.color.opacity(isHovered ? 0.3 : 0.15), lineWidth: 1)
+        )
+        .scaleEffect(isHovered && !reduceMotion ? 1.02 : 1.0)
+        .animation(reduceMotion ? .none : .easeInOut(duration: 0.15), value: isHovered)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(finding.severity.rawValue): \(finding.message)")
+        .accessibilityHint("In \(finding.fileURL.lastPathComponent)\(finding.line.map { ", line \($0)" } ?? "")")
+    }
                     Image(systemName: "doc")
                         .font(.caption2)
                     Text(finding.fileURL.lastPathComponent)
@@ -61,7 +134,7 @@ struct FindingRowView: View {
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, DesignTokens.Spacing.hair + DesignTokens.Spacing.micro)
         .scaleEffect(isHovered && !reduceMotion ? 1.01 : 1.0)
         .animation(reduceMotion ? .none : .easeInOut(duration: 0.15), value: isHovered)
         .onHover { hovering in

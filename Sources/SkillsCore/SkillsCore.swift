@@ -5,6 +5,17 @@ import CryptoKit
 public enum AgentKind: String, Codable, CaseIterable, Sendable {
     case codex
     case claude
+    case codexSkillManager
+    case copilot
+
+    public var displayLabel: String {
+        switch self {
+        case .codex: return "Codex"
+        case .claude: return "Claude"
+        case .codexSkillManager: return "CodexSkillManager"
+        case .copilot: return "Copilot"
+        }
+    }
 }
 
 /// Normalized finding severity.
@@ -61,6 +72,9 @@ public struct SkillDoc: Codable, Hashable, Sendable {
     public let isSymlinkedDir: Bool
     public let hasFrontmatter: Bool
     public let frontmatterStartLine: Int
+    public let referencesCount: Int
+    public let assetsCount: Int
+    public let scriptsCount: Int
 }
 
 /// Scan root configuration.
@@ -83,6 +97,20 @@ public struct SyncReport: Hashable, Sendable {
     public var onlyInCodex: [String] = []
     public var onlyInClaude: [String] = []
     public var differentContent: [String] = []
+
+    public init() {}
+}
+
+/// Multi-agent sync comparison results.
+public struct MultiSyncReport: Hashable, Sendable, Codable {
+    public struct DiffDetail: Hashable, Sendable, Codable {
+        public let name: String
+        public let hashes: [AgentKind: String]
+        public let modified: [AgentKind: Date]
+    }
+
+    public var missingByAgent: [AgentKind: [String]] = [:]
+    public var differentContent: [DiffDetail] = []
 
     public init() {}
 }
@@ -215,6 +243,50 @@ public enum PathUtil {
         return (try? NSRegularExpression(pattern: regexPattern)).map {
             $0.firstMatch(in: path, range: NSRange(location: 0, length: path.utf16.count)) != nil
         } ?? false
+    }
+}
+
+// MARK: - Path validation
+
+/// Validates user-provided directories to prevent traversal or missing paths.
+public enum PathValidator {
+    public enum ValidationError: LocalizedError, Equatable {
+        case empty
+        case traversal
+        case missing
+        case notDirectory
+
+        public var errorDescription: String? {
+            switch self {
+            case .empty: return "Path is empty."
+            case .traversal: return "Path contains parent directory traversal (\"..\") and was rejected."
+            case .missing: return "Directory does not exist."
+            case .notDirectory: return "Path is not a directory."
+            }
+        }
+    }
+
+    /// Validates and normalizes a directory path.
+    /// - Parameter path: user-provided path (may include ~).
+    /// - Returns: normalized URL or a validation error.
+    public static func validatedDirectory(from path: String?) -> Result<URL, ValidationError> {
+        guard let path, !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return .failure(.empty)
+        }
+        let expanded = PathUtil.expandTilde(path)
+        let url = URL(fileURLWithPath: expanded)
+        if url.pathComponents.contains("..") {
+            return .failure(.traversal)
+        }
+        let normalized = url.standardizedFileURL
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: normalized.path, isDirectory: &isDir) else {
+            return .failure(.missing)
+        }
+        guard isDir.boolValue else {
+            return .failure(.notDirectory)
+        }
+        return .success(normalized)
     }
 }
 
@@ -362,6 +434,10 @@ public enum SkillLoader {
 
         let frontmatterStartLine = text.hasPrefix("---") ? 1 : -1
 
+        let refs = countFiles(in: skillDirURL.appendingPathComponent("references", isDirectory: true))
+        let assets = countFiles(in: skillDirURL.appendingPathComponent("assets", isDirectory: true))
+        let scripts = countFiles(in: skillDirURL.appendingPathComponent("scripts", isDirectory: true))
+
         return SkillDoc(
             agent: agent,
             rootURL: rootURL,
@@ -372,8 +448,22 @@ public enum SkillLoader {
             lineCount: lineCount,
             isSymlinkedDir: isSymlinkedDir,
             hasFrontmatter: hasFrontmatter,
-            frontmatterStartLine: frontmatterStartLine
+            frontmatterStartLine: frontmatterStartLine,
+            referencesCount: refs,
+            assetsCount: assets,
+            scriptsCount: scripts
         )
+    }
+
+    private static func countFiles(in directory: URL) -> Int {
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+        guard fm.fileExists(atPath: directory.path, isDirectory: &isDir), isDir.boolValue else { return 0 }
+        let items = (try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])) ?? []
+        return items.filter { url in
+            let rv = try? url.resourceValues(forKeys: [.isDirectoryKey])
+            return rv?.isDirectory == false
+        }.count
     }
 }
 
@@ -701,25 +791,25 @@ extension SkillValidator {
         }
 
         switch doc.agent {
-        case .codex:
+        case .codex, .codexSkillManager, .copilot:
             if !name.isEmpty && name.count > 100 {
                 findings.append(.init(
-                    ruleID: "codex.name.max_length",
+                    ruleID: "\(doc.agent.rawValue).name.max_length",
                     severity: .error,
-                    agent: .codex,
+                    agent: doc.agent,
                     fileURL: doc.skillFileURL,
-                    message: "Codex: name exceeds 100 characters",
+                    message: "\(doc.agent.displayLabel): name exceeds 100 characters",
                     line: doc.frontmatterStartLine > 0 ? doc.frontmatterStartLine + 1 : nil,
                     column: nil
                 ))
             }
             if !desc.isEmpty && desc.count > 500 {
                 findings.append(.init(
-                    ruleID: "codex.description.max_length",
+                    ruleID: "\(doc.agent.rawValue).description.max_length",
                     severity: .error,
-                    agent: .codex,
+                    agent: doc.agent,
                     fileURL: doc.skillFileURL,
-                    message: "Codex: description exceeds 500 characters",
+                    message: "\(doc.agent.displayLabel): description exceeds 500 characters",
                     line: doc.frontmatterStartLine > 0 ? doc.frontmatterStartLine + 2 : nil,
                     column: nil
                 ))
@@ -727,11 +817,11 @@ extension SkillValidator {
             if doc.isSymlinkedDir {
                 let severity = policy?.codexSymlinkSeverity ?? .error
                 findings.append(.init(
-                    ruleID: "codex.symlinked_dir",
+                    ruleID: "\(doc.agent.rawValue).symlinked_dir",
                     severity: severity,
-                    agent: .codex,
+                    agent: doc.agent,
                     fileURL: doc.skillFileURL,
-                    message: "Codex: skill directory is a symlink and may be ignored"
+                    message: "\(doc.agent.displayLabel): skill directory is a symlink and may be ignored"
                 ))
             }
 
@@ -823,6 +913,82 @@ public enum SkillHash {
 // MARK: - Sync
 
 public enum SyncChecker {
+    public static func multiByName(
+        roots: [ScanRoot],
+        recursive: Bool = false,
+        excludeDirNames: Set<String> = [".git", ".system", "__pycache__", ".DS_Store"],
+        excludeGlobs: [String] = []
+    ) -> MultiSyncReport {
+        if Task.isCancelled { return MultiSyncReport() }
+        var report = MultiSyncReport()
+        let filesByRoot = SkillsScanner.findSkillFiles(
+            roots: roots,
+            excludeDirNames: excludeDirNames,
+            excludeGlobs: excludeGlobs
+        )
+
+        // Map agent -> name -> url
+        var byAgent: [AgentKind: [String: URL]] = [:]
+        for root in roots {
+            if Task.isCancelled { return MultiSyncReport() }
+            let files = filesByRoot[root] ?? []
+            for file in files {
+                if Task.isCancelled { return MultiSyncReport() }
+                guard let doc = SkillLoader.load(agent: root.agent, rootURL: root.rootURL, skillFileURL: file),
+                      let name = doc.name?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !name.isEmpty else { continue }
+                var map = byAgent[root.agent, default: [:]]
+                map[name] = file
+                byAgent[root.agent] = map
+            }
+        }
+
+        let allAgents = Set(roots.map { $0.agent })
+        let allNames = Set(byAgent.values.flatMap { $0.keys })
+
+        for agent in allAgents {
+            report.missingByAgent[agent] = []
+        }
+
+        var diffs: [MultiSyncReport.DiffDetail] = []
+
+        for name in allNames {
+            if Task.isCancelled { return MultiSyncReport() }
+            var presentAgents: [AgentKind: URL] = [:]
+            for agent in allAgents {
+                if Task.isCancelled { return MultiSyncReport() }
+                if let url = byAgent[agent]?[name] {
+                    presentAgents[agent] = url
+                } else {
+                    report.missingByAgent[agent, default: []].append(name)
+                }
+            }
+
+            if presentAgents.count >= 2 {
+                var hashes: [AgentKind: String] = [:]
+                var modified: [AgentKind: Date] = [:]
+                for (agent, url) in presentAgents {
+                    if Task.isCancelled { return MultiSyncReport() }
+                    hashes[agent] = SkillHash.sha256Hex(ofFile: url) ?? ""
+                    if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+                       let m = attrs[.modificationDate] as? Date {
+                        modified[agent] = m
+                    }
+                }
+                let uniqueHashes = Set(hashes.values.filter { !$0.isEmpty })
+                if uniqueHashes.count > 1 {
+                    diffs.append(.init(name: name, hashes: hashes, modified: modified))
+                }
+            }
+        }
+
+        for agent in allAgents {
+            report.missingByAgent[agent]?.sort()
+        }
+        report.differentContent = diffs.sorted { $0.name < $1.name }
+        return report
+    }
+
     public static func byName(
         codexRoot: URL,
         claudeRoot: URL,

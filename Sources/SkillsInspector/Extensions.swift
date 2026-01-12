@@ -1,5 +1,8 @@
 import SwiftUI
 import SkillsCore
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Severity Color Extension
 
@@ -28,6 +31,8 @@ extension AgentKind {
         switch self {
         case .codex: return DesignTokens.Colors.Accent.blue
         case .claude: return DesignTokens.Colors.Accent.purple
+        case .codexSkillManager: return DesignTokens.Colors.Accent.green
+        case .copilot: return DesignTokens.Colors.Accent.orange
         }
     }
     
@@ -35,6 +40,17 @@ extension AgentKind {
         switch self {
         case .codex: return "cpu"
         case .claude: return "brain"
+        case .codexSkillManager: return "folder"
+        case .copilot: return "bolt"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .codex: return "Codex"
+        case .claude: return "Claude"
+        case .codexSkillManager: return "CodexSkillManager"
+        case .copilot: return "Copilot"
         }
     }
 }
@@ -52,7 +68,7 @@ struct EmptyStateView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DesignTokens.Spacing.xs) {
             Image(systemName: icon)
                 .font(.system(size: 48))
                 .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
@@ -68,11 +84,10 @@ struct EmptyStateView: View {
                 }
             
             Text(title)
-                .font(.title2)
-                .fontWeight(.medium)
+                .heading3()
             
             Text(message)
-                .font(.body)
+                .bodyText()
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 300)
@@ -81,12 +96,12 @@ struct EmptyStateView: View {
                 Button(actionLabel) {
                     action()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.large)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DesignTokens.Colors.Background.primary)
+        .background(glassPanelStyle(cornerRadius: 18))
     }
 }
 
@@ -102,9 +117,9 @@ struct StatusBarView: View {
     let scannedFiles: Int
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: DesignTokens.Spacing.xs) {
             // Severity badges
-            HStack(spacing: 8) {
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
                 severityBadge(count: errorCount, severity: .error)
                 severityBadge(count: warningCount, severity: .warning)
                 severityBadge(count: infoCount, severity: .info)
@@ -115,7 +130,7 @@ struct StatusBarView: View {
             
             // Cache stats
             if scannedFiles > 0 {
-                HStack(spacing: 4) {
+                HStack(spacing: DesignTokens.Spacing.hair) {
                     Image(systemName: "bolt.fill")
                         .foregroundStyle(DesignTokens.Colors.Status.success)
                     Text("\(scannedFiles) files")
@@ -124,7 +139,7 @@ struct StatusBarView: View {
                             .foregroundStyle(DesignTokens.Colors.Text.secondary)
                     }
                 }
-                .font(.caption)
+                .captionText()
             }
             
             Spacer()
@@ -133,32 +148,32 @@ struct StatusBarView: View {
             if let duration {
                 Text(String(format: "%.2fs", duration))
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
             }
             
             if let lastScan {
                 Text(lastScan.formatted(date: .omitted, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .captionText()
+                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.horizontal, DesignTokens.Spacing.xxs)
+        .padding(.vertical, DesignTokens.Spacing.hair + DesignTokens.Spacing.micro)
         .background(.bar)
     }
     
     private func severityBadge(count: Int, severity: Severity) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DesignTokens.Spacing.hair) {
             Image(systemName: severity.icon)
-                .foregroundStyle(count > 0 ? AnyShapeStyle(severity.color) : AnyShapeStyle(.tertiary))
+                .foregroundStyle(count > 0 ? AnyShapeStyle(severity.color) : AnyShapeStyle(DesignTokens.Colors.Icon.tertiary))
             Text("\(count)")
                 .fontWeight(count > 0 ? .medium : .regular)
         }
-        .font(.caption)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .captionText()
+        .padding(.horizontal, DesignTokens.Spacing.xxxs)
+        .padding(.vertical, DesignTokens.Spacing.hair)
         .background(count > 0 ? severity.color.opacity(0.1) : Color.clear)
-        .cornerRadius(6)
+        .cornerRadius(DesignTokens.Radius.sm)
     }
 }
 
@@ -196,80 +211,80 @@ extension View {
 
 struct SkeletonFindingRow: View {
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.xxxs) {
             // Severity indicator
             Circle()
                 .fill(DesignTokens.Colors.Background.secondary)
                 .frame(width: 16, height: 16)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
                 // Header
-                HStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 4)
+                HStack(spacing: DesignTokens.Spacing.hair + DesignTokens.Spacing.micro) {
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                         .fill(DesignTokens.Colors.Background.secondary)
                         .frame(width: 100, height: 12)
                     
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                         .fill(DesignTokens.Colors.Background.secondary)
                         .frame(width: 50, height: 12)
                 }
                 
                 // Message
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(height: 14)
                 
                 // File path
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 150, height: 10)
             }
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 12)
+        .padding(.vertical, DesignTokens.Spacing.hair + DesignTokens.Spacing.micro)
+        .padding(.horizontal, DesignTokens.Spacing.xxs)
         .shimmer()
     }
 }
 
 struct SkeletonSyncRow: View {
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DesignTokens.Spacing.xxs) {
             Image(systemName: "doc.fill")
                 .foregroundStyle(DesignTokens.Colors.Background.secondary)
             
-            VStack(alignment: .leading, spacing: 4) {
-                RoundedRectangle(cornerRadius: 4)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 180, height: 14)
                 
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 120, height: 10)
             }
         }
-        .padding(12)
+        .padding(DesignTokens.Spacing.xxs)
         .shimmer()
     }
 }
 
 struct SkeletonIndexRow: View {
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.xxs) {
             Circle()
                 .fill(DesignTokens.Colors.Background.secondary)
                 .frame(width: 40, height: 40)
             
-            VStack(alignment: .leading, spacing: 4) {
-                RoundedRectangle(cornerRadius: 4)
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 200, height: 16)
                 
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 150, height: 12)
             }
         }
-        .padding(12)
+        .padding(DesignTokens.Spacing.xxs)
         .shimmer()
     }
 }
@@ -305,14 +320,56 @@ extension View {
         self
             .padding(DesignTokens.Spacing.xxs)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(DesignTokens.Colors.Background.primary)
+                Group {
+                    if #available(iOS 26, macOS 15, *) {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(.clear)
+                            .glassEffect(
+                                .regular
+                                    .tint(tint.opacity(selected ? 0.22 : 0.12)),
+                                in: .rect(cornerRadius: 12)
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(DesignTokens.Colors.Background.primary.opacity(0.9))
+                    }
+                }
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(selected ? tint.opacity(0.55) : .clear, lineWidth: 2)
+                    .stroke(selected ? tint.opacity(0.9) : .clear, lineWidth: selected ? 3 : 0)
             )
-            .shadow(color: .black.opacity(selected ? 0.14 : 0.06), radius: selected ? 8 : 4, y: selected ? 4 : 2)
+            .shadow(color: tint.opacity(selected ? 0.18 : 0.08), radius: selected ? 10 : 6, y: selected ? 4 : 2)
+            .shadow(color: tint.opacity(selected ? 0.28 : 0), radius: selected ? 18 : 0, y: 0)
+    }
+
+    /// Glass panel background with fallback for pre-glass platforms.
+    func glassPanelStyle(cornerRadius: CGFloat = 14, tint: Color = Color.primary.opacity(0.08)) -> some View {
+        Group {
+            if #available(iOS 26, macOS 15, *) {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.clear)
+                    .glassEffect(.regular.tint(tint), in: .rect(cornerRadius: cornerRadius))
+            } else {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(DesignTokens.Colors.Background.secondary.opacity(0.92))
+                    .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+            }
+        }
+    }
+
+    /// Glass bar/background for toolbars and headers.
+    func glassBarStyle(cornerRadius: CGFloat = 10, tint: Color = Color.primary.opacity(0.06)) -> some View {
+        Group {
+            if #available(iOS 26, macOS 15, *) {
+                Color.clear
+                    .glassEffect(.regular.tint(tint), in: .rect(cornerRadius: cornerRadius))
+            } else {
+                Color(.windowBackgroundColor)
+                    .opacity(0.35)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+            }
+        }
     }
 }
 
@@ -416,6 +473,172 @@ extension View {
     func toast(_ toast: Binding<ToastMessage?>) -> some View {
         modifier(ToastModifier(toast: toast))
     }
+}
+
+// MARK: - Button Styles
+
+struct GlassButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, DesignTokens.Spacing.xxs)
+            .padding(.vertical, DesignTokens.Spacing.xxxs)
+            .background(
+                Group {
+                    if #available(iOS 26, macOS 15, *) {
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                            .fill(.clear)
+                            .glassEffect(.regular.tint(Color.primary.opacity(configuration.isPressed ? 0.15 : 0.08)))
+                    } else {
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                            .fill(DesignTokens.Colors.Background.secondary.opacity(configuration.isPressed ? 0.8 : 0.6))
+                    }
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                    .stroke(DesignTokens.Colors.Border.light, lineWidth: 0.5)
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct GlassProminentButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, DesignTokens.Spacing.xxs)
+            .padding(.vertical, DesignTokens.Spacing.xxxs)
+            .background(
+                Group {
+                    if #available(iOS 26, macOS 15, *) {
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                            .fill(.clear)
+                            .glassEffect(.regular.tint(Color.accentColor.opacity(configuration.isPressed ? 0.25 : 0.15)))
+                    } else {
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                            .fill(Color.accentColor.opacity(configuration.isPressed ? 0.8 : 0.6))
+                    }
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
+                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 0.5)
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Typography Extensions
+
+extension View {
+    func heading1() -> some View {
+        self.font(.system(size: DesignTokens.Typography.Heading1.size, weight: DesignTokens.Typography.Heading1.weight))
+            .tracking(DesignTokens.Typography.Heading1.tracking)
+            .lineSpacing(DesignTokens.Typography.Heading1.line - DesignTokens.Typography.Heading1.size)
+    }
+    
+    func heading2() -> some View {
+        self.font(.system(size: DesignTokens.Typography.Heading2.size, weight: DesignTokens.Typography.Heading2.weight))
+            .tracking(DesignTokens.Typography.Heading2.tracking)
+            .lineSpacing(DesignTokens.Typography.Heading2.line - DesignTokens.Typography.Heading2.size)
+    }
+    
+    func heading3() -> some View {
+        self.font(.system(size: DesignTokens.Typography.Heading3.size, weight: DesignTokens.Typography.Heading3.weight))
+            .tracking(DesignTokens.Typography.Heading3.tracking)
+            .lineSpacing(DesignTokens.Typography.Heading3.line - DesignTokens.Typography.Heading3.size)
+    }
+    
+    func bodyText(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.Body.size, weight: emphasis ? DesignTokens.Typography.Body.emphasis : DesignTokens.Typography.Body.weight))
+            .tracking(DesignTokens.Typography.Body.tracking)
+            .lineSpacing(DesignTokens.Typography.Body.line - DesignTokens.Typography.Body.size)
+    }
+    
+    func bodySmall(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.BodySmall.size, weight: emphasis ? DesignTokens.Typography.BodySmall.emphasis : DesignTokens.Typography.BodySmall.weight))
+            .tracking(DesignTokens.Typography.BodySmall.tracking)
+            .lineSpacing(DesignTokens.Typography.BodySmall.line - DesignTokens.Typography.BodySmall.size)
+    }
+    
+    func captionText(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.Caption.size, weight: emphasis ? DesignTokens.Typography.Caption.emphasis : DesignTokens.Typography.Caption.weight))
+            .tracking(DesignTokens.Typography.Caption.tracking)
+            .lineSpacing(DesignTokens.Typography.Caption.line - DesignTokens.Typography.Caption.size)
+    }
+    
+    func cornerRadius(_ radius: CGFloat, corners: RectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+// MARK: - Custom Shapes
+
+enum RectCorner {
+    case topLeft, topRight, bottomLeft, bottomRight
+    case allCorners
+    
+    var nsRectCorner: NSRectCorner {
+        switch self {
+        case .topLeft: return .topLeft
+        case .topRight: return .topRight
+        case .bottomLeft: return .bottomLeft
+        case .bottomRight: return .bottomRight
+        case .allCorners: return [.topLeft, .topRight, .bottomLeft, .bottomRight]
+        }
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: RectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        
+        let topLeft = corners == .allCorners || corners == .topLeft
+        let topRight = corners == .allCorners || corners == .topRight
+        let bottomLeft = corners == .allCorners || corners == .bottomLeft
+        let bottomRight = corners == .allCorners || corners == .bottomRight
+        
+        let tlRadius = topLeft ? radius : 0
+        let trRadius = topRight ? radius : 0
+        let blRadius = bottomLeft ? radius : 0
+        let brRadius = bottomRight ? radius : 0
+        
+        path.move(to: CGPoint(x: rect.minX + tlRadius, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - trRadius, y: rect.minY))
+        if trRadius > 0 {
+            path.addArc(center: CGPoint(x: rect.maxX - trRadius, y: rect.minY + trRadius), 
+                       radius: trRadius, startAngle: Angle(degrees: -90), endAngle: Angle(degrees: 0), clockwise: false)
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - brRadius))
+        if brRadius > 0 {
+            path.addArc(center: CGPoint(x: rect.maxX - brRadius, y: rect.maxY - brRadius), 
+                       radius: brRadius, startAngle: Angle(degrees: 0), endAngle: Angle(degrees: 90), clockwise: false)
+        }
+        path.addLine(to: CGPoint(x: rect.minX + blRadius, y: rect.maxY))
+        if blRadius > 0 {
+            path.addArc(center: CGPoint(x: rect.minX + blRadius, y: rect.maxY - blRadius), 
+                       radius: blRadius, startAngle: Angle(degrees: 90), endAngle: Angle(degrees: 180), clockwise: false)
+        }
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + tlRadius))
+        if tlRadius > 0 {
+            path.addArc(center: CGPoint(x: rect.minX + tlRadius, y: rect.minY + tlRadius), 
+                       radius: tlRadius, startAngle: Angle(degrees: 180), endAngle: Angle(degrees: 270), clockwise: false)
+        }
+        
+        return path
+    }
+}
+
+extension ButtonStyle where Self == GlassButtonStyle {
+    static var glass: GlassButtonStyle { GlassButtonStyle() }
+}
+
+extension ButtonStyle where Self == GlassProminentButtonStyle {
+    static var glassProminent: GlassProminentButtonStyle { GlassProminentButtonStyle() }
 }
 
 #Preview("Empty State") {

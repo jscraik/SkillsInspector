@@ -3,568 +3,524 @@ import SkillsCore
 
 struct SyncDetailView: View {
     let selection: SyncViewModel.SyncSelection
-    let codexRoot: URL
-    let claudeRoot: URL
-    @State private var codexContent: String = ""
-    @State private var claudeContent: String = ""
-    @State private var loadError: String?
-    @State private var statusMessage: String?
-    @State private var diffText: String = ""
+    let rootsByAgent: [AgentKind: URL]
+    let diffDetail: MultiSyncReport.DiffDetail?
+
+    @State private var contents: [AgentKind: String] = [:]
+    @State private var errors: [AgentKind: String] = [:]
+    @State private var modified: [AgentKind: Date] = [:]
     @State private var isLoading = false
-    @State private var showingCopyConfirmation = false
-    @State private var pendingCopyOperation: CopyOperation?
+    @State private var diffMode: DiffMode = .unified
     @State private var showLineNumbers = true
-    @State private var diffViewMode: DiffViewMode = .unified
-    
-    enum DiffViewMode: String, CaseIterable {
+
+    enum DiffMode: String, CaseIterable {
         case unified = "Unified"
         case sideBySide = "Side by Side"
     }
 
-    private var skillName: String {
-        switch selection {
-        case .onlyCodex(let n), .onlyClaude(let n), .different(let n):
-            return n
-        }
-    }
-
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: headerIcon)
-                            .foregroundStyle(headerColor)
-                            .font(.title2)
-                        Text(headerLabel)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundStyle(headerColor)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(headerColor.opacity(0.15))
-                            .cornerRadius(4)
-                    }
-                    
-                    Text(skillName)
-                        .font(.title3)
-                        .fontWeight(.medium)
-                    
-                    Text(headerDescription)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                
-                if let statusMessage {
-                    HStack(spacing: 6) {
-                        Image(systemName: "info.circle")
-                        Text(statusMessage)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.blue)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.blue.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                header
+
                 if isLoading {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                        Text("Loading files...")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: 200)
-                } else if let loadError {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle")
-                        Text(loadError)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.red.opacity(0.1))
-                    .cornerRadius(8)
-                } else if codexContent.isEmpty && claudeContent.isEmpty {
+                    loadingState
+                } else if contents.isEmpty && errors.isEmpty {
                     EmptyStateView(
                         icon: "sidebar.right",
                         title: "No Content",
-                        message: "Unable to load skill files."
+                        message: "Could not load SKILL.md for \(skillName)."
                     )
-                } else {
-                    // Diff view for different content
-                    if isDifferent {
-                        Divider()
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Diff")
-                                    .font(.headline)
-                                Spacer()
-                                
-                                // Statistics
-                                if !diffText.isEmpty {
-                                    HStack(spacing: 12) {
-                                        Label("\(diffStats.additions)", systemImage: "plus.circle.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(DesignTokens.Colors.Status.success)
-                                        Label("\(diffStats.deletions)", systemImage: "minus.circle.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(DesignTokens.Colors.Status.error)
-                                        Label("\(diffStats.totalLines)", systemImage: "doc.text")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(.quaternary.opacity(0.5))
-                                    .cornerRadius(6)
-                                }
-                                
-                                // View mode toggle
-                                Picker("View Mode", selection: $diffViewMode) {
-                                    ForEach(DiffViewMode.allCases, id: \.self) { mode in
-                                        Text(mode.rawValue).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(.segmented)
-                                .frame(width: 180)
-                                
-                                Toggle(isOn: $showLineNumbers) {
-                                    Label("Line Numbers", systemImage: "number")
-                                        .font(.caption)
-                                }
-                                .toggleStyle(.checkbox)
-                                .controlSize(.small)
-                                
-                                Button {
-                                    #if os(macOS)
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(diffText, forType: .string)
-                                    #endif
-                                } label: {
-                                    Label("Copy", systemImage: "doc.on.doc")
-                                        .font(.caption)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .disabled(diffText.isEmpty)
-                            }
-                            
-                            if diffViewMode == .unified {
-                                ScrollView([.horizontal, .vertical]) {
-                                    enhancedDiffView
-                                        .padding(12)
-                                }
-                                .frame(height: 300)
-                                .background(.tertiary.opacity(0.1))
-                                .cornerRadius(8)
-                            } else {
-                                sideBySideDiffView
-                            }
-                        }
-                    }
-                    
-                    Divider()
-                    
-                    // Side-by-side content comparison
-                    HStack(alignment: .top, spacing: 16) {
-                        // Codex column
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "cpu")
-                                    .foregroundStyle(.blue)
-                                Text("Codex")
-                                    .font(.headline)
-                                Spacer()
-                                Text("\(codexContent.split(separator: "\n").count) lines")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            ScrollView {
-                                Text(codexContent.isEmpty ? "Not available" : codexContent)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(12)
-                            }
-                            .frame(maxHeight: 300)
-                            .background(.tertiary.opacity(0.05))
-                            .cornerRadius(8)
-                            
-                            if isDifferent && !codexContent.isEmpty {
-                                Button {
-                                    pendingCopyOperation = CopyOperation(
-                                        from: codexFile,
-                                        to: claudeFile,
-                                        direction: "Codex → Claude"
-                                    )
-                                    showingCopyConfirmation = true
-                                } label: {
-                                    Label("Copy to Claude", systemImage: "arrow.right")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .disabled(isLoading)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        // Claude column
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "brain")
-                                    .foregroundStyle(.purple)
-                                Text("Claude")
-                                    .font(.headline)
-                                Spacer()
-                                Text("\(claudeContent.split(separator: "\n").count) lines")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            ScrollView {
-                                Text(claudeContent.isEmpty ? "Not available" : claudeContent)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(12)
-                            }
-                            .frame(maxHeight: 300)
-                            .background(.tertiary.opacity(0.05))
-                            .cornerRadius(8)
-                            
-                            if isDifferent && !claudeContent.isEmpty {
-                                Button {
-                                    pendingCopyOperation = CopyOperation(
-                                        from: claudeFile,
-                                        to: codexFile,
-                                        direction: "Claude → Codex"
-                                    )
-                                    showingCopyConfirmation = true
-                                } label: {
-                                    Label("Copy to Codex", systemImage: "arrow.left")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .disabled(isLoading)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
                 }
+
+                if let diffInputs = diffInputs {
+                    diffSection(diffInputs)
+                }
+
+                agentGrid
             }
-            .padding(20)
+            .padding(DesignTokens.Spacing.xs)
         }
-        .task(id: selection) { await loadFiles() }
-        .alert("Confirm Copy Operation", isPresented: $showingCopyConfirmation) {
-            Button("Cancel", role: .cancel) {
-                pendingCopyOperation = nil
+        .task(id: selection) { await loadContents() }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair + DesignTokens.Spacing.micro) {
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
+                Image(systemName: headerIcon)
+                    .foregroundStyle(headerTint)
+                Text(headerTitle)
+                    .captionText()
+                    .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                    .padding(.vertical, DesignTokens.Spacing.micro)
+                    .background(headerTint.opacity(0.12))
+                    .cornerRadius(DesignTokens.Radius.sm)
             }
-            Button("Copy with Backup", role: .destructive) {
-                if let op = pendingCopyOperation {
-                    Task(priority: .userInitiated) {
-                        await performCopy(from: op.from, to: op.to)
+
+            Text(skillName)
+                .heading3()
+
+            Text(headerDescription)
+                .bodySmall()
+                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+
+            if let detail = diffDetail {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DesignTokens.Spacing.xxs), count: 2), spacing: DesignTokens.Spacing.xxxs) {
+                    ForEach(sortedAgents(from: detail.hashes.keys), id: \.self) { agent in
+                        HStack(spacing: DesignTokens.Spacing.xxxs) {
+                            Circle()
+                                .fill(agent.color.opacity(0.2))
+                                .frame(width: 22, height: 22)
+                                .overlay(Image(systemName: agent.icon).foregroundStyle(agent.color).font(.caption2))
+                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.micro) {
+                                Text(agent.displayName)
+                                    .captionText()
+                                if let hash = detail.hashes[agent], !hash.isEmpty {
+                                    Text(hash.prefix(10))
+                                        .font(.system(.caption2, design: .monospaced))
+                                        .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                                }
+                                if let date = detail.modified[agent] ?? modified[agent] {
+                                    Text(DateFormatter.shortDateTime.string(from: date))
+                                        .captionText()
+                                        .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, DesignTokens.Spacing.micro)
                     }
                 }
-                pendingCopyOperation = nil
-            }
-        } message: {
-            if let op = pendingCopyOperation {
-                Text("This will copy \(op.direction). A backup of the destination file will be created with a .bak extension.\n\nDestination: \(op.to.lastPathComponent)")
             }
         }
     }
-    
+
+    private var loadingState: some View {
+        VStack(spacing: DesignTokens.Spacing.xs) {
+            ProgressView()
+            Text("Loading skill files…")
+                .bodySmall()
+                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: 200)
+    }
+
+    private func diffSection(_ inputs: DiffInputs) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+            HStack {
+                Text("Diff between \(inputs.leftAgent.displayName) and \(inputs.rightAgent.displayName)")
+                    .heading3()
+                Spacer()
+                Button {
+                    Task { await copyContent(from: inputs.leftAgent, to: inputs.rightAgent) }
+                } label: {
+                    Label("\(inputs.leftAgent.displayName) → \(inputs.rightAgent.displayName)", systemImage: "arrow.right.doc.on.doc")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(contents[inputs.leftAgent]?.isEmpty ?? true)
+
+                Button {
+                    Task { await copyContent(from: inputs.rightAgent, to: inputs.leftAgent) }
+                } label: {
+                    Label("\(inputs.rightAgent.displayName) → \(inputs.leftAgent.displayName)", systemImage: "arrow.left.doc.on.doc")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(contents[inputs.rightAgent]?.isEmpty ?? true)
+
+                Button {
+                    Task { await copyAndBump(from: inputs.leftAgent, to: inputs.rightAgent) }
+                } label: {
+                    Label("Copy & bump", systemImage: "arrow.triangle.branch")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(contents[inputs.leftAgent]?.isEmpty ?? true)
+
+                Picker("View", selection: $diffMode) {
+                    ForEach(DiffMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 220)
+
+                Toggle(isOn: $showLineNumbers) {
+                    Label("Line numbers", systemImage: "number")
+                        .font(.caption)
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .frame(maxWidth: 160)
+            }
+
+            if diffMode == .unified {
+                unifiedDiffView(inputs)
+            } else {
+                sideBySideDiffView(inputs)
+            }
+        }
+        .padding(DesignTokens.Spacing.xxs)
+        .background(DesignTokens.Colors.Background.secondary)
+        .cornerRadius(DesignTokens.Radius.md)
+    }
+
+    private func unifiedDiffView(_ inputs: DiffInputs) -> some View {
+        ScrollView([.vertical, .horizontal]) {
+            VStack(alignment: .leading, spacing: 0) {
+                let lines = inputs.diffText.split(separator: "\n", omittingEmptySubsequences: false)
+                ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
+                        if showLineNumbers {
+                            Text("\(index + 1)")
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                                .frame(width: 36, alignment: .trailing)
+                        }
+                        let (color, background) = diffStyling(for: line)
+                        Text(String(line))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(color)
+                            .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                            .padding(.vertical, DesignTokens.Spacing.micro)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(background)
+                    }
+                }
+            }
+            .padding(DesignTokens.Spacing.xxxs)
+        }
+        .frame(minHeight: 220, maxHeight: 320)
+        .background(DesignTokens.Colors.Background.primary)
+        .cornerRadius(DesignTokens.Radius.sm)
+    }
+
+    private func sideBySideDiffView(_ inputs: DiffInputs) -> some View {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.hair) {
+            diffColumn(title: inputs.leftAgent.displayName, content: inputs.leftContent, alignment: .trailing)
+            Divider()
+            diffColumn(title: inputs.rightAgent.displayName, content: inputs.rightContent, alignment: .leading)
+        }
+        .frame(minHeight: 220, maxHeight: 320)
+        .background(DesignTokens.Colors.Background.primary)
+        .cornerRadius(DesignTokens.Radius.sm)
+    }
+
+    private func diffColumn(title: String, content: String, alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title)
+                .captionText()
+                .padding(.vertical, DesignTokens.Spacing.micro)
+                .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(DesignTokens.Colors.Background.secondary)
+
+            ScrollView([.vertical, .horizontal]) {
+                VStack(alignment: alignment, spacing: 0) {
+                    let lines = content.split(separator: "\n", omittingEmptySubsequences: false)
+                    ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                        HStack(spacing: DesignTokens.Spacing.xxxs) {
+                            if showLineNumbers {
+                                Text("\(index + 1)")
+                                    .font(.system(.caption2, design: .monospaced))
+                                    .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                                    .frame(width: 34, alignment: .trailing)
+                            }
+                            Text(String(line))
+                                .font(.system(.caption, design: .monospaced))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, DesignTokens.Spacing.micro)
+                                .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                        }
+                    }
+                }
+                .padding(DesignTokens.Spacing.xxxs)
+            }
+        }
+    }
+
+    private var agentGrid: some View {
+        VStack(spacing: DesignTokens.Spacing.xs) {
+            ForEach(sortedAgents(from: rootsByAgent.keys), id: \.self) { agent in
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
+                        Circle()
+                            .fill(agent.color.opacity(0.18))
+                            .frame(width: 26, height: 26)
+                            .overlay(Image(systemName: agent.icon).foregroundStyle(agent.color).font(.caption))
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.micro) {
+                            Text(agent.displayName)
+                                .bodyText()
+                            Text(pathDescription(for: agent))
+                                .captionText()
+                                .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                                .lineLimit(2)
+                                .truncationMode(.middle)
+                        }
+                        Spacer()
+                        if let hash = diffDetail?.hashes[agent], !hash.isEmpty {
+                            Text(hash.prefix(8))
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                        }
+                    }
+                    .padding(.bottom, DesignTokens.Spacing.micro)
+
+                    if let text = contents[agent] {
+                        Text("\(text.split(separator: "\n").count) lines")
+                            .captionText()
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                        ScrollView {
+                            Text(text)
+                                .font(.system(.caption, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(DesignTokens.Spacing.xxxs)
+                        }
+                        .frame(minHeight: 140, maxHeight: 260)
+                        .background(DesignTokens.Colors.Background.secondary)
+                        .cornerRadius(DesignTokens.Radius.sm)
+                    } else {
+                        HStack(spacing: DesignTokens.Spacing.xxxs) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(DesignTokens.Colors.Status.warning)
+                            Text(errorMessage(for: agent))
+                                .bodySmall()
+                                .foregroundStyle(DesignTokens.Colors.Status.warning)
+                                .lineLimit(2)
+                                .truncationMode(.middle)
+                        }
+                        .padding(DesignTokens.Spacing.xxxs)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(DesignTokens.Colors.Background.secondary)
+                        .cornerRadius(DesignTokens.Radius.sm)
+                    }
+                }
+                .cardStyle(tint: agent.color)
+            }
+        }
+    }
+
     private var headerIcon: String {
         switch selection {
-        case .onlyCodex: return "doc.badge.plus"
-        case .onlyClaude: return "doc.badge.plus"
+        case .missing: return "exclamationmark.triangle.fill"
         case .different: return "doc.badge.gearshape"
         }
     }
-    
-    private var headerColor: Color {
+
+    private var headerTint: Color {
         switch selection {
-        case .onlyCodex: return .blue
-        case .onlyClaude: return .purple
-        case .different: return .orange
+        case .missing(let agent, _): return agent.color
+        case .different: return DesignTokens.Colors.Accent.orange
         }
     }
-    
-    private var headerLabel: String {
+
+    private var headerTitle: String {
         switch selection {
-        case .onlyCodex: return "ONLY IN CODEX"
-        case .onlyClaude: return "ONLY IN CLAUDE"
-        case .different: return "DIFFERENT CONTENT"
+        case .missing(let agent, _):
+            return "Missing in \(agent.displayName)"
+        case .different:
+            return "Content differs across agents"
         }
     }
-    
+
     private var headerDescription: String {
         switch selection {
-        case .onlyCodex:
-            return "This skill exists only in Codex and is missing from Claude."
-        case .onlyClaude:
-            return "This skill exists only in Claude and is missing from Codex."
+        case .missing(let agent, _):
+            return "Skill exists in at least one other agent but not in \(agent.displayName)."
         case .different:
-            return "This skill exists in both locations but has different content."
+            return "Hashes or content vary between agents. Review differences and align as needed."
         }
     }
+
+    private var skillName: String { selection.name }
 
     private var isDifferent: Bool {
         if case .different = selection { return true }
         return false
     }
-    
-    private var diffStats: DiffStats {
-        let lines = diffText.split(separator: "\n")
-        var additions = 0
-        var deletions = 0
-        
-        for line in lines {
-            if line.hasPrefix("+") && !line.hasPrefix("+++") {
-                additions += 1
-            } else if line.hasPrefix("-") && !line.hasPrefix("---") {
-                deletions += 1
-            }
+
+    private var missingAgent: AgentKind? {
+        if case .missing(let agent, _) = selection { return agent }
+        return nil
+    }
+
+    private var diffInputs: DiffInputs? {
+        guard isDifferent else { return nil }
+        let ordered = comparisonAgents
+        guard let left = ordered.first, let right = ordered.dropFirst().first else { return nil }
+        let leftContent = contents[left] ?? ""
+        let rightContent = contents[right] ?? ""
+        return DiffInputs(
+            leftAgent: left,
+            rightAgent: right,
+            leftContent: leftContent,
+            rightContent: rightContent,
+            diffText: unifiedDiff(
+                left: leftContent,
+                right: rightContent,
+                leftName: left.displayName,
+                rightName: right.displayName
+            )
+        )
+    }
+
+    private var comparisonAgents: [AgentKind] {
+        if let detail = diffDetail, !detail.hashes.isEmpty {
+            return sortedAgents(from: detail.hashes.keys)
         }
-        
-        return DiffStats(additions: additions, deletions: deletions, totalLines: lines.count)
-    }
-    
-    private var enhancedDiffView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if diffText.isEmpty {
-                Text("Diff unavailable")
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            } else {
-                let lines = diffText.split(separator: "\n", omittingEmptySubsequences: false)
-                ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                    HStack(spacing: 8) {
-                        if showLineNumbers {
-                            Text("\(index + 1)")
-                                .font(.system(.caption2, design: .monospaced))
-                                .foregroundStyle(.tertiary)
-                                .frame(width: 40, alignment: .trailing)
-                        }
-                        
-                        let (text, color, bgColor) = formatDiffLine(String(line))
-                        Text(text)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(color)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 2)
-                            .padding(.horizontal, 8)
-                            .background(bgColor)
-                    }
-                    .textSelection(.enabled)
-                }
-            }
-        }
-    }
-    
-    private var sideBySideDiffView: some View {
-        HStack(alignment: .top, spacing: 1) {
-            // Left side (codex/deletions)
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Codex (Original)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.tertiary.opacity(0.2))
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(codexContent.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { index, line in
-                            HStack(spacing: 8) {
-                                if showLineNumbers {
-                                    Text("\(index + 1)")
-                                        .font(.system(.caption2, design: .monospaced))
-                                        .foregroundStyle(.tertiary)
-                                        .frame(width: 35, alignment: .trailing)
-                                }
-                                Text(String(line))
-                                    .font(.system(.caption, design: .monospaced))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 2)
-                                    .padding(.horizontal, 8)
-                            }
-                            .textSelection(.enabled)
-                        }
-                    }
-                    .padding(8)
-                }
-                .background(.tertiary.opacity(0.05))
-            }
-            .frame(maxWidth: .infinity)
-            
-            Divider()
-            
-            // Right side (claude/additions)
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Claude (Modified)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.tertiary.opacity(0.2))
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(claudeContent.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { index, line in
-                            HStack(spacing: 8) {
-                                if showLineNumbers {
-                                    Text("\(index + 1)")
-                                        .font(.system(.caption2, design: .monospaced))
-                                        .foregroundStyle(.tertiary)
-                                        .frame(width: 35, alignment: .trailing)
-                                }
-                                Text(String(line))
-                                    .font(.system(.caption, design: .monospaced))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 2)
-                                    .padding(.horizontal, 8)
-                            }
-                            .textSelection(.enabled)
-                        }
-                    }
-                    .padding(8)
-                }
-                .background(.tertiary.opacity(0.05))
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .frame(height: 300)
-        .background(.tertiary.opacity(0.1))
-        .cornerRadius(8)
-    }
-    
-    private func formatDiffLine(_ line: String) -> (String, Color, Color) {
-        if line.hasPrefix("+++") || line.hasPrefix("---") {
-            return (line, .secondary, .clear)
-        } else if line.hasPrefix("@@") {
-            return (line, .blue, .blue.opacity(0.1))
-        } else if line.hasPrefix("+") {
-            return (line, DesignTokens.Colors.Status.success, DesignTokens.Colors.Status.success.opacity(0.15))
-        } else if line.hasPrefix("-") {
-            return (line, DesignTokens.Colors.Status.error, DesignTokens.Colors.Status.error.opacity(0.15))
-        } else {
-            return (line, .primary, .clear)
-        }
+        return sortedAgents(from: rootsByAgent.keys)
     }
 
-    private var codexFile: URL {
-        codexRoot.appendingPathComponent(skillName).appendingPathComponent("SKILL.md")
-    }
-    private var claudeFile: URL {
-        claudeRoot.appendingPathComponent(skillName).appendingPathComponent("SKILL.md")
+    private func sortedAgents(from agents: some Collection<AgentKind>) -> [AgentKind] {
+        agents.sorted { $0.displayName < $1.displayName }
     }
 
-    private func loadFiles() async {
-        isLoading = true
-        loadError = nil
-        statusMessage = nil
-
-        let codexURL = codexFile
-        let claudeURL = claudeFile
-
-        let (codex, claude, codexErr, claudeErr) = await Task(priority: .userInitiated) { () -> (String, String, String?, String?) in
-            if Task.isCancelled { return ("", "", nil, nil) }
-            let codexResult: (String, String?) = {
-                guard FileManager.default.fileExists(atPath: codexURL.path) else {
-                    return ("", nil)
-                }
-                do {
-                    return (try String(contentsOf: codexURL, encoding: .utf8), nil)
-                } catch {
-                    return ("", error.localizedDescription)
-                }
-            }()
-
-            let claudeResult: (String, String?) = {
-                guard FileManager.default.fileExists(atPath: claudeURL.path) else {
-                    return ("", nil)
-                }
-                do {
-                    return (try String(contentsOf: claudeURL, encoding: .utf8), nil)
-                } catch {
-                    return ("", error.localizedDescription)
-                }
-            }()
-
-            return (codexResult.0, claudeResult.0, codexResult.1, claudeResult.1)
-        }.value
-        if Task.isCancelled { return }
-
+    private func loadContents() async {
+        let name = skillName
         await MainActor.run {
-            isLoading = false
-            codexContent = codex
-            claudeContent = claude
-
-            var errors: [String] = []
-            if let err = codexErr { errors.append("Codex: \(err)") }
-            if let err = claudeErr { errors.append("Claude: \(err)") }
-
-            if !errors.isEmpty {
-                loadError = errors.joined(separator: "\n")
-            }
-
-            if isDifferent {
-                diffText = unifiedDiff(left: codexContent, right: claudeContent, leftName: "Codex", rightName: "Claude")
-            }
-        }
-    }
-
-    private func performCopy(from: URL, to: URL) async {
-        await MainActor.run {
-            statusMessage = "Copying..."
             isLoading = true
+            contents = [:]
+            errors = [:]
+            modified = [:]
         }
 
-        let result = await Task(priority: .userInitiated) { () -> CopyResult in
-            if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
-            guard FileManager.default.fileExists(atPath: from.path) else {
-                return CopyResult(success: false, message: "Source missing: \(from.lastPathComponent)")
-            }
-
-            do {
-                if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
-                let data = try Data(contentsOf: from)
-                let dir = to.deletingLastPathComponent()
-                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-
-                if FileManager.default.fileExists(atPath: to.path) {
-                    if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
-                    let backup = to.appendingPathExtension("bak")
-                    try? FileManager.default.removeItem(at: backup)
-                    try FileManager.default.copyItem(at: to, to: backup)
+        let (loadedContents, loadedErrors, loadedModified) = await Task.detached(priority: .userInitiated) { () -> ([AgentKind: String], [AgentKind: String], [AgentKind: Date]) in
+            var contents: [AgentKind: String] = [:]
+            var errors: [AgentKind: String] = [:]
+            var modified: [AgentKind: Date] = [:]
+            for (agent, root) in rootsByAgent {
+                let url = root.appendingPathComponent(name).appendingPathComponent("SKILL.md")
+                guard FileManager.default.fileExists(atPath: url.path) else {
+                    errors[agent] = "Missing SKILL.md"
+                    continue
                 }
-
-                if Task.isCancelled { return CopyResult(success: false, message: "Copy cancelled") }
-                try data.write(to: to, options: .atomic)
-                return CopyResult(success: true, message: "Copied \(from.lastPathComponent) → \(to.lastPathComponent)")
-            } catch {
-                return CopyResult(success: false, message: "Copy failed: \(error.localizedDescription)")
+                do {
+                    contents[agent] = try String(contentsOf: url, encoding: .utf8)
+                    if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+                       let m = attrs[.modificationDate] as? Date {
+                        modified[agent] = m
+                    }
+                } catch {
+                    errors[agent] = error.localizedDescription
+                }
             }
+            return (contents, errors, modified)
         }.value
-        if Task.isCancelled { return }
 
         await MainActor.run {
+            contents = loadedContents
+            errors = loadedErrors
+            modified = loadedModified
             isLoading = false
-            statusMessage = result.message
+        }
+    }
 
-            if result.success {
-                // Reload files to show updated content
-                Task { await loadFiles() }
+    private func errorMessage(for agent: AgentKind) -> String {
+        if let specific = errors[agent] {
+            return specific
+        }
+        if agent == missingAgent {
+            return "\(skillName) is missing in \(agent.displayName)"
+        }
+        return "No content available"
+    }
+
+    private func pathDescription(for agent: AgentKind) -> String {
+        guard let root = rootsByAgent[agent] else { return "Root not set" }
+        return root.appendingPathComponent(skillName).path
+    }
+
+    private func diffStyling(for line: Substring) -> (Color, Color) {
+        if line.hasPrefix("+++") || line.hasPrefix("---") {
+            return (DesignTokens.Colors.Text.secondary, .clear)
+        }
+        if line.hasPrefix("@@") {
+            return (DesignTokens.Colors.Accent.blue, DesignTokens.Colors.Accent.blue.opacity(0.08))
+        }
+        if line.hasPrefix("+") {
+            return (DesignTokens.Colors.Status.success, DesignTokens.Colors.Status.success.opacity(0.12))
+        }
+        if line.hasPrefix("-") {
+            return (DesignTokens.Colors.Status.error, DesignTokens.Colors.Status.error.opacity(0.12))
+        }
+        return (DesignTokens.Colors.Text.primary, .clear)
+    }
+
+    private func copyContent(from: AgentKind, to: AgentKind) async {
+        guard let text = contents[from], !text.isEmpty, let destRoot = rootsByAgent[to] else { return }
+        let dest = destRoot.appendingPathComponent(skillName).appendingPathComponent("SKILL.md")
+        let fm = FileManager.default
+        do {
+            try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if fm.fileExists(atPath: dest.path) {
+                let backup = dest.appendingPathExtension("bak")
+                try? fm.removeItem(at: backup)
+                try fm.copyItem(at: dest, to: backup)
             }
+            try text.write(to: dest, atomically: true, encoding: .utf8)
+            await loadContents()
+        } catch {
+            // Could surface a toast; keeping silent to avoid blocking UX.
+        }
+    }
+
+    private func copyAndBump(from: AgentKind, to: AgentKind) async {
+        await copyContent(from: from, to: to)
+        await regenerateIndexAndChangelog(note: "Synced \(skillName) from \(from.displayName) to \(to.displayName)")
+    }
+
+    private func regenerateIndexAndChangelog(note: String) async {
+        let codexRoots = rootsByAgent[.codex].map { [$0] } ?? []
+        let claudeRoot = rootsByAgent[.claude]
+        let csmRoot = rootsByAgent[.codexSkillManager]
+        let copilotRoot = rootsByAgent[.copilot]
+        let entries = SkillIndexer.generate(
+            codexRoots: codexRoots,
+            claudeRoot: claudeRoot,
+            codexSkillManagerRoot: csmRoot,
+            copilotRoot: copilotRoot,
+            include: .all,
+            recursive: true
+        )
+        let (version, markdown) = SkillIndexer.renderMarkdown(
+            entries: entries,
+            existingVersion: nil,
+            bump: .patch,
+            changelogNote: note
+        )
+        let changelog = changelogSection(from: markdown)
+        if let target = resolveChangelogPath() {
+            try? FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? changelog.write(to: target, atomically: true, encoding: .utf8)
+        }
+        _ = version // currently unused, retained for future display
+    }
+
+    private func changelogSection(from markdown: String) -> String {
+        let lines = markdown.split(separator: "\n", omittingEmptySubsequences: false)
+        if let start = lines.firstIndex(where: { $0 == "## Changelog" }) {
+            return lines[start...].joined(separator: "\n")
+        }
+        return "## Changelog\n(No entries yet.)"
+    }
+
+    private func resolveChangelogPath() -> URL? {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let candidates: [URL] = [
+            home.appendingPathComponent(".codex/public/skills-changelog.md"),
+            home.appendingPathComponent(".claude/skills-changelog.md"),
+            home.appendingPathComponent(".copilot/skills-changelog.md"),
+            home.appendingPathComponent(".codexskillmanager/skills-changelog.md"),
+            URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("docs/skills-changelog.md")
+        ]
+        return candidates.first { url in
+            let parent = url.deletingLastPathComponent()
+            if FileManager.default.fileExists(atPath: parent.path) { return true }
+            return (try? FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)) != nil
         }
     }
 
@@ -573,14 +529,13 @@ struct SyncDetailView: View {
         let rightLines = right.split(separator: "\n", omittingEmptySubsequences: false)
 
         var output: [String] = []
-        output.reserveCapacity(leftLines.count + rightLines.count + 2)
         output.append("--- \(leftName)")
         output.append("+++ \(rightName)")
 
         let maxCount = max(leftLines.count, rightLines.count)
-        for i in 0..<maxCount {
-            let l = i < leftLines.count ? String(leftLines[i]) : nil
-            let r = i < rightLines.count ? String(rightLines[i]) : nil
+        for index in 0..<maxCount {
+            let l = index < leftLines.count ? String(leftLines[index]) : nil
+            let r = index < rightLines.count ? String(rightLines[index]) : nil
             if l == r {
                 output.append(" \(l ?? "")")
             } else {
@@ -592,21 +547,23 @@ struct SyncDetailView: View {
     }
 }
 
-// MARK: - Helper Types
-
-private struct CopyOperation: Sendable {
-    let from: URL
-    let to: URL
-    let direction: String
+private struct DiffInputs {
+    let leftAgent: AgentKind
+    let rightAgent: AgentKind
+    let leftContent: String
+    let rightContent: String
+    let diffText: String
 }
 
-private struct CopyResult: Sendable {
-    let success: Bool
-    let message: String
-}
-
-private struct DiffStats {
-    let additions: Int
-    let deletions: Int
-    let totalLines: Int
+#Preview {
+    let roots: [AgentKind: URL] = [
+        .codex: URL(fileURLWithPath: "/tmp/codex"),
+        .claude: URL(fileURLWithPath: "/tmp/claude"),
+        .copilot: URL(fileURLWithPath: "/tmp/copilot")
+    ]
+    SyncDetailView(
+        selection: .different(name: "demo"),
+        rootsByAgent: roots,
+        diffDetail: nil
+    )
 }

@@ -41,15 +41,14 @@ public enum Editor: String, CaseIterable, Sendable {
         if let bundleId = bundleIdentifier {
             return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) != nil
         } else if self == .codexCLI {
-            // Check if codex CLI exists
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-            process.arguments = ["codex"]
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            try? process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
+            // Fast, non-blocking check for common install locations
+            let fm = FileManager.default
+            let candidates = [
+                "/opt/homebrew/bin/codex",
+                "/usr/local/bin/codex",
+                "/usr/bin/codex"
+            ]
+            return candidates.contains(where: { fm.isExecutableFile(atPath: $0) })
         }
         return false
         #else
@@ -138,6 +137,8 @@ public enum Editor: String, CaseIterable, Sendable {
 }
 
 public enum EditorIntegration {
+    private static let detectedEditors: [Editor] = Editor.allCases.filter { $0.isInstalled() }
+
     public static var defaultEditor: Editor {
         get {
             if let raw = UserDefaults.standard.string(forKey: "defaultEditor"),
@@ -145,7 +146,7 @@ public enum EditorIntegration {
                 return editor
             }
             // Auto-detect installed editor
-            return Editor.allCases.first { $0.isInstalled() } ?? .finder
+            return detectedEditors.first ?? .finder
         }
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: "defaultEditor")
@@ -158,6 +159,6 @@ public enum EditorIntegration {
     }
     
     public static var installedEditors: [Editor] {
-        Editor.allCases.filter { $0.isInstalled() }
+        detectedEditors
     }
 }

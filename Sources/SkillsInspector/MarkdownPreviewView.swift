@@ -16,10 +16,10 @@ struct MarkdownPreviewView: View {
         if isLarge {
             fallbackView(title: "Large document", detail: "Showing plain text to keep scrolling responsive.")
         } else if let parsed {
-            ScrollView {
+            ScrollView([.vertical, .horizontal]) {
                 Markdown(parsed)
                     .markdownTheme(Self.theme)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(minWidth: 1200, maxWidth: .infinity, alignment: .leading)
                     .padding()
             }
             .background(DesignTokens.Colors.Background.primary)
@@ -58,11 +58,16 @@ struct MarkdownPreviewView: View {
 
     private func prepare() async {
         let stripped = stripFrontmatter(content)
+        await MainActor.run {
+            // Reset cached state whenever the bound content changes (task is keyed by `content`)
+            // so the preview always reflects the newly selected skill.
+            self.parsed = nil
+            self.isLarge = false
+        }
         if stripped.count > largeThreshold {
             isLarge = true
             return
         }
-        if parsed != nil { return }
         let parsedContent = MarkdownContent(stripped)
         await MainActor.run {
             self.parsed = parsedContent

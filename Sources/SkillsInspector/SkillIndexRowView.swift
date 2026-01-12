@@ -5,17 +5,21 @@ struct SkillIndexRowView: View {
     let entry: SkillIndexEntry
     let isExpanded: Bool
     let onToggle: () -> Void
+    let onSelect: () -> Void
     @State private var isHovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button {
-                onToggle()
-            } label: {
-                cardContent
-            }
-            .buttonStyle(.plain)
+            cardContent
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .onTapGesture {
+                    onSelect()
+                }
+                .onTapGesture(count: 2) {
+                    onSelect()
+                    onToggle()
+                }
         }
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -37,7 +41,7 @@ struct SkillIndexRowView: View {
             if isExpanded {
                 LinearGradient(
                     colors: [
-                        entry.agent == .codex ? DesignTokens.Colors.Accent.blue.opacity(0.1) : DesignTokens.Colors.Accent.purple.opacity(0.1),
+                        entry.agent.color.opacity(0.12),
                         DesignTokens.Colors.Background.primary
                     ],
                     startPoint: .topLeading,
@@ -50,96 +54,138 @@ struct SkillIndexRowView: View {
     }
     
     private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             // Header: Skill name and agent icon
-            HStack(alignment: .top, spacing: 12) {
-                Circle()
-                    .fill(entry.agent == .codex ? DesignTokens.Colors.Accent.blue.opacity(0.15) : DesignTokens.Colors.Accent.purple.opacity(0.15))
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: entry.agent == .codex ? "cpu" : "brain")
-                            .font(.system(size: 18))
-                            .foregroundStyle(entry.agent.color)
-                    )
+            HStack(alignment: .top, spacing: DesignTokens.Spacing.xs) {
+                // Agent icon with enhanced styling
+                ZStack {
+                    Circle()
+                        .fill(entry.agent.color.opacity(0.15))
+                        .frame(width: 44, height: 44)
+                    Circle()
+                        .stroke(entry.agent.color.opacity(0.3), lineWidth: 1)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: entry.agent.icon)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(entry.agent.color)
+                }
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                    // Skill name with better typography
                     Text(entry.name)
                         .font(.system(.title3, design: .default, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(DesignTokens.Colors.Text.primary)
                         .lineLimit(2)
                         .textSelection(.enabled)
                     
+                    // Description with improved styling
                     if !entry.description.isEmpty {
                         Text(entry.description)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
                             .lineLimit(isExpanded ? nil : 2)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                     }
+                    
+                    // File location with enhanced styling
+                    HStack(spacing: DesignTokens.Spacing.hair) {
+                        Image(systemName: "doc.text")
+                            .font(.caption2)
+                            .foregroundStyle(DesignTokens.Colors.Icon.secondary)
+                        Text(URL(fileURLWithPath: entry.path).lastPathComponent)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                            .fontWeight(.medium)
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                    .padding(.vertical, DesignTokens.Spacing.hair)
+                    .background(DesignTokens.Colors.Background.secondary.opacity(0.6))
+                    .cornerRadius(DesignTokens.Radius.sm)
                 }
                 
                 Spacer()
                 
-                Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(isHovered && !isExpanded ? 180 : 0))
+                // Expand/collapse indicator
+                Button {
+                    onToggle()
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
+                        .font(.system(size: 22))
+                        .foregroundStyle(isExpanded ? entry.agent.color : DesignTokens.Colors.Icon.tertiary)
+                        .rotationEffect(.degrees(isHovered && !isExpanded ? 180 : 0))
+                        .animation(.easeInOut(duration: 0.2), value: isHovered)
+                }
+                .buttonStyle(.plain)
+                .help(isExpanded ? "Collapse details" : "Expand details")
             }
             
-            // Bottom badges
-            HStack(spacing: 8) {
-                // Agent badge
-                Label(entry.agent.rawValue.capitalized, systemImage: entry.agent == .codex ? "cpu" : "brain")
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(entry.agent == .codex ? DesignTokens.Colors.Accent.blue.opacity(0.15) : DesignTokens.Colors.Accent.purple.opacity(0.15))
-                    .foregroundStyle(entry.agent.color)
-                    .cornerRadius(6)
-                
-                // File location badge
-                Label(URL(fileURLWithPath: entry.path).lastPathComponent, systemImage: "doc.text")
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(.systemGray).opacity(0.15))
-                    .foregroundStyle(.secondary)
-                    .cornerRadius(6)
-                    .lineLimit(1)
-                
-                Spacer()
+            // Metadata badges with improved organization
+            if entry.referencesCount > 0 || entry.assetsCount > 0 || entry.scriptsCount > 0 {
+                HStack(spacing: DesignTokens.Spacing.xxxs) {
+                    if entry.referencesCount > 0 {
+                        metadataBadge(
+                            count: entry.referencesCount,
+                            label: "ref",
+                            icon: "book.closed",
+                            color: DesignTokens.Colors.Accent.purple
+                        )
+                    }
+                    if entry.assetsCount > 0 {
+                        metadataBadge(
+                            count: entry.assetsCount,
+                            label: "asset",
+                            icon: "tray.full",
+                            color: DesignTokens.Colors.Accent.blue
+                        )
+                    }
+                    if entry.scriptsCount > 0 {
+                        metadataBadge(
+                            count: entry.scriptsCount,
+                            label: "script",
+                            icon: "terminal",
+                            color: DesignTokens.Colors.Accent.orange
+                        )
+                    }
+                    Spacer()
+                }
             }
             
-            // Expanded actions
+            // Expanded details section
             if isExpanded {
-                Divider()
-                    .padding(.vertical, 4)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    // Path display
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Location")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+                    Divider()
+                        .padding(.vertical, DesignTokens.Spacing.hair)
+                    
+                    // Full path display
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                        Text("Full Path")
+                            .font(.system(.caption2, weight: .semibold))
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
                             .textCase(.uppercase)
+                        
                         Text(entry.path.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))
                             .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
                             .textSelection(.enabled)
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .background(Color(.systemGray).opacity(0.1))
-                            .cornerRadius(4)
+                            .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                            .padding(.vertical, DesignTokens.Spacing.xxxs)
+                            .background(DesignTokens.Colors.Background.secondary.opacity(0.4))
+                            .cornerRadius(DesignTokens.Radius.sm)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                                    .stroke(DesignTokens.Colors.Border.light, lineWidth: 0.5)
+                            )
                     }
                     
-                    // Action buttons
-                    HStack(spacing: 8) {
+                    // Action buttons with improved styling
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
                         Button {
                             NSWorkspace.shared.selectFile(entry.path, inFileViewerRootedAtPath: "")
                         } label: {
                             Label("Reveal", systemImage: "folder")
                                 .font(.caption)
+                                .fontWeight(.medium)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
@@ -155,6 +201,7 @@ struct SkillIndexRowView: View {
                         } label: {
                             Label("Open", systemImage: "pencil")
                                 .font(.caption)
+                                .fontWeight(.medium)
                         } primaryAction: {
                             EditorIntegration.openFile(URL(fileURLWithPath: entry.path), line: nil, editor: nil)
                         }
@@ -166,15 +213,37 @@ struct SkillIndexRowView: View {
                             pb.clearContents()
                             pb.setString(entry.path, forType: .string)
                         } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
+                            Label("Copy Path", systemImage: "doc.on.doc")
                                 .font(.caption)
+                                .fontWeight(.medium)
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        
+                        Spacer()
                     }
                 }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(16)
+        .padding(DesignTokens.Spacing.xs)
+    }
+    
+    private func metadataBadge(count: Int, label: String, icon: String, color: Color) -> some View {
+        HStack(spacing: DesignTokens.Spacing.hair) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text("\(count)")
+                .font(.system(.caption2, design: .monospaced))
+                .fontWeight(.medium)
+            Text(count == 1 ? label : "\(label)s")
+                .font(.caption2)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, DesignTokens.Spacing.xxxs)
+        .padding(.vertical, DesignTokens.Spacing.hair)
+        .background(color.opacity(0.12))
+        .cornerRadius(DesignTokens.Radius.sm)
+    }
     }
 }

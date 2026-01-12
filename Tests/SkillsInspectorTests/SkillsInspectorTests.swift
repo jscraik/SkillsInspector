@@ -12,6 +12,8 @@ final class InspectorViewModelTests: XCTestCase {
         try await super.setUp()
         UserDefaults.standard.removeObject(forKey: settingsKey)
         sut = InspectorViewModel()
+        sut.codexSkillManagerRoot = nil
+        sut.copilotRoot = nil
         tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("ViewModelTests_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
     }
@@ -203,6 +205,11 @@ final class InspectorViewModelTests: XCTestCase {
         XCTAssertGreaterThan(sut.lastScanDuration!, 0, "Duration should be positive")
     }
 
+    func testValidateRootRejectsTraversal() {
+        let bad = URL(fileURLWithPath: "/tmp/../etc")
+        XCTAssertFalse(sut.validateRoot(bad))
+    }
+
     // MARK: - Findings Sorting Tests
 
     func testFindingsAreSortedBySeverityThenAgentThenPath() async throws {
@@ -317,8 +324,7 @@ final class SyncViewModelTests: XCTestCase {
     // MARK: - Initialization Tests
 
     func testInitializesWithEmptyReport() {
-        XCTAssertTrue(sut.report.onlyInCodex.isEmpty)
-        XCTAssertTrue(sut.report.onlyInClaude.isEmpty)
+        XCTAssertTrue(sut.report.missingByAgent.isEmpty)
         XCTAssertTrue(sut.report.differentContent.isEmpty)
         XCTAssertFalse(sut.isRunning)
         XCTAssertNil(sut.selection)
@@ -344,16 +350,15 @@ final class SyncViewModelTests: XCTestCase {
         """.write(to: codexFile, atomically: true, encoding: .utf8)
 
         await sut.run(
-            codexRoot: codexRoot,
-            claudeRoot: claudeRoot,
+            roots: [.codex: codexRoot, .claude: claudeRoot],
             recursive: false,
             maxDepth: nil,
             excludes: [],
             excludeGlobs: []
         )
 
-        XCTAssertEqual(sut.report.onlyInCodex, ["only-codex"])
-        XCTAssertTrue(sut.report.onlyInClaude.isEmpty)
+        XCTAssertEqual(sut.report.missingByAgent[.claude], ["only-codex"])
+        XCTAssertEqual(sut.report.missingByAgent[.codex] ?? [], [])
         XCTAssertTrue(sut.report.differentContent.isEmpty)
         XCTAssertFalse(sut.isRunning)
     }
@@ -376,16 +381,15 @@ final class SyncViewModelTests: XCTestCase {
         """.write(to: claudeFile, atomically: true, encoding: .utf8)
 
         await sut.run(
-            codexRoot: codexRoot,
-            claudeRoot: claudeRoot,
+            roots: [.codex: codexRoot, .claude: claudeRoot],
             recursive: false,
             maxDepth: nil,
             excludes: [],
             excludeGlobs: []
         )
 
-        XCTAssertTrue(sut.report.onlyInCodex.isEmpty)
-        XCTAssertEqual(sut.report.onlyInClaude, ["only-claude"])
+        XCTAssertEqual(sut.report.missingByAgent[.codex], ["only-claude"])
+        XCTAssertEqual(sut.report.missingByAgent[.claude] ?? [], [])
         XCTAssertTrue(sut.report.differentContent.isEmpty)
         XCTAssertFalse(sut.isRunning)
     }
@@ -417,31 +421,29 @@ final class SyncViewModelTests: XCTestCase {
         """.write(to: claudeSkill.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 
         await sut.run(
-            codexRoot: codexRoot,
-            claudeRoot: claudeRoot,
+            roots: [.codex: codexRoot, .claude: claudeRoot],
             recursive: false,
             maxDepth: nil,
             excludes: [],
             excludeGlobs: []
         )
 
-        XCTAssertTrue(sut.report.onlyInCodex.isEmpty)
-        XCTAssertTrue(sut.report.onlyInClaude.isEmpty)
-        XCTAssertEqual(sut.report.differentContent, ["different"])
+        XCTAssertTrue(sut.report.missingByAgent.values.allSatisfy { $0.isEmpty })
+        XCTAssertEqual(sut.report.differentContent.map(\.name), ["different"])
         XCTAssertFalse(sut.isRunning)
     }
 
     // MARK: - Selection Tests
 
     func testSelectionCanBeUpdated() {
-        sut.selection = .onlyCodex("test")
-        XCTAssertEqual(sut.selection, .onlyCodex("test"))
+        sut.selection = .missing(agent: .codex, name: "test")
+        XCTAssertEqual(sut.selection, .missing(agent: .codex, name: "test"))
 
-        sut.selection = .onlyClaude("test2")
-        XCTAssertEqual(sut.selection, .onlyClaude("test2"))
+        sut.selection = .missing(agent: .claude, name: "test2")
+        XCTAssertEqual(sut.selection, .missing(agent: .claude, name: "test2"))
 
-        sut.selection = .different("test3")
-        XCTAssertEqual(sut.selection, .different("test3"))
+        sut.selection = .different(name: "test3")
+        XCTAssertEqual(sut.selection, .different(name: "test3"))
 
         sut.selection = nil
         XCTAssertNil(sut.selection)
@@ -467,15 +469,15 @@ final class SyncViewModelTests: XCTestCase {
         """.write(to: nestedFile, atomically: true, encoding: .utf8)
 
         await sut.run(
-            codexRoot: codexRoot,
-            claudeRoot: claudeRoot,
+            roots: [.codex: codexRoot, .claude: claudeRoot],
             recursive: true,
             maxDepth: nil,
             excludes: [],
             excludeGlobs: []
         )
 
-        XCTAssertEqual(sut.report.onlyInCodex, ["nested"])
+        let missing = sut.report.missingByAgent[.claude] ?? []
+        XCTAssertEqual(missing, ["nested"])
     }
 
     // MARK: - Exclude Tests
@@ -509,15 +511,15 @@ final class SyncViewModelTests: XCTestCase {
         """.write(to: includedFile, atomically: true, encoding: .utf8)
 
         await sut.run(
-            codexRoot: codexRoot,
-            claudeRoot: claudeRoot,
+            roots: [.codex: codexRoot, .claude: claudeRoot],
             recursive: true,
             maxDepth: nil,
             excludes: ["excluded-dir"],
             excludeGlobs: []
         )
 
-        XCTAssertEqual(sut.report.onlyInCodex, ["included"])
+        let missingClaude = sut.report.missingByAgent[.claude] ?? []
+        XCTAssertEqual(missingClaude, ["included"])
     }
 }
 

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skillsctl remote list/search output",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["slug", "displayName"],
+    "properties": {
+      "id": { "type": "string" },
+      "slug": { "type": "string" },
+      "displayName": { "type": "string" },
+      "summary": { "type": ["string", "null"] },
+      "latestVersion": { "type": ["string", "null"] },
+      "updatedAt": { "type": ["string", "null"], "format": "date-time" },
+      "downloads": { "type": ["integer", "null"], "minimum": 0 },
+      "stars": { "type": ["integer", "null"], "minimum": 0 }
+    },
+    "additionalProperties": false
+  }
+}

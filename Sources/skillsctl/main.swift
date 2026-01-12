@@ -6,8 +6,204 @@ struct SkillsCtl: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "skillsctl",
         abstract: "Scan/validate/sync Codex + Claude SKILL.md directories.",
-        subcommands: [Scan.self, Fix.self, SyncCheck.self, Index.self, Completion.self]
+        subcommands: [Scan.self, Fix.self, SyncCheck.self, Index.self, Remote.self, Completion.self]
     )
+}
+
+// MARK: - Remote commands
+
+struct Remote: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Browse and install remote skills from Clawdhub.",
+        subcommands: [RemoteList.self, RemoteSearch.self, RemoteDetail.self, RemoteInstall.self, RemoteUpdate.self]
+    )
+}
+
+struct RemoteList: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "List latest skills from Clawdhub.")
+
+    @Option(name: .customLong("limit"), help: "Maximum items to fetch (default 20)")
+    var limit: Int = 20
+
+    @Option(name: .customLong("format"), help: "Output format: text|json")
+    var format: String = "text"
+
+    func run() async throws {
+        let client = RemoteSkillClient.live()
+        let items = try await client.fetchLatest(limit)
+        try output(items: items, format: format)
+    }
+}
+
+struct RemoteSearch: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Search remote skills.")
+
+    @Argument(help: "Search query") var query: String
+    @Option(name: .customLong("limit"), help: "Maximum items to fetch (default 20)")
+    var limit: Int = 20
+    @Option(name: .customLong("format"), help: "Output format: text|json")
+    var format: String = "text"
+
+    func run() async throws {
+        let client = RemoteSkillClient.live()
+        let items = try await client.search(query, limit)
+        try output(items: items, format: format)
+    }
+}
+
+struct RemoteDetail: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Fetch owner detail for a slug.")
+    @Argument(help: "Skill slug") var slug: String
+
+    func run() async throws {
+        let client = RemoteSkillClient.live()
+        async let owner = client.fetchDetail(slug)
+        async let latest = client.fetchLatestVersion(slug)
+        let detail = RemoteSkillDetail(
+            skill: RemoteSkill(id: slug, slug: slug, displayName: slug, summary: nil, latestVersion: try await latest, updatedAt: nil, downloads: nil, stars: nil),
+            owner: try await owner,
+            changelog: nil
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(detail)
+        if let text = String(data: data, encoding: .utf8) {
+            if let schema = schemaURL(named: "remote-detail-schema.json"),
+               let schemaText = try? String(contentsOf: schema, encoding: .utf8),
+               !JSONValidator.validate(json: text, schema: schemaText) {
+                fputs("WARNING: JSON output did not validate against remote-detail schema\n", stderr)
+            }
+            print(text)
+        }
+    }
+}
+
+struct RemoteInstall: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Download and install a remote skill into Codex/Claude/custom root.")
+    @Argument(help: "Skill slug") var slug: String
+    @Option(name: .customLong("version"), help: "Specific version; defaults to latest") var version: String?
+    @Option(name: .customLong("target"), help: "codex|claude|<path>; default codex") var target: String = "codex"
+    @Flag(name: .customLong("overwrite"), help: "Overwrite existing skill directory if present") var overwrite: Bool = false
+    @Flag(name: .customLong("plain"), help: "Plain output") var plain: Bool = false
+
+    func run() async throws {
+        let client = RemoteSkillClient.live()
+        let installer = RemoteSkillInstaller()
+        let downloadURL = try await client.download(slug, version)
+        let targetRoot = resolveTargetRoot(target)
+        let result = try await installer.install(
+            archiveURL: downloadURL,
+            target: targetRoot,
+            overwrite: overwrite
+        )
+        if plain {
+            print("Installed to \(result.skillDirectory.path)")
+        } else {
+            let payload: [String: Any] = [
+                "destination": result.skillDirectory.path,
+                "filesCopied": result.filesCopied,
+                "bytes": result.totalBytes,
+                "archiveSHA256": result.archiveSHA256 ?? ""
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys]),
+               let text = String(data: data, encoding: .utf8) {
+                if let schema = schemaURL(named: "remote-install-schema.json"),
+                   let schemaText = try? String(contentsOf: schema, encoding: .utf8),
+                   !JSONValidator.validate(json: text, schema: schemaText) {
+                    fputs("WARNING: JSON output did not validate against remote-install schema\n", stderr)
+                }
+                print(text)
+            } else {
+                print("✅ Installed \(slug) to \(result.skillDirectory.path)")
+            }
+        }
+    }
+}
+
+struct RemoteUpdate: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Download and overwrite with the latest version of a skill.")
+    @Argument(help: "Skill slug") var slug: String
+    @Option(name: .customLong("target"), help: "codex|claude|<path>; default codex") var target: String = "codex"
+    @Flag(name: .customLong("plain"), help: "Plain output") var plain: Bool = false
+
+    func run() async throws {
+        let client = RemoteSkillClient.live()
+        let installer = RemoteSkillInstaller()
+        let targetRoot = resolveTargetRoot(target)
+        let downloadURL = try await client.download(slug, nil)
+        let result = try await installer.install(archiveURL: downloadURL, target: targetRoot, overwrite: true)
+        if plain {
+            print("Updated \(slug) at \(targetRoot.root.path)")
+        } else {
+            let payload: [String: Any] = [
+                "destination": result.skillDirectory.path,
+                "filesCopied": result.filesCopied,
+                "bytes": result.totalBytes,
+                "archiveSHA256": result.archiveSHA256 ?? "",
+                "contentSHA256": result.contentSHA256 ?? ""
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys]),
+               let text = String(data: data, encoding: .utf8) {
+                if let schema = schemaURL(named: "remote-install-schema.json"),
+                   let schemaText = try? String(contentsOf: schema, encoding: .utf8),
+                   !JSONValidator.validate(json: text, schema: schemaText) {
+                    fputs("WARNING: JSON output did not validate against remote-install schema\n", stderr)
+                }
+                print(text)
+            } else {
+                print("Updated \(slug) at \(targetRoot.root.path)")
+            }
+        }
+    }
+}
+
+// Shared output helper
+private func output(items: [RemoteSkill], format: String) throws {
+    switch format.lowercased() {
+    case "json":
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(items)
+        if let text = String(data: data, encoding: .utf8) {
+            if let schema = schemaURL(named: "remote-list-schema.json"),
+               let schemaText = try? String(contentsOf: schema, encoding: .utf8),
+               !JSONValidator.validate(json: text, schema: schemaText) {
+                fputs("WARNING: JSON output did not validate against remote-list schema\n", stderr)
+            }
+            print(text)
+        }
+    default:
+        for item in items {
+            var line = "- \(item.displayName) (\(item.slug))"
+            if let v = item.latestVersion { line += "  v\(v)" }
+            if let updated = item.updatedAt {
+                let fmt = ISO8601DateFormatter()
+                line += "  updated \(fmt.string(from: updated))"
+            }
+            if let downloads = item.downloads { line += "  ⬇︎\(downloads)" }
+            if let stars = item.stars { line += "  ★\(stars)" }
+            print(line)
+            if let summary = item.summary { print("  \(summary)") }
+        }
+    }
+}
+
+private func resolveTargetRoot(_ target: String) -> SkillInstallTarget {
+    switch target.lowercased() {
+    case "codex":
+        return .codex(PathUtil.urlFromPath("~/.codex/skills"))
+    case "claude":
+        return .claude(PathUtil.urlFromPath("~/.claude/skills"))
+    default:
+        return .custom(PathUtil.urlFromPath(target))
+    }
+}
+
+private func schemaURL(named name: String) -> URL? {
+    let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    let local = cwd.appendingPathComponent("docs/schema").appendingPathComponent(name)
+    if FileManager.default.fileExists(atPath: local.path) { return local }
+    return Bundle.main.url(forResource: name.replacingOccurrences(of: ".json", with: ""), withExtension: "json", subdirectory: "docs/schema")
 }
 
 struct Scan: ParsableCommand {
@@ -18,6 +214,9 @@ struct Scan: ParsableCommand {
 
     @Option(name: .customLong("claude"), help: "Claude skills root (default: ~/.claude/skills)")
     var claudePath: String = "~/.claude/skills"
+
+    @Option(name: .customLong("csm-path"), help: "Path to CodexSkillManager working tree (optional)")
+    var codexSkillManagerPath: String?
 
     @Option(name: .customLong("repo"), help: "Repo root; scans <repo>/.codex/skills and <repo>/.claude/skills")
     var repoPath: String?
@@ -91,15 +290,44 @@ struct Scan: ParsableCommand {
 
         var roots: [ScanRoot] = []
 
+        let csmRoot: URL?
+        switch PathValidator.validatedDirectory(from: codexSkillManagerPath) {
+        case .success(let url):
+            csmRoot = url
+        case .failure(.empty):
+            csmRoot = nil
+        case .failure(let error):
+            fputs("CodexSkillManager path invalid: \(error.localizedDescription)\n", stderr)
+            throw ExitCode(1)
+        }
+
         if let repoPath {
             let repoURL = PathUtil.urlFromPath(repoPath)
             let codexURL = repoURL.appendingPathComponent(".codex/skills", isDirectory: true)
             let claudeURL = repoURL.appendingPathComponent(".claude/skills", isDirectory: true)
-            if !skipCodex { roots.append(.init(agent: .codex, rootURL: codexURL, recursive: recursive, maxDepth: maxDepth)) }
+            if !skipCodex {
+                roots.append(.init(agent: .codex, rootURL: codexURL, recursive: recursive, maxDepth: maxDepth))
+                // Also scan nested public if present
+                let publicRoot = codexURL.appendingPathComponent("public", isDirectory: true)
+                if PathUtil.existsDir(publicRoot) {
+                    roots.append(.init(agent: .codex, rootURL: publicRoot, recursive: recursive, maxDepth: maxDepth))
+                }
+            }
             if !skipClaude { roots.append(.init(agent: .claude, rootURL: claudeURL, recursive: recursive, maxDepth: maxDepth)) }
         } else {
-            if !skipCodex { roots.append(.init(agent: .codex, rootURL: PathUtil.urlFromPath(codexPath), recursive: recursive, maxDepth: maxDepth)) }
+            let codexRoot = PathUtil.urlFromPath(codexPath)
+            if !skipCodex {
+                roots.append(.init(agent: .codex, rootURL: codexRoot, recursive: recursive, maxDepth: maxDepth))
+                let publicRoot = codexRoot.appendingPathComponent("public", isDirectory: true)
+                if PathUtil.existsDir(publicRoot) {
+                    roots.append(.init(agent: .codex, rootURL: publicRoot, recursive: recursive, maxDepth: maxDepth))
+                }
+            }
             if !skipClaude { roots.append(.init(agent: .claude, rootURL: PathUtil.urlFromPath(claudePath), recursive: recursive, maxDepth: maxDepth)) }
+        }
+
+        if let csmRoot {
+            roots.append(.init(agent: .codexSkillManager, rootURL: csmRoot, recursive: recursive, maxDepth: maxDepth))
         }
 
         let config = ConfigLoader.loadConfig(explicitPath: configPath, repoRoot: repoPath.map(PathUtil.urlFromPath))
@@ -391,7 +619,7 @@ struct Index: ParsableCommand {
     var write: Bool = false
 
     func run() throws {
-        let includeMode = IndexInclude(rawValue: include) ?? .both
+        let includeMode = IndexInclude(rawValue: include) ?? .all
         let bumpMode = IndexBump(rawValue: bump) ?? .none
 
         let resolvedRoots = roots(fromRepo: repoPath, codexPath: codexPath, claudePath: claudePath)
@@ -799,6 +1027,12 @@ struct SyncCheck: ParsableCommand {
     @Option(name: .customLong("claude"), help: "Claude skills root (default: ~/.claude/skills)")
     var claudePath: String = "~/.claude/skills"
 
+    @Option(name: .customLong("copilot"), help: "Copilot skills root (optional, default: ~/.copilot/skills)")
+    var copilotPath: String?
+
+    @Option(name: .customLong("csm-path"), help: "CodexSkillManager working tree (optional)")
+    var codexSkillManagerPath: String?
+
     @Flag(name: .customLong("recursive"), help: "Recursively walk for SKILL.md instead of shallow root/<skill>/SKILL.md")
     var recursive: Bool = false
 
@@ -815,12 +1049,33 @@ struct SyncCheck: ParsableCommand {
     var format: String = "text"
 
     func run() throws {
-        let codexURL = PathUtil.urlFromPath(codexPath)
-        let claudeURL = PathUtil.urlFromPath(claudePath)
+        var roots: [ScanRoot] = [
+            .init(agent: .codex, rootURL: PathUtil.urlFromPath(codexPath), recursive: recursive, maxDepth: maxDepth),
+            .init(agent: .claude, rootURL: PathUtil.urlFromPath(claudePath), recursive: recursive, maxDepth: maxDepth)
+        ]
 
-        let report = SyncChecker.byName(
-            codexRoot: codexURL,
-            claudeRoot: claudeURL,
+        if let copilotPath {
+            switch PathValidator.validatedDirectory(from: copilotPath) {
+            case .success(let url):
+                roots.append(.init(agent: .copilot, rootURL: url, recursive: recursive, maxDepth: maxDepth))
+            case .failure(let err):
+                fputs("Copilot path invalid: \(err.localizedDescription)\n", stderr)
+                throw ExitCode(1)
+            }
+        }
+
+        if let codexSkillManagerPath {
+            switch PathValidator.validatedDirectory(from: codexSkillManagerPath) {
+            case .success(let url):
+                roots.append(.init(agent: .codexSkillManager, rootURL: url, recursive: recursive, maxDepth: maxDepth))
+            case .failure(let err):
+                fputs("CodexSkillManager path invalid: \(err.localizedDescription)\n", stderr)
+                throw ExitCode(1)
+            }
+        }
+
+        let report = SyncChecker.multiByName(
+            roots: roots,
             recursive: recursive,
             excludeDirNames: Set(excludes).union([".git", ".system", "__pycache__", ".DS_Store"]),
             excludeGlobs: excludeGlobs
@@ -828,40 +1083,39 @@ struct SyncCheck: ParsableCommand {
 
         output(report: report)
 
-        let ok = report.onlyInCodex.isEmpty && report.onlyInClaude.isEmpty && report.differentContent.isEmpty
+        let ok = report.missingByAgent.values.allSatisfy { $0.isEmpty } && report.differentContent.isEmpty
         if !ok { throw ExitCode(1) }
     }
 
-    private func output(report: SyncReport) {
+    private func output(report: MultiSyncReport) {
         switch format.lowercased() {
         case "json":
-            let payload: [String: Any] = [
-                "onlyInCodex": report.onlyInCodex,
-                "onlyInClaude": report.onlyInClaude,
-                "differentContent": report.differentContent
-            ]
-            if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted]),
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            if let data = try? encoder.encode(report),
                let text = String(data: data, encoding: .utf8) {
                 print(text)
             }
         default:
-            if report.onlyInCodex.isEmpty &&
-                report.onlyInClaude.isEmpty &&
-                report.differentContent.isEmpty {
-                print("Codex and Claude skill trees are in sync.")
+            let missing = report.missingByAgent.filter { !$0.value.isEmpty }
+            if missing.isEmpty && report.differentContent.isEmpty {
+                print("Skill trees are in sync across provided agents.")
                 return
             }
-            if !report.onlyInCodex.isEmpty {
-                print("Only in Codex:")
-                report.onlyInCodex.forEach { print("  - \($0)") }
-            }
-            if !report.onlyInClaude.isEmpty {
-                print("Only in Claude:")
-                report.onlyInClaude.forEach { print("  - \($0)") }
+            for (agent, names) in missing.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
+                print("Missing in \(agent.displayLabel):")
+                names.forEach { print("  - \($0)") }
             }
             if !report.differentContent.isEmpty {
-                print("Different content (same name):")
-                report.differentContent.forEach { print("  - \($0)") }
+                print("Different content (hash mismatch):")
+                for diff in report.differentContent {
+                    let hashSummary = diff.hashes.map { "\($0.key.displayLabel)=\($0.value.prefix(8))" }.joined(separator: ", ")
+                    let modifiedSummary = diff.modified.map { key, date in "\(key.displayLabel)=\(ISO8601DateFormatter().string(from: date))" }
+                        .sorted()
+                        .joined(separator: ", ")
+                    print("  - \(diff.name) [\(hashSummary)]\(modifiedSummary.isEmpty ? "" : " modified: \(modifiedSummary)")")
+                }
             }
         }
     }

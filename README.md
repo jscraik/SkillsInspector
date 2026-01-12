@@ -83,6 +83,11 @@ skillsctl sync-check --repo .
 
 # Generate index (Skills.md) for both roots and bump version
 skillsctl index --repo . --write --bump patch
+
+# Browse remote catalog and install skills
+skillsctl remote list --limit 10 --format json
+skillsctl remote search "sql"
+skillsctl remote install my-skill --target codex --overwrite
 ```
 
 Common flags: `--config <path>` (defaults to `.skillsctl/config.json`), `--baseline <path>` (defaults to `.skillsctl/baseline.json`), `--ignore <path>` (defaults to `.skillsctl/ignore.json`), `--plain`, `--log-level <level>`, `--schema-version 1`, `--allow-empty`, `--recursive`, `--max-depth <n>`, `--exclude <name>`, `--exclude-glob <pattern>`, `--format text|json`, `--telemetry`.

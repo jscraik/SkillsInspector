@@ -95,4 +95,6 @@ enum AppMode: Hashable {
     case stats
     case sync
     case index
+    case remote
+    case changelog
 }

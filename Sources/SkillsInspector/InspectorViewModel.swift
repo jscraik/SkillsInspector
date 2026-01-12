@@ -9,6 +9,12 @@ final class InspectorViewModel: ObservableObject {
     @Published var claudeRoot: URL {
         didSet { persistSettings() }
     }
+    @Published var copilotRoot: URL? {
+        didSet { persistSettings() }
+    }
+    @Published var codexSkillManagerRoot: URL? {
+        didSet { persistSettings() }
+    }
     @Published var recursive = false {
         didSet { persistSettings() }
     }
@@ -55,6 +61,8 @@ final class InspectorViewModel: ObservableObject {
            let saved = try? JSONDecoder().decode(UserSettings.self, from: data) {
             codexRoots = saved.codexRoots.isEmpty ? Self.defaultCodexRoots(home: home) : saved.codexRoots
             claudeRoot = saved.claudeRoot
+            codexSkillManagerRoot = saved.codexSkillManagerRoot
+            copilotRoot = saved.copilotRoot
             recursive = saved.recursive
             excludeInput = saved.excludeInput
             excludeGlobInput = saved.excludeGlobInput
@@ -62,6 +70,8 @@ final class InspectorViewModel: ObservableObject {
         } else {
             codexRoots = Self.defaultCodexRoots(home: home)
             claudeRoot = home.appendingPathComponent(".claude/skills", isDirectory: true)
+            codexSkillManagerRoot = Self.defaultCodexSkillManagerRoot(home: home)
+            copilotRoot = Self.defaultCopilotRoot(home: home)
         }
     }
 
@@ -69,11 +79,7 @@ final class InspectorViewModel: ObservableObject {
     var codexRoot: URL {
         get { codexRoots.first ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/skills", isDirectory: true) }
         set {
-            if codexRoots.isEmpty {
-                codexRoots = [newValue]
-            } else {
-                codexRoots[0] = newValue
-            }
+            codexRoots = [newValue]
         }
     }
 
@@ -105,9 +111,12 @@ final class InspectorViewModel: ObservableObject {
 
         let codexRootsCopy = codexRoots
         let claude = claudeRoot
+        let csm = codexSkillManagerRoot
+        let copilot = copilotRoot
         let recursiveFlag = recursive
 
         scanTask = Task { [weak self] in
+            guard let self else { return }
             guard Task.isCancelled == false else { return }
 
             // Build roots from all Codex directories plus Claude
@@ -115,6 +124,12 @@ final class InspectorViewModel: ObservableObject {
                 ScanRoot(agent: .codex, rootURL: url, recursive: recursiveFlag)
             }
             roots.append(ScanRoot(agent: .claude, rootURL: claude, recursive: recursiveFlag))
+            if let csm, self.validateRoot(csm) {
+                roots.append(ScanRoot(agent: .codexSkillManager, rootURL: csm, recursive: recursiveFlag))
+            }
+            if let copilot, self.validateRoot(copilot) {
+                roots.append(ScanRoot(agent: .copilot, rootURL: copilot, recursive: recursiveFlag))
+            }
             
             // Set up cache
             let cacheURL = Self.findRepoRoot(from: codexRootsCopy.first ?? claude) ?? Self.findRepoRoot(from: claude)
@@ -161,7 +176,7 @@ final class InspectorViewModel: ObservableObject {
                 await cacheManager.save()
             }
 
-            guard let self = self, currentScanID == scanID else { return }
+            guard currentScanID == scanID else { return }
             guard Task.isCancelled == false else { return }
 
             await MainActor.run {
@@ -180,6 +195,9 @@ final class InspectorViewModel: ObservableObject {
                 self.scanProgress = 1.0
             }
         }
+
+        // Ensure callers awaiting scan() get deterministic completion for tests/UI updates.
+        await scanTask?.value
     }
     
     private static func findRepoRoot(from url: URL) -> URL? {
@@ -199,6 +217,8 @@ final class InspectorViewModel: ObservableObject {
         
         var roots = codexRoots
         roots.append(claudeRoot)
+        if let csm = codexSkillManagerRoot { roots.append(csm) }
+        if let copilotRoot { roots.append(copilotRoot) }
         fileWatcher = FileWatcher(roots: roots)
         fileWatcher?.onChange = { [weak self] in
             guard let self else { return }
@@ -239,6 +259,7 @@ final class InspectorViewModel: ObservableObject {
     func validateRoot(_ url: URL) -> Bool {
         guard PathUtil.existsDir(url) else { return false }
         let path = url.path
+        if url.pathComponents.contains("..") { return false }
         for suspicious in Self.suspiciousPaths {
             if path.hasPrefix(suspicious) { return false }
         }
@@ -249,6 +270,8 @@ final class InspectorViewModel: ObservableObject {
         let settings = UserSettings(
             codexRoots: codexRoots,
             claudeRoot: claudeRoot,
+            codexSkillManagerRoot: codexSkillManagerRoot,
+            copilotRoot: copilotRoot,
             recursive: recursive,
             excludeInput: excludeInput,
             excludeGlobInput: excludeGlobInput,
@@ -278,10 +301,35 @@ final class InspectorViewModel: ObservableObject {
             }
         }
         let primaryCodex = home.appendingPathComponent(".codex/skills", isDirectory: true)
+        let publicCodex = home.appendingPathComponent(".codex/public/skills", isDirectory: true)
+
+        // Prefer both roots when they exist; otherwise fall back to any detected or primary default.
+        var result: [URL] = []
         if FileManager.default.fileExists(atPath: primaryCodex.path) {
-            return [primaryCodex]
+            result.append(primaryCodex)
         }
-        return resolvedRoots.isEmpty ? [primaryCodex] : resolvedRoots
+        if FileManager.default.fileExists(atPath: publicCodex.path) {
+            if !result.contains(where: { $0.standardizedFileURL == publicCodex.standardizedFileURL }) {
+                result.append(publicCodex)
+            }
+        }
+        if result.isEmpty { result = resolvedRoots }
+        if result.isEmpty { result = [primaryCodex] }
+        return result
+    }
+
+    private static func defaultCodexSkillManagerRoot(home: URL) -> URL? {
+        let candidates = [
+            home.appendingPathComponent("dev/CodexSkillManager", isDirectory: true),
+            home.appendingPathComponent("Code/CodexSkillManager", isDirectory: true),
+            home.appendingPathComponent("CodexSkillManager", isDirectory: true)
+        ]
+        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    private static func defaultCopilotRoot(home: URL) -> URL? {
+        let candidate = home.appendingPathComponent(".copilot/skills", isDirectory: true)
+        return FileManager.default.fileExists(atPath: candidate.path) ? candidate : nil
     }
 }
 
@@ -294,6 +342,8 @@ private struct ScanResult: Sendable {
 private struct UserSettings: Codable {
     let codexRoots: [URL]
     let claudeRoot: URL
+    let codexSkillManagerRoot: URL?
+    let copilotRoot: URL?
     let recursive: Bool
     let excludeInput: String
     let excludeGlobInput: String

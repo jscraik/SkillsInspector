@@ -3,7 +3,9 @@ import Foundation
 public enum IndexInclude: String, CaseIterable, Sendable {
     case codex
     case claude
-    case both
+    case codexSkillManager
+    case copilot
+    case all
 }
 
 public enum IndexBump: String, Sendable {
@@ -18,6 +20,10 @@ public struct SkillIndexEntry: Sendable, Hashable {
     public let name: String
     public let path: String
     public let description: String
+    public let modified: Date?
+    public let referencesCount: Int
+    public let assetsCount: Int
+    public let scriptsCount: Int
 }
 
 public enum SkillIndexer {
@@ -25,7 +31,9 @@ public enum SkillIndexer {
     public static func generate(
         codexRoots: [URL],
         claudeRoot: URL?,
-        include: IndexInclude = .both,
+        codexSkillManagerRoot: URL? = nil,
+        copilotRoot: URL? = nil,
+        include: IndexInclude = .all,
         recursive: Bool = false,
         maxDepth: Int? = nil,
         excludes: [String] = [".git", ".system", "__pycache__", ".DS_Store"],
@@ -40,7 +48,20 @@ public enum SkillIndexer {
                 guard let doc = SkillLoader.load(agent: agent, rootURL: root, skillFileURL: f) else { continue }
                 let name = doc.name ?? f.deletingLastPathComponent().lastPathComponent
                 let desc = (doc.description ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                entries.append(SkillIndexEntry(agent: agent, name: name, path: f.path, description: desc))
+                let attrs = try? FileManager.default.attributesOfItem(atPath: f.path)
+                let modified = attrs?[.modificationDate] as? Date
+                entries.append(
+                    SkillIndexEntry(
+                        agent: agent,
+                        name: name,
+                        path: f.path,
+                        description: desc,
+                        modified: modified,
+                        referencesCount: doc.referencesCount,
+                        assetsCount: doc.assetsCount,
+                        scriptsCount: doc.scriptsCount
+                    )
+                )
             }
         }
 
@@ -49,9 +70,15 @@ public enum SkillIndexer {
             codexRoots.forEach { collect(agent: .codex, root: $0) }
         case .claude:
             if let c = claudeRoot { collect(agent: .claude, root: c) }
-        case .both:
+        case .codexSkillManager:
+            if let csm = codexSkillManagerRoot { collect(agent: .codexSkillManager, root: csm) }
+        case .copilot:
+            if let cp = copilotRoot { collect(agent: .copilot, root: cp) }
+        case .all:
             codexRoots.forEach { collect(agent: .codex, root: $0) }
             if let c = claudeRoot { collect(agent: .claude, root: c) }
+            if let csm = codexSkillManagerRoot { collect(agent: .codexSkillManager, root: csm) }
+            if let cp = copilotRoot { collect(agent: .copilot, root: cp) }
         }
 
         return entries.sorted { lhs, rhs in
@@ -66,7 +93,7 @@ public enum SkillIndexer {
     public static func generate(
         codexRoot: URL?,
         claudeRoot: URL?,
-        include: IndexInclude = .both,
+        include: IndexInclude = .all,
         recursive: Bool = false,
         maxDepth: Int? = nil,
         excludes: [String] = [".git", ".system", "__pycache__", ".DS_Store"],
@@ -76,6 +103,8 @@ public enum SkillIndexer {
         return generate(
             codexRoots: roots,
             claudeRoot: claudeRoot,
+            codexSkillManagerRoot: nil,
+            copilotRoot: nil,
             include: include,
             recursive: recursive,
             maxDepth: maxDepth,
@@ -98,12 +127,13 @@ public enum SkillIndexer {
         md.append("generated: \(ISO8601DateFormatter().string(from: Date()))")
         md.append("---\n")
         md.append("# Skills Index\n")
-        md.append("| Agent | Skill | Description | Path |")
-        md.append("| --- | --- | --- | --- |")
+        md.append("| Agent | Skill | Description | Path | Modified | #Refs | #Assets | #Scripts |")
+        md.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
         for e in entries {
             let desc = e.description.isEmpty ? "" : e.description.replacingOccurrences(of: "|", with: "\\|")
             let path = e.path.replacingOccurrences(of: "|", with: "\\|")
-            md.append("| \(e.agent.rawValue) | \(e.name) | \(desc) | `\(path)` |")
+            let modified = e.modified.map { DateFormatter.shortDateTime.string(from: $0) } ?? ""
+            md.append("| \(e.agent.rawValue) | \(e.name) | \(desc) | `\(path)` | \(modified) | \(e.referencesCount) | \(e.assetsCount) | \(e.scriptsCount) |")
         }
         md.append("\n## Changelog")
         if let note = changelogNote, !note.isEmpty {
@@ -132,7 +162,7 @@ public enum SkillIndexer {
     }
 }
 
-private extension DateFormatter {
+public extension DateFormatter {
     static let shortDateTime: DateFormatter = {
         let df = DateFormatter()
         df.dateStyle = .medium

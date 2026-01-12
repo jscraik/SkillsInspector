@@ -15,76 +15,98 @@ struct StatsView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(spacing: DesignTokens.Spacing.sm) {
+                // Header with improved styling
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                     HStack {
-                        Text("Validation Statistics")
-                            .heading2()
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                            Text("Statistics")
+                                .heading2()
+                            Text("Analysis overview and insights")
+                                .bodySmall()
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                        }
                         Spacer()
                         if severityFilter != nil || agentFilter != nil {
                             Button {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.2)) {
                                     severityFilter = nil
                                     agentFilter = nil
                                 }
                             } label: {
                                 Label("Clear Filters", systemImage: "xmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .captionText()
+                                    .foregroundStyle(DesignTokens.Colors.Accent.blue)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.glass)
+                            .controlSize(.small)
                             .accessibilityLabel("Clear all filters")
                         }
                     }
+                    
+                    // Progress indicator
                     if viewModel.isScanning {
                         ProgressView()
                             .progressViewStyle(.linear)
+                            .tint(DesignTokens.Colors.Accent.blue)
                     }
+                    
+                    // Active filters display
                     if let sev = severityFilter {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(sev.color)
-                                .frame(width: 8, height: 8)
-                            Text("Filtering by \(sev.rawValue) severity")
+                        HStack(spacing: DesignTokens.Spacing.xxxs) {
+                            Image(systemName: sev.icon)
+                                .foregroundStyle(sev.color)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Text("Filtering by \(sev.rawValue) severity")
+                                .captionText()
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
                         }
-                        .padding(.vertical, 4)
-                        .transition(.opacity)
+                        .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                        .padding(.vertical, DesignTokens.Spacing.hair)
+                        .background(sev.color.opacity(0.1))
+                        .cornerRadius(DesignTokens.Radius.sm)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     }
                     if let agent = agentFilter {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(agent.color)
-                                .frame(width: 8, height: 8)
-                            Text("Filtering by \(agent.rawValue) agent")
+                        HStack(spacing: DesignTokens.Spacing.xxxs) {
+                            Image(systemName: agent.icon)
+                                .foregroundStyle(agent.color)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Text("Filtering by \(agent.displayName)")
+                                .captionText()
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
                         }
-                        .padding(.vertical, 4)
-                        .transition(.opacity)
+                        .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                        .padding(.vertical, DesignTokens.Spacing.hair)
+                        .background(agent.color.opacity(0.1))
+                        .cornerRadius(DesignTokens.Radius.sm)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     }
                 }
+                .padding(DesignTokens.Spacing.xs)
+                .background(glassBarStyle(cornerRadius: DesignTokens.Radius.lg))
                 
-                // Summary cards
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    statCard(title: "Total Files", value: "\(viewModel.filesScanned)", icon: "doc.fill", color: DesignTokens.Colors.Accent.blue)
-                    statCard(title: "Findings", value: "\(viewModel.findings.count)", icon: "exclamationmark.triangle.fill", color: DesignTokens.Colors.Accent.orange)
+                // Summary cards with improved layout
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: DesignTokens.Spacing.xs),
+                    GridItem(.flexible(), spacing: DesignTokens.Spacing.xs)
+                ], spacing: DesignTokens.Spacing.xs) {
+                    statCard(title: "Files Scanned", value: "\(viewModel.filesScanned)", icon: "doc.fill", color: DesignTokens.Colors.Accent.blue)
+                    statCard(title: "Total Findings", value: "\(viewModel.findings.count)", icon: "exclamationmark.triangle.fill", color: DesignTokens.Colors.Accent.orange)
                     statCard(title: "Errors", value: "\(stats.errorCount)", icon: "xmark.circle.fill", color: DesignTokens.Colors.Status.error)
                     statCard(title: "Warnings", value: "\(stats.warningCount)", icon: "exclamationmark.triangle.fill", color: DesignTokens.Colors.Status.warning)
                 }
                 
-                // Charts
+                // Charts section with improved organization
                 if !viewModel.findings.isEmpty {
-                    VStack(spacing: 20) {
+                    VStack(spacing: DesignTokens.Spacing.xs) {
                         sectionCard(title: "Findings by Severity", icon: "exclamationmark.triangle.fill", tint: DesignTokens.Colors.Accent.orange) {
                             severityChart
                         }
                         sectionCard(title: "Findings by Agent", icon: "person.2", tint: DesignTokens.Colors.Accent.purple) {
                             agentChart
                         }
-                        sectionCard(title: "Top 10 Most Common Rules", icon: "list.number", tint: DesignTokens.Colors.Accent.blue) {
+                        sectionCard(title: "Most Common Issues", icon: "list.number", tint: DesignTokens.Colors.Accent.blue) {
                             topRulesChart
                         }
                         sectionCard(title: "Fix Availability", icon: "wand.and.stars", tint: DesignTokens.Colors.Accent.green) {
@@ -95,45 +117,70 @@ struct StatsView: View {
                     emptyState
                 }
             }
-            .padding(20)
+            .padding(DesignTokens.Spacing.xs)
         }
+        .background(DesignTokens.Colors.Background.primary)
     }
     
     private func statCard(title: String, value: String, icon: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
                 Image(systemName: icon)
                     .foregroundStyle(color)
+                    .font(.callout)
                 Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .captionText(emphasis: true)
+                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                    .textCase(.uppercase)
+                Spacer()
             }
+            
             Text(value)
-                .font(.system(.title, design: .rounded))
-                .fontWeight(.bold)
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .foregroundStyle(DesignTokens.Colors.Text.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
+        .padding(DesignTokens.Spacing.xs)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
+                .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: color.opacity(0.06)))
+        )
         .overlay(alignment: .leading) {
-            Capsule()
-                .fill(color.opacity(0.25))
-                .frame(width: 5)
-                .padding(.vertical, 6)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
+                .stroke(color.opacity(0.2), lineWidth: 1)
         }
-        .cardStyle(tint: color)
+        .overlay(alignment: .topLeading) {
+            Rectangle()
+                .fill(color)
+                .frame(width: 4, height: 20)
+                .cornerRadius(2, corners: .topLeft)
+                .offset(x: 0, y: DesignTokens.Spacing.xs)
+        }
     }
     
     private func sectionCard<Content: View>(title: String, icon: String, tint: Color, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
                 Image(systemName: icon)
                     .foregroundStyle(tint)
+                    .font(.title3)
                 Text(title)
                     .heading3()
+                Spacer()
             }
+            .padding(.bottom, DesignTokens.Spacing.hair)
+            
             content()
         }
-        .cardStyle(tint: tint)
+        .padding(DesignTokens.Spacing.xs)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
+                .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: tint.opacity(0.04)))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
+                .stroke(tint.opacity(0.15), lineWidth: 1)
+        )
     }
     
     private var severityChart: some View {
@@ -217,7 +264,7 @@ struct StatsView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Agent breakdown chart. Tap a legend item below to filter by that agent.")
             
-            HStack(spacing: 16) {
+            HStack(spacing: DesignTokens.Spacing.xs) {
                 ForEach(stats.agentBreakdown, id: \.agent) { item in
                     let isSelected = agentFilter == item.agent
                     let isFiltered = agentFilter != nil && !isSelected
@@ -225,7 +272,7 @@ struct StatsView: View {
                     
                     Label {
                         Text("\(item.agent.rawValue.capitalized): \(item.count)")
-                            .font(.caption)
+                            .captionText()
                     } icon: {
                         Circle()
                             .fill(item.agent.color.opacity(opacity))
@@ -258,7 +305,7 @@ struct StatsView: View {
                     x: .value("Count", item.count),
                     y: .value("Rule", item.ruleID)
                 )
-                .foregroundStyle(.blue.gradient)
+                .foregroundStyle(DesignTokens.Colors.Accent.blue.gradient)
                 .annotation(position: .trailing) {
                     Text("\(item.count)")
                         .font(.caption2)
@@ -316,7 +363,7 @@ struct StatsView: View {
                     innerRadius: .ratio(0.5),
                     angularInset: 2
                 )
-                .foregroundStyle(.gray)
+                .foregroundStyle(DesignTokens.Colors.Accent.gray)
                 .annotation(position: .overlay) {
                     VStack(spacing: 2) {
                         Image(systemName: "xmark")
@@ -330,34 +377,43 @@ struct StatsView: View {
             }
             .frame(height: 200)
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
                 Label("Auto-fixable: \(autoFixable)", systemImage: "wand.and.stars")
-                    .font(.caption)
+                    .captionText()
                     .foregroundStyle(DesignTokens.Colors.Accent.green)
                 Label("Manual fix: \(manualFix)", systemImage: "wrench")
-                    .font(.caption)
+                    .captionText()
                     .foregroundStyle(DesignTokens.Colors.Accent.blue)
                 Label("No fix available: \(noFix)", systemImage: "xmark")
-                    .font(.caption)
+                    .captionText()
                     .foregroundStyle(DesignTokens.Colors.Accent.gray)
             }
         }
     }
     
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DesignTokens.Spacing.xs) {
             Image(systemName: "chart.bar")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            Text("No findings to display")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            Text("Run a validation scan to see statistics")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 64))
+                .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
+                .padding(.bottom, DesignTokens.Spacing.xxxs)
+            
+            Text("No Statistics Available")
+                .heading2()
+                .foregroundStyle(DesignTokens.Colors.Text.primary)
+            
+            Text("Run a validation scan to generate insights and statistics about your skill files")
+                .bodySmall()
+                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 400)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(40)
+        .padding(DesignTokens.Spacing.xl)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.xl, style: .continuous)
+                .fill(glassPanelStyle(cornerRadius: DesignTokens.Radius.xl, tint: DesignTokens.Colors.Accent.blue.opacity(0.03)))
+        )
     }
 }
 

@@ -98,6 +98,16 @@ public enum DesignTokens {
 
     public enum Shadow {
         public static let card = ShadowSpec(radius: 16, x: 0, y: 4, color: Color.black.opacity(0.05))
+        public static let subtle = ShadowSpec(radius: 8, x: 0, y: 2, color: Color.black.opacity(0.03))
+        public static let elevated = ShadowSpec(radius: 24, x: 0, y: 8, color: Color.black.opacity(0.08))
+    }
+    
+    public enum Layout {
+        public static let sidebarMinWidth: CGFloat = 220
+        public static let sidebarIdealWidth: CGFloat = 260
+        public static let sidebarMaxWidth: CGFloat = 340
+        public static let minRowHeight: CGFloat = 36
+    }
         public static let pip = ShadowSpec(radius: 16, x: 0, y: 4, color: Color.black.opacity(0.05))
         public static let pill = ShadowSpec(radius: 22, x: 0, y: 10, color: Color.black.opacity(0.04))
         public static let close = ShadowSpec(radius: 8, x: 0, y: 4, color: Color.black.opacity(0.16))

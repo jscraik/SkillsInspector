@@ -14,21 +14,20 @@ struct FindingDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                 // Header Card
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
                         Image(systemName: finding.severity.icon)
                             .foregroundStyle(finding.severity.color)
                             .font(.title2)
                         Text(finding.severity.rawValue.uppercased())
-                            .font(.caption)
-                            .fontWeight(.bold)
+                            .captionText(emphasis: true)
                             .foregroundStyle(finding.severity.color)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                            .padding(.vertical, DesignTokens.Spacing.hair)
                             .background(finding.severity.color.opacity(0.15))
-                            .cornerRadius(4)
+                            .cornerRadius(DesignTokens.Radius.sm)
                     }
                     
                     Text(finding.ruleID)
@@ -38,28 +37,26 @@ struct FindingDetailView: View {
                     Divider()
                     
                     // Message
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair + DesignTokens.Spacing.micro) {
                         Text("Message")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .captionText()
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
                             .textCase(.uppercase)
                         Text(finding.message)
-                            .font(.body)
+                            .bodyText()
                             .textSelection(.enabled)
                     }
                 }
-                .padding(16)
-                .background(DesignTokens.Colors.Background.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                .padding(DesignTokens.Spacing.xs)
+                .background(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: finding.severity.color.opacity(0.08)))
                 
                 // Details Card
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
                         Image(systemName: "info.circle.fill")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(DesignTokens.Colors.Accent.blue)
                         Text("Details")
-                            .font(.headline)
+                            .heading3()
                     }
                     
                     Divider()
@@ -71,19 +68,17 @@ struct FindingDetailView: View {
                         detailRow(icon: "number", label: "Line", value: "\(line)")
                     }
                 }
-                .padding(16)
-                .background(DesignTokens.Colors.Background.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                .padding(DesignTokens.Spacing.xs)
+                .background(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: DesignTokens.Colors.Accent.blue.opacity(0.06)))
                 
                 // Markdown Preview Card (only for .md files)
                 if finding.fileURL.pathExtension.lowercased() == "md" {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
                         HStack {
                             Image(systemName: "doc.richtext")
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(DesignTokens.Colors.Accent.purple)
                             Text("Markdown Preview")
-                                .font(.headline)
+                                .heading3()
                             Spacer()
                             Toggle("", isOn: $showPreview)
                                 .toggleStyle(.switch)
@@ -97,8 +92,7 @@ struct FindingDetailView: View {
                                 MarkdownPreviewView(content: content)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 400)
-                                    .background(Color(.controlBackgroundColor))
-                                    .cornerRadius(8)
+                                    .background(glassPanelStyle(cornerRadius: DesignTokens.Radius.md, tint: DesignTokens.Colors.Accent.purple.opacity(0.06)))
                             } else {
                                 ProgressView("Loading...")
                                     .frame(maxWidth: .infinity)
@@ -106,10 +100,8 @@ struct FindingDetailView: View {
                             }
                         }
                     }
-                    .padding(16)
-                    .background(DesignTokens.Colors.Background.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                    .padding(DesignTokens.Spacing.xs)
+                    .background(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: DesignTokens.Colors.Accent.purple.opacity(0.05)))
                     .onAppear {
                         loadMarkdownContent()
                     }
@@ -117,19 +109,19 @@ struct FindingDetailView: View {
                 
                 // Suggested Fix Card (if available)
                 if let fix = finding.suggestedFix {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                        HStack(spacing: DesignTokens.Spacing.xxxs) {
                             Image(systemName: "wrench.and.screwdriver.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(DesignTokens.Colors.Accent.green)
                             Text("Suggested Fix")
-                                .font(.headline)
+                                .heading3()
                         }
                         
                         Divider()
                         
                         Text(fix.description)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                            .bodyText()
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
                         
                         if fix.automated {
                             Button {
@@ -142,28 +134,26 @@ struct FindingDetailView: View {
                             .controlSize(.large)
                         } else {
                             Label("Manual fix required - open in editor", systemImage: "hand.point.up")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .captionText()
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
                         }
                     }
-                    .padding(16)
-                    .background(DesignTokens.Colors.Background.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                    .padding(DesignTokens.Spacing.xs)
+                    .background(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: DesignTokens.Colors.Accent.blue.opacity(0.06)))
                 }
                 
                 // Actions Card
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
                         Image(systemName: "bolt.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(DesignTokens.Colors.Accent.orange)
                         Text("Actions")
-                            .font(.headline)
+                            .heading3()
                     }
                     
                     Divider()
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: DesignTokens.Spacing.xxxs) {
                         Menu {
                             ForEach(EditorIntegration.installedEditors, id: \.self) { editor in
                                 Button {
@@ -200,26 +190,24 @@ struct FindingDetailView: View {
                         }
                     }
                 }
-                .padding(16)
-                .background(DesignTokens.Colors.Background.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                .padding(DesignTokens.Spacing.xs)
+                .background(glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: DesignTokens.Colors.Accent.orange.opacity(0.06)))
             }
-            .padding(20)
+            .padding(DesignTokens.Spacing.xs)
         }
         .toast($toastMessage)
     }
 
     private func detailRow(icon: String, label: String, value: String, color: Color = .primary) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.xxxs) {
             Image(systemName: icon)
                 .foregroundStyle(color)
                 .frame(width: 20)
                 .font(.callout)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.micro) {
                 Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .captionText()
+                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 Text(value)
                     .font(.system(.callout, design: label == "File" || label == "Path" ? .monospaced : .default))
                     .textSelection(.enabled)
@@ -285,19 +273,18 @@ struct FindingDetailView: View {
 
     // MARK: - Cards
     private var headerCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
                 Image(systemName: finding.severity.icon)
                     .foregroundStyle(finding.severity.color)
                     .font(.title2)
                 Text(finding.severity.rawValue.uppercased())
-                    .font(.system(size: DesignTokens.Typography.Caption.size, weight: DesignTokens.Typography.Caption.weight))
-                    .fontWeight(.bold)
+                    .captionText(emphasis: true)
                     .foregroundStyle(finding.severity.color)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                    .padding(.vertical, DesignTokens.Spacing.hair)
                     .background(finding.severity.color.opacity(0.15))
-                    .cornerRadius(6)
+                    .cornerRadius(DesignTokens.Radius.sm)
             }
             
             Text(finding.ruleID)
@@ -432,7 +419,7 @@ struct FindingDetailView: View {
                 } primaryAction: {
                     FindingActions.openInEditor(finding.fileURL, line: finding.line)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 .controlSize(.large)
                 
                 HStack(spacing: 8) {
@@ -442,7 +429,7 @@ struct FindingDetailView: View {
                         Label("Show in Finder", systemImage: "folder")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                     
                     Button {
                         addToBaseline()
@@ -450,7 +437,7 @@ struct FindingDetailView: View {
                         Label("Add to Baseline", systemImage: "checkmark.circle")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glassProminent)
                 }
             }
         }

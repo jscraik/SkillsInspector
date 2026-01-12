@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skillsctl remote install output",
+  "type": "object",
+  "required": ["destination", "filesCopied", "bytes"],
+  "properties": {
+    "destination": { "type": "string" },
+    "filesCopied": { "type": "integer", "minimum": 0 },
+    "bytes": { "type": "integer", "minimum": 0 },
+    "archiveSHA256": { "type": ["string", "null"] },
+    "contentSHA256": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

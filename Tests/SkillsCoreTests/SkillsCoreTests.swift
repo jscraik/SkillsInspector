@@ -89,6 +89,56 @@ final class SkillsCoreTests: XCTestCase {
         try? FileManager.default.removeItem(at: temp)
     }
 
+    func testPathValidatorRejectsTraversal() {
+        let result = PathValidator.validatedDirectory(from: "/tmp/../etc")
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .traversal)
+        default:
+            XCTFail("Expected traversal failure")
+        }
+    }
+
+    func testPathValidatorRejectsNotDirectory() throws {
+        let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try "hi".write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+        let result = PathValidator.validatedDirectory(from: tempFile.path)
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .notDirectory)
+        default:
+            XCTFail("Expected notDirectory failure")
+        }
+    }
+
+    func testPathValidatorEmpty() {
+        let result = PathValidator.validatedDirectory(from: "   ")
+        if case .failure(let error) = result {
+            XCTAssertEqual(error, .empty)
+        } else {
+            XCTFail("Expected empty failure")
+        }
+    }
+
+    func testCodexSkillManagerRootScans() throws {
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent("csm-\(UUID().uuidString)", isDirectory: true)
+        let skillDir = temp.appendingPathComponent("example", isDirectory: true)
+        try FileManager.default.createDirectory(at: skillDir, withIntermediateDirectories: true)
+        let skillFile = skillDir.appendingPathComponent("SKILL.md")
+        try """
+        ---
+        name: csm-example
+        description: example
+        ---
+        """.write(to: skillFile, atomically: true, encoding: .utf8)
+
+        let root = ScanRoot(agent: .codexSkillManager, rootURL: temp, recursive: false)
+        let files = SkillsScanner.findSkillFiles(roots: [root], excludeDirNames: [".git"], excludeGlobs: [])
+        XCTAssertEqual(files[root]?.count, 1)
+        try? FileManager.default.removeItem(at: temp)
+    }
+
     private func fixture(_ relative: String) -> URL {
         let file = URL(fileURLWithPath: relative).lastPathComponent
         let name = URL(fileURLWithPath: file).deletingPathExtension().lastPathComponent

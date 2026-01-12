@@ -9,7 +9,7 @@ final class UISnapshotsTests: XCTestCase {
     func testStatsViewSnapshotHash() throws {
         let view = StatsSnapshotHarness(findings: Self.sampleFindings)
         let hash = Self.renderHash(for: view, size: CGSize(width: 800, height: 1200))
-        XCTAssertEqual(hash, "b00e216df8e8b7af393eaff95ef3463bcb25fff1494058cd5486be17f82c20c2")
+        XCTAssertEqual(hash, "aae8de6a323f70bb1262804570b35d1cce8a51f8b874e7e379aa32e01964586b")
     }
 
     func testMarkdownPreviewSnapshotHash() throws {
@@ -35,7 +35,12 @@ final class UISnapshotsTests: XCTestCase {
         vm.filesScanned = 3
         vm.cacheHits = 1
         vm.isScanning = false
-        let view = StatsView(viewModel: vm)
+        let view = StatsView(
+            viewModel: vm,
+            mode: .constant(.stats),
+            severityFilter: .constant(nil),
+            agentFilter: .constant(nil)
+        )
             .environment(\.colorScheme, .light)
         let hash = Self.renderHash(for: view, size: CGSize(width: 800, height: 1200))
         XCTAssertEqual(hash, "44b0a0ea804e6358ad4fff0f638ae26574abc63b37c39094206cc51242dca20b")

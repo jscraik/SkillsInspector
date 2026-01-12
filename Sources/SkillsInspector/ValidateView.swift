@@ -64,62 +64,182 @@ struct ValidateView: View {
     }
 
     private var toolbar: some View {
-        HStack(spacing: 12) {
-            Button(viewModel.isScanning ? "Scanning…" : "Scan") {
-                Task { await viewModel.scan() }
-            }
-            .keyboardShortcut("r", modifiers: .command)
-            .disabled(viewModel.isScanning)
-            
-            Button("Cancel") { viewModel.cancelScan() }
-                .disabled(!viewModel.isScanning)
-            
-            Toggle("Watch", isOn: $viewModel.watchMode)
-                .toggleStyle(.switch)
-                .controlSize(.small)
+        VStack(spacing: 0) {
+            // Main toolbar
+            HStack(spacing: DesignTokens.Spacing.xs) {
+                // Primary actions group
+                HStack(spacing: DesignTokens.Spacing.xxxs) {
+                    Button(viewModel.isScanning ? "Scanning…" : "Scan") {
+                        Task { await viewModel.scan() }
+                    }
+                    .keyboardShortcut("r", modifiers: .command)
+                    .disabled(viewModel.isScanning)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+                    
+                    Button("Cancel") { 
+                        viewModel.cancelScan() 
+                    }
+                    .disabled(!viewModel.isScanning)
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                }
+                
+                Divider()
+                    .frame(height: 24)
+                
+                // Watch mode toggle
+                HStack(spacing: DesignTokens.Spacing.xxxs) {
+                    Label("Watch Mode", systemImage: "eye")
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(viewModel.watchMode ? DesignTokens.Colors.Accent.green : DesignTokens.Colors.Icon.secondary)
+                    Toggle("", isOn: $viewModel.watchMode)
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                }
                 .help("Automatically re-scan when files change")
-            
-            Divider()
-                .frame(height: 20)
-            
-            Button {
-                showingExportDialog = true
-            } label: {
-                Label("Export", systemImage: "square.and.arrow.up")
-            }
-            .disabled(viewModel.findings.isEmpty)
-            .help("Export validation results")
-
-            // Progress indicator when scanning
-            if viewModel.isScanning {
-                HStack(spacing: 4) {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                    if viewModel.totalFiles > 0 {
-                        Text("\(viewModel.filesScanned)/\(viewModel.totalFiles)")
+                
+                Spacer()
+                
+                // Progress and stats
+                if viewModel.isScanning {
+                    HStack(spacing: DesignTokens.Spacing.xxxs) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(DesignTokens.Colors.Accent.blue)
+                        if viewModel.totalFiles > 0 {
+                            Text("\(viewModel.filesScanned)/\(viewModel.totalFiles)")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                        }
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                    .padding(.vertical, DesignTokens.Spacing.hair)
+                    .background(DesignTokens.Colors.Accent.blue.opacity(0.1))
+                    .cornerRadius(DesignTokens.Radius.sm)
+                }
+                
+                // Cache stats
+                if viewModel.cacheHits > 0 && viewModel.filesScanned > 0 {
+                    let hitRate = Int(Double(viewModel.cacheHits) / Double(viewModel.filesScanned) * 100)
+                    HStack(spacing: DesignTokens.Spacing.hair) {
+                        Image(systemName: "bolt.fill")
+                            .foregroundStyle(DesignTokens.Colors.Accent.green)
+                            .font(.caption2)
+                        Text("\(hitRate)%")
                             .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                    }
+                    .padding(.horizontal, DesignTokens.Spacing.xxxs)
+                    .padding(.vertical, DesignTokens.Spacing.hair)
+                    .background(DesignTokens.Colors.Accent.green.opacity(0.1))
+                    .cornerRadius(DesignTokens.Radius.sm)
+                    .help("Cache hit rate: \(hitRate)%")
+                }
+                
+                // Export button
+                Menu {
+                    ForEach(ExportFormat.allCases, id: \.self) { format in
+                        Button {
+                            exportFormat = format
+                            showingExportDialog = true
+                        } label: {
+                            Label(format.rawValue, systemImage: format.icon)
+                        }
+                    }
+                } label: {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                }
+                .disabled(viewModel.findings.isEmpty)
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help("Export validation results")
+            }
+            .padding(.horizontal, DesignTokens.Spacing.xs)
+            .padding(.vertical, DesignTokens.Spacing.xxs)
+            .background(glassBarStyle(cornerRadius: 0))
+            
+            // Stats summary bar
+            if !viewModel.findings.isEmpty || viewModel.filesScanned > 0 {
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    // Severity badges
+                    let errors = viewModel.findings.filter { $0.severity == .error }.count
+                    let warnings = viewModel.findings.filter { $0.severity == .warning }.count
+                    let infos = viewModel.findings.filter { $0.severity == .info }.count
+                    
+                    severityBadge(count: errors, severity: .error, isActive: severityFilter == .error)
+                    severityBadge(count: warnings, severity: .warning, isActive: severityFilter == .warning)
+                    severityBadge(count: infos, severity: .info, isActive: severityFilter == .info)
+                    
+                    Spacer()
+                    
+                    // Scan timing
+                    if let duration = viewModel.lastScanDuration {
+                        HStack(spacing: DesignTokens.Spacing.hair) {
+                            Image(systemName: "clock")
+                                .font(.caption2)
+                            Text(String(format: "%.2fs", duration))
+                                .font(.system(.caption, design: .monospaced))
+                        }
+                        .foregroundStyle(DesignTokens.Colors.Text.tertiary)
+                    }
+                    
+                    if let lastScan = viewModel.lastScanAt {
+                        Text(lastScan.formatted(date: .omitted, time: .shortened))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(DesignTokens.Colors.Text.tertiary)
                     }
                 }
+                .padding(.horizontal, DesignTokens.Spacing.xs)
+                .padding(.vertical, DesignTokens.Spacing.xxxs)
+                .background(DesignTokens.Colors.Background.secondary.opacity(0.5))
             }
-
-            Spacer()
-
-            // Cache stats
-            if viewModel.cacheHits > 0 && viewModel.filesScanned > 0 {
-                let hitRate = Int(Double(viewModel.cacheHits) / Double(viewModel.filesScanned) * 100)
-                Text("Cache: \(viewModel.cacheHits)/\(viewModel.filesScanned)")
+        }
+    }
+    
+    private func severityBadge(count: Int, severity: Severity, isActive: Bool) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if severityFilter == severity {
+                    severityFilter = nil
+                } else {
+                    severityFilter = severity
+                    agentFilter = nil
+                }
+            }
+        } label: {
+            HStack(spacing: DesignTokens.Spacing.hair) {
+                Image(systemName: severity.icon)
+                    .font(.caption2)
+                Text("\(count)")
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .help("Cache hit rate: \(hitRate)%")
+                    .fontWeight(count > 0 ? .medium : .regular)
             }
-
-            // Stats badges
-            HStack(spacing: 12) {
-                let errors = viewModel.findings.filter { $0.severity == .error }.count
-                let warnings = viewModel.findings.filter { $0.severity == .warning }.count
+            .foregroundStyle(count > 0 ? severity.color : DesignTokens.Colors.Text.tertiary)
+            .padding(.horizontal, DesignTokens.Spacing.xxxs)
+            .padding(.vertical, DesignTokens.Spacing.hair)
+            .background(
+                Group {
+                    if isActive {
+                        severity.color.opacity(0.2)
+                    } else if count > 0 {
+                        severity.color.opacity(0.1)
+                    } else {
+                        Color.clear
+                    }
+                }
+            )
+            .cornerRadius(DesignTokens.Radius.sm)
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .stroke(isActive ? severity.color.opacity(0.5) : Color.clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .help("\(severity.rawValue.capitalized): \(count) findings")
+    }
                 
-                HStack(spacing: 4) {
+                HStack(spacing: DesignTokens.Spacing.hair) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(errors > 0 ? DesignTokens.Colors.Status.error : DesignTokens.Colors.Icon.secondary)
                     Text("\(errors)")
@@ -127,7 +247,7 @@ struct ValidateView: View {
                 .font(.callout)
                 .help("Errors")
                 
-                HStack(spacing: 4) {
+                HStack(spacing: DesignTokens.Spacing.hair) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(warnings > 0 ? DesignTokens.Colors.Status.warning : DesignTokens.Colors.Icon.secondary)
                     Text("\(warnings)")
@@ -143,9 +263,9 @@ struct ValidateView: View {
                     .help("Scan duration")
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .padding(.horizontal, DesignTokens.Spacing.xxs)
+        .padding(.vertical, DesignTokens.Spacing.xxxs)
+        .background(glassBarStyle(tint: DesignTokens.Colors.Accent.blue.opacity(0.05)))
         .font(.system(size: DesignTokens.Typography.BodySmall.size, weight: .regular))
     }
 
@@ -160,7 +280,7 @@ struct ValidateView: View {
                     List {
                         ForEach(0..<5, id: \.self) { _ in
                             SkeletonFindingRow()
-                                .listRowBackground(Color.clear)
+                                .listRowBackground(glassPanelStyle(cornerRadius: 12, tint: Color.primary.opacity(0.05)))
                                 .listRowInsets(EdgeInsets())
                         }
                     }
@@ -193,6 +313,9 @@ struct ValidateView: View {
                 } else {
                     // Normal list
                     findingsList(filtered)
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                        .background(glassPanelStyle(cornerRadius: 0, tint: Color.primary.opacity(0.04)))
                 }
             }
             .frame(minWidth: 280, idealWidth: 340, maxWidth: 440)
@@ -214,16 +337,16 @@ struct ValidateView: View {
     }
     
     private var emptyDetailState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DesignTokens.Spacing.xxs) {
             Image(systemName: "sidebar.right")
                 .font(.system(size: 40))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
             Text("Select a finding to view details")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+                .heading3()
+                .foregroundStyle(DesignTokens.Colors.Text.secondary)
             Text("Click a finding from the list or use ↑↓ arrow keys")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .captionText()
+                .foregroundStyle(DesignTokens.Colors.Text.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -232,14 +355,17 @@ struct ValidateView: View {
         List(findings, selection: $selectedFinding) { finding in
             FindingRowView(finding: finding)
                 .tag(finding)
-                .listRowBackground(Color.clear)
+                .listRowBackground(glassPanelStyle(cornerRadius: 12, tint: finding.severity.color.opacity(0.08)))
                 .listRowInsets(EdgeInsets())
                 .contextMenu {
                     contextMenuItems(for: finding)
                 }
                 .cardStyle(selected: finding.id == selectedFinding?.id, tint: finding.severity == .error ? DesignTokens.Colors.Status.error : DesignTokens.Colors.Status.warning)
         }
-        .listStyle(.inset)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .listRowSeparator(.hidden)
+        .background(glassPanelStyle(cornerRadius: 10, tint: DesignTokens.Colors.Accent.blue.opacity(0.03)))
         .accessibilityLabel("Findings list")
         .onAppear {
             // Auto-select first finding if none selected
