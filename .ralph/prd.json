@@ -42,8 +42,8 @@
         "Migration/security notes added",
         "README updated with CLI examples"
       ],
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Updated AGENTS.md with security/quarantine commands, expanded README + docs usage with CLI examples and migration/security notes, and added DocC comments for public security APIs."
     }
   ]
 }

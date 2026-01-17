@@ -3,7 +3,9 @@ import CryptoKit
 
 /// Verification strictness for remote artifact handling.
 public enum RemoteVerificationMode: String, Codable, Sendable {
+    /// Allow artifacts with verification issues while still recording them.
     case permissive
+    /// Require verification to succeed; treat issues as install blockers.
     case strict
 }
 
@@ -19,9 +21,13 @@ public extension RemoteVerificationMode {
 
 /// Limits applied to downloaded and extracted archives to guard against zip bombs and oversized payloads.
 public struct RemoteVerificationLimits: Sendable {
+    /// Maximum archive size allowed for download (bytes).
     public let maxArchiveBytes: Int64
+    /// Maximum total size allowed after extraction (bytes).
     public let maxExtractedBytes: Int64
+    /// Maximum number of files allowed in the extracted archive.
     public let maxFileCount: Int
+    /// Allowed MIME types for downloadable artifacts.
     public let allowedMIMETypes: Set<String>
 
     public init(
@@ -117,9 +123,13 @@ public struct RemoteVerificationOutcome: Codable, Sendable {
 
 /// Local trust store for signer keys.
 public struct RemoteTrustStore: Sendable {
+    /// Trusted signer key metadata.
     public struct TrustedKey: Codable, Sendable {
+        /// Identifier for the key, used in manifests.
         public let keyId: String
+        /// Base64-encoded Ed25519 public key.
         public let publicKeyBase64: String
+        /// Optional list of slugs that the key may sign.
         public let allowedSlugs: [String]?
 
         public init(keyId: String, publicKeyBase64: String, allowedSlugs: [String]? = nil) {
@@ -135,6 +145,7 @@ public struct RemoteTrustStore: Sendable {
         self.keys = Dictionary(uniqueKeysWithValues: keys.map { ($0.keyId, $0) })
     }
 
+    /// Returns a trusted key scoped to an optional slug.
     public func trustedKey(for keyId: String, scopeSlug: String? = nil) -> TrustedKey? {
         guard let key = keys[keyId] else { return nil }
         if let allowed = key.allowedSlugs {
@@ -145,6 +156,7 @@ public struct RemoteTrustStore: Sendable {
         return key
     }
 
+    /// Verify a signature against a hex digest using a trusted key.
     public func verifySignature(hexDigest: String, signatureBase64: String, keyId: String, scopeSlug: String? = nil) throws -> Bool {
         guard let key = trustedKey(for: keyId, scopeSlug: scopeSlug) else { return false }
         guard let sigData = Data(base64Encoded: signatureBase64) else { return false }
@@ -208,9 +220,13 @@ public struct RemoteTrustStore: Sendable {
 
 /// Result of security scanning on downloaded skill content
 public enum SecurityCheckResult: Sendable {
+    /// No security issues were detected.
     case clean
+    /// Findings were detected but content is allowed with warnings.
     case warning(reasons: [String])
+    /// Content was quarantined and requires manual review.
     case quarantined(quarantineID: String, reasons: [String], safeExcerpt: String)
+    /// Content was blocked and must not be installed.
     case blocked(reason: String)
 
     public var isClean: Bool {
@@ -243,6 +259,7 @@ public actor QuarantineStore {
         return supportDir.appendingPathComponent("quarantine.json")
     }
 
+    /// A quarantined skill record awaiting review.
     public struct QuarantineItem: Codable, Sendable, Identifiable, Hashable {
         public let id: String
         public let skillName: String
@@ -253,6 +270,7 @@ public actor QuarantineStore {
         public let sourceURL: URL
         public let status: Status
 
+        /// Review status for a quarantined item.
         public enum Status: String, Codable, Sendable, Hashable {
             case pending
             case approved

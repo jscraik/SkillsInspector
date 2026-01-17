@@ -5,7 +5,7 @@
 - **Audience:** Intermediate developers familiar with Swift/CLI tools
 - **Scope:** Complete usage guide for all sTools components
 - **Owner:** sTools maintainers
-- **Last updated:** 2026-01-12
+- **Last updated:** 2026-01-17
 - **Review cadence:** With each major release
 
 ## CLI (skillsctl)
@@ -81,6 +81,24 @@ swift run skillsctl index --repo . --write --bump patch
 - Skills.md created/updated in skill roots
 - Version numbers incremented according to --bump flag
 - Index includes all discovered skills with metadata
+
+### Security & Quarantine
+
+**Run ACIP security scan on a skill directory:**
+
+```bash
+swift run skillsctl security scan path/to/skill
+# Expected: Summary of findings and recommended action (allow/quarantine/block)
+```
+
+**Review quarantined items:**
+
+```bash
+swift run skillsctl quarantine list
+swift run skillsctl quarantine approve <id>
+swift run skillsctl quarantine block <id>
+# Expected: Approved/rejected status updates for the quarantine item
+```
 
 ## Command plugin (SkillsLintPlugin)
 
@@ -164,3 +182,9 @@ swift build --product sTools && swift run sTools 2>&1
 - Use `--help` flag with any command for options
 - Check `--log-level debug` for detailed output
 - Review schemas in `docs/schema/` for JSON formats
+
+## Migration & Security Notes
+
+- Remote installs now enforce ACIP scanning; quarantined content blocks installs until reviewed.
+- Quarantine records are stored at `~/Library/Application Support/SkillsInspector/quarantine.json`.
+- Use `skillsctl quarantine list` to review pending items and `skillsctl quarantine approve <id>` or `skillsctl quarantine block <id>` to resolve.

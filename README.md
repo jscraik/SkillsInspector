@@ -165,6 +165,14 @@ skillsctl sync-check --repo .
 # Generate index (Skills.md) for both roots and bump version
 skillsctl index --repo . --write --bump patch
 
+# Run ACIP security scan on a skill directory
+skillsctl security scan path/to/skill
+
+# Review quarantined items
+skillsctl quarantine list
+skillsctl quarantine approve <id>
+skillsctl quarantine block <id>
+
 # Browse remote catalog and install skills
 skillsctl remote list --limit 10 --format json
 skillsctl remote search "sql"
@@ -235,6 +243,13 @@ CLI defaults:
 - Default excludes: `.git`, `.system`, `__pycache__`, `.DS_Store` (disable with `--no-default-excludes`).
 - Baselining/ignores: auto-load `.skillsctl/baseline.json` and `.skillsctl/ignore.json` when present.
 - Cache: stored at `<repo>/.skillsctl/cache.json` (disable with `--no-cache`; stats via `--show-cache-stats`).
+
+## Migration & Security Notes
+
+- Remote installs now enforce ACIP scanning; quarantined content blocks installs until reviewed.
+- Quarantine records are stored at `~/Library/Application Support/SkillsInspector/quarantine.json`.
+- Use `skillsctl quarantine list` to review pending items and `skillsctl quarantine approve <id>` or `skillsctl quarantine block <id>` to resolve.
+- If you need to reset quarantine state for a clean slate, delete the quarantine file and rerun installs.
 
 ## Troubleshooting
 

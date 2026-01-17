@@ -16,6 +16,8 @@
 - Build app: `swift build -c debug --product sTools`
 - Launch app after build: `open sTools.app`
 - Run CLI: `swift run skillsctl --help`
+- CLI security scan: `swift run skillsctl security scan <skill-path>`
+- CLI quarantine review: `swift run skillsctl quarantine list` and `swift run skillsctl quarantine approve <id>` / `swift run skillsctl quarantine block <id>`
 - Run tests: `swift test` (set `ALLOW_CHARTS_SNAPSHOT=1` to include chart
   snapshots)
 

@@ -1353,3 +1353,6 @@ All 10 acceptance criteria verified as implemented and functional.
 - [2026-01-17T01:00:32Z] iter 11 mode=prd status=UPDATE checks=PARTIAL story=S9 — Updated skillsctl entrypoint to run AsyncParsableCommand via Task + dispatchMain and kept @available annotation to satisfy async root; lint run hung while running skillsctl scan (SwiftPM lock), needs rerun.
 - [20260117T010221Z] iter 11 mode=prd status=DONE checks=PASS story=S9 agent=codex branch=ralph log=20260117T010221Z-iter0011-codex.log
 - [2026-01-17T01:31:36Z] iter 11 mode=prd status=UPDATE checks=PASS story=S10 — Added integration tests for workflow create→validate→approve→publish, ACIP quarantine details, search rebuild/query, and multi-agent sync; isolated workflow state storage in tests. Fixed failures by ensuring frontmatter starts at line 1 and creating temp roots for SQLite DBs.
+- [20260117T013201Z] iter 11 mode=prd status=DONE checks=PASS story=S10 agent=codex branch=ralph log=20260117T013201Z-iter0011-codex.log
+
+- [2026-01-17T01:37:51Z] iter 12 mode=prd status=UPDATE checks=PASS story=S11 — Updated AGENTS/README/docs usage with security scan + quarantine CLI examples and migration/security notes; added DocC comments for RemoteArtifactSecurity public APIs.
