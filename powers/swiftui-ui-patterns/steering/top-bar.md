@@ -2,7 +2,9 @@
 
 ## Intent
 
-Provide a custom top selector or pill row that sits above scroll content, using `safeAreaBar(.top)` on iOS 26 and a compatible fallback on earlier OS versions.
+Provide a custom top selector or pill row that sits above scroll content,
+using `safeAreaBar(.top)` on iOS 26 and a compatible fallback on earlier OS
+versions.
 
 ## iOS 26+ approach
 
@@ -20,7 +22,8 @@ if #available(iOS 26.0, *) {
 
 ## Fallback for earlier iOS
 
-Use `.safeAreaInset(edge: .top)` and hide the toolbar background to avoid double layers.
+Use `.safeAreaInset(edge: .top)` and hide the toolbar background to avoid
+double layers.
 
 ```swift
 content
@@ -39,8 +42,14 @@ content
 
 ## Design choices to keep
 
-- Use `safeAreaBar` when available; it integrates better with the navigation bar.
-- Use a subtle background + divider in the fallback to keep separation from content.
+- Use `safeAreaBar` when available; it integrates better with the navigation
+
+  bar.
+
+- Use a subtle background + divider in the fallback to keep separation from
+
+  content.
+
 - Keep the selector height compact to avoid pushing content too far down.
 
 ## Pitfalls

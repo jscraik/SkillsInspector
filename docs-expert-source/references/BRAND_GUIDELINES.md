@@ -8,23 +8,27 @@ license: Complete terms in LICENSE.txt
 
 ## Overview
 
-Use this reference to apply BrAInwav's brand identity consistently across software repositories and supporting artifacts. This is intended to support clarity, provenance, and readability in developer workflows (not marketing).
+Use this reference to apply BrAInwav's brand identity consistently across
+software repositories and supporting artifacts. This is intended to support
+clarity, provenance, and readability in developer workflows (not marketing).
 
-**Keywords**: branding, corporate identity, visual identity, documentation signature, styling, brand colors, typography, brAInwav, visual formatting, visual design, provenance
+**Keywords**: branding, corporate identity, visual identity, documentation
+signature, styling, brand colors, typography, brAInwav, visual formatting,
+visual design, provenance
 
 ## Documentation Signature (Recommended)
 
-BrAInwav uses a **documentation signature**, not a watermark. The signature is a small footer marker placed in root-level README files (and optionally key reference docs) to indicate stewardship without adding visual noise.
+BrAInwav uses a **documentation signature**, not a watermark. The signature is
+a small footer marker placed in root-level README files (and optionally key
+reference docs) to indicate stewardship without adding visual noise.
 
 ### Approved Text (Primary)
 
-brAInwav
-*from demo to duty*
+brAInwav *from demo to duty*
 
 ### Optional Text (Only when a descriptor is required)
 
-brAInwav - software engineering
-*from demo to duty*
+brAInwav - software engineering *from demo to duty*
 
 ### Rules
 
@@ -48,7 +52,7 @@ brAInwav - software engineering
 
 <br clear="left" />
 
-**brAInwav**  
+**brAInwav**
 _from demo to duty_
 ```
 
@@ -80,9 +84,12 @@ Do not mix ASCII and image marks in the same document.
 - Blue: `#6a9bcc` - Secondary accent
 - Green: `#788c5d` - Tertiary accent
 
-**Usage Rules**
+#### Usage Rules
 
-- Accent colors are decorative; do not rely on accent color alone to convey meaning.
+- Accent colors are decorative; do not rely on accent color alone to convey
+
+  meaning.
+
 - Maintain readable contrast in light and dark contexts.
 
 ### Typography
@@ -120,7 +127,10 @@ If you include a mark, keep it minimal and documentation-safe.
 ### Asset Requirements
 
 - Format: WebP (primary), PNG (optional fallback)
-- Background: may be transparent or badge-style (if badge-style, ensure it stays legible on both light and dark README themes)
+- Background: may be transparent or badge-style (if badge-style, ensure it
+
+  stays legible on both light and dark README themes)
+
 - No glow/blur/animation
 - Must be legible at 24-32px height
 - Provide a 2x retina version
@@ -152,15 +162,31 @@ If you include a mark, keep it minimal and documentation-safe.
 
 ## Enforcement (Make docs consistent)
 
-To keep documentation consistent across repos, enforce the brand rules in process and automation:
+To keep documentation consistent across repos, enforce the brand rules in
+process and automation:
 
-- **Templates**: Start new docs from the standard templates in `assets/` (README, doc, and agents templates). Update templates when guidelines change.
-- **Review checklist**: Require the Doc QA checklist to pass in doc PR reviews.
-- **CI linting**: Run markdownlint/vale (if present) plus a custom check that verifies:
+- **Templates**: Start new docs from the standard templates in `assets/`
+
+  (README, doc, and agents templates). Update templates when guidelines
+  change.
+
+- **Review checklist**: Require the Doc QA checklist to pass in doc PR
+
+  reviews.
+
+- **CI linting**: Run markdownlint/vale (if present) plus a custom check that
+
+  verifies:
+
   - Root `README.md` contains the documentation signature snippet.
-  - `/brand/` assets exist (`brand-mark.webp`, `brand-mark@2x.webp`, optional PNGs).
+  - `/brand/` assets exist (`brand-mark.webp`, `brand-mark@2x.webp`, optional
+
+    PNGs).
+
   - No watermark usage in README or technical docs.
-- **Pre-commit hooks**: Optionally block commits that remove or alter the signature.
+- **Pre-commit hooks**: Optionally block commits that remove or alter the
+
+  signature.
 
 ## Recommended Repo Layout
 
@@ -172,7 +198,8 @@ To keep documentation consistent across repos, enforce the brand rules in proces
 
 ## Skill Asset Location
 
-The official mark assets are stored in this skill and can be copied into a repo's `brand/` directory:
+The official mark assets are stored in this skill and can be copied into a
+repo's `brand/` directory:
 
 - `assets/brand/brand-mark.webp`
 - `assets/brand/brand-mark@2x.webp`

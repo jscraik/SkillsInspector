@@ -9,7 +9,7 @@ let package = Package(
     products: [
         .library(name: "SkillsCore", targets: ["SkillsCore"]),
         .executable(name: "skillsctl", targets: ["skillsctl"]),
-        .executable(name: "sTools", targets: ["SkillsInspector"]),
+        .executable(name: "SkillsInspector", targets: ["SkillsInspector"]),
         .plugin(name: "SkillsLintPlugin", targets: ["SkillsLintPlugin"])
     ],
     dependencies: [

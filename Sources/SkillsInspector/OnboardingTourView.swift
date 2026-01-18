@@ -101,7 +101,7 @@ struct OnboardingTourView: View {
                 .foregroundStyle(DesignTokens.Colors.Accent.blue)
                 .symbolEffect(.bounce, value: currentStep)
 
-            Text("Welcome to sTools")
+            Text("Welcome to SkillsInspector")
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(DesignTokens.Colors.Text.primary)
 
@@ -133,7 +133,7 @@ struct OnboardingTourView: View {
             .cornerRadius(DesignTokens.Radius.lg)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Welcome to sTools. Your trustworthy skills inspector with verify skills, track changes, and trust store features.")
+        .accessibilityLabel("Welcome to SkillsInspector. Your trustworthy skills inspector with verify skills, track changes, and trust store features.")
     }
 
     private func featureRow(icon: String, title: String, description: String) -> some View {
@@ -378,7 +378,7 @@ struct OnboardingTourView: View {
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(DesignTokens.Colors.Text.primary)
 
-            Text("sTools is ready to help you manage and verify your skills with confidence.")
+            Text("SkillsInspector is ready to help you manage and verify your skills with confidence.")
                 .bodyText()
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 .multilineTextAlignment(.center)
@@ -397,7 +397,7 @@ struct OnboardingTourView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("You're all set! sTools is ready to help you manage and verify your skills.")
+        .accessibilityLabel("You're all set! SkillsInspector is ready to help you manage and verify your skills.")
     }
 
     // MARK: - Navigation Buttons

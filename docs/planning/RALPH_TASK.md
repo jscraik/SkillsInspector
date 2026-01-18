@@ -7,20 +7,28 @@ lint_command: "swift format --lint ."
 
 # Ralph Task - sTools
 
-This is the default checkbox mode task file. Replace the placeholder task below with your actual work.
+This is the default checkbox mode task file. Replace the placeholder task
+below with your actual work.
 
 ## Success Criteria (checkboxes)
 
-Work through these checkboxes one at a time. Each checkbox should be small enough for 1-2 iterations.
+Work through these checkboxes one at a time. Each checkbox should be small
+enough for 1-2 iterations.
 
 ### Example: Add a New Feature
 
 1. [ ] **Add failing test** for the desired behavior
-   - Create test file in `Tests/SkillsCoreTests/` or appropriate test directory
+   - Create test file in `Tests/SkillsCoreTests/` or appropriate test
+
+     directory
+
    - Test should fail initially (TDD red phase)
 
 2. [ ] **Implement the behavior** to make test pass
-   - Modify source files in `Sources/SkillsCore/` or appropriate source directory
+   - Modify source files in `Sources/SkillsCore/` or appropriate source
+
+     directory
+
    - Run `swift test` to verify
 
 3. [ ] **All checks pass**

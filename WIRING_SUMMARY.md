@@ -4,7 +4,7 @@
 
 ### 1. Menu Commands Missing in Sync/Index Modes
 
-```
+```text
 App.swift (lines 31-53) posts notifications:
   ├─ ✅ ValidateView.onReceive() → InspectorViewModel
   ├─ ❌ SyncView (NO listeners)
@@ -15,7 +15,7 @@ Result: ⌘R, ⌘., ⌘⇧W shortcuts broken in Sync/Index
 
 ### 2. Root Paths Not Editable
 
-```
+```text
 InspectorViewModel.init() (lines 34-69):
   └─ Hardcoded: ~/.codex/skills, ~/.claude/skills
 
@@ -30,10 +30,10 @@ Result: Users stuck with defaults, can't test other repos
 
 ### 3. Index Ignores Multiple Roots
 
-```
+```text
 IndexViewModel.generate() (line 19):
   let codexRoot = codexRoots.first  // ⚠️ Drops rest
-  
+
 Result: If user has 2+ codex roots, only first is indexed
 ```
 
@@ -43,13 +43,13 @@ Result: If user has 2+ codex roots, only first is indexed
 
 ### Settings Divergence
 
-```
+```text
 InspectorViewModel:
   └─ recursive: Bool (bound to sidebar toggle)
-  
+
 SyncView:
   └─ @State private var recursive = false (local, ignores sidebar)
-  
+
 IndexViewModel:
   └─ recursive: Bool (separate instance, ignores sidebar)
 
@@ -58,7 +58,7 @@ Result: Sidebar "Recursive" toggle only affects Validate mode
 
 ### Hardcoded Excludes (3 locations)
 
-```
+```text
 InspectorViewModel.scan(): [".git", ".system", "__pycache__", ".DS_Store"]
 IndexViewModel.generate(): [".git", ".system", "__pycache__", ".DS_Store"]
 SyncViewModel.run():       [".git", ".system", "__pycache__", ".DS_Store"]
@@ -104,7 +104,12 @@ Recommendation: Define SkillsConfig.defaultExcludes
 
 ```swift
 .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in
-    Task { await viewModel.generate(codexRoots: codexRoots, claudeRoot: claudeRoot) }
+    Task {
+        await viewModel.generate(
+            codexRoots: codexRoots,
+            claudeRoot: claudeRoot
+        )
+    }
 }
 ```
 
@@ -114,14 +119,17 @@ Recommendation: Define SkillsConfig.defaultExcludes
 
 ```swift
 Section {
-    ForEach(Array(viewModel.codexRoots.enumerated()), id: \.offset) { index, url in
+    ForEach(
+        Array(viewModel.codexRoots.enumerated()),
+        id: \.offset
+    ) { index, url in
         RootRow(title: "Codex \(index + 1)", url: url) { newURL in
             if validateRoot(newURL) {
                 viewModel.codexRoots[index] = newURL
             }
         }
     }
-    
+
     RootRow(title: "Claude", url: viewModel.claudeRoot) { newURL in
         if validateRoot(newURL) {
             viewModel.claudeRoot = newURL
@@ -137,9 +145,9 @@ Section {
 Pass `viewModel.recursive` to child views:
 
 ```swift
-SyncView(viewModel: syncVM, codexRoot: ..., claudeRoot: ..., 
+SyncView(viewModel: syncVM, codexRoot: ..., claudeRoot: ...,
          recursive: viewModel.recursive)  // Add binding
-IndexView(viewModel: indexVM, ..., 
+IndexView(viewModel: indexVM, ...,
           recursive: viewModel.recursive)  // Add binding
 ```
 
@@ -149,12 +157,12 @@ Remove `@State` from SyncView/IndexView, accept `@Binding` instead.
 
 ## 📊 Impact Assessment
 
-| Issue | Users Affected | Severity | Effort |
-|-------|---------------|----------|--------|
-| Menu shortcuts in Sync/Index | 100% | High | 10 min |
-| Can't change roots | 100% | High | 30 min |
-| Index multi-root | Users w/ 2+ roots | Medium | 1 hr |
-| Settings divergence | Power users | Low | 20 min |
+| Issue | Users Affected | Severity |
+| ------- | --------------- | ---------- |
+| Menu shortcuts in Sync/Index | 100% | High |
+| Can't change roots | 100% | High |
+| Index multi-root | Users w/ 2+ roots | Medium |
+| Settings divergence | Power users | Low |
 
 **Total Fix Time**: ~2 hours for all critical issues
 
@@ -162,10 +170,10 @@ Remove `@State` from SyncView/IndexView, accept `@Binding` instead.
 
 ## 📁 Files Needing Changes
 
-```
+```text
 Sources/SkillsInspector/
   ├─ SyncView.swift        (+6 lines: add onReceive)
-  ├─ IndexView.swift       (+6 lines: add onReceive)  
+  ├─ IndexView.swift       (+6 lines: add onReceive)
   ├─ ContentView.swift     (~30 lines: wire RootRow)
   └─ InspectorViewModel.swift (optional: persist roots)
 

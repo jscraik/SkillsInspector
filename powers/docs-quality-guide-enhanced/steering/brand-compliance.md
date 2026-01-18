@@ -1,19 +1,31 @@
 # brAInwav Brand Compliance Guide
 
-This guide ensures all documentation and artifacts follow brAInwav brand guidelines when visual formatting is requested or required.
+This guide ensures all documentation and artifacts follow brAInwav brand
+guidelines when visual formatting is requested or required.
 
 ## When Brand Compliance is Required
 
 ### Automatic Requirements
 
-- **Root README files** - Always include documentation signature unless user opts out
-- **Official documentation** - Any documentation representing brAInwav publicly
+- **Root README files** - Always include documentation signature unless user
+
+  opts out
+
+- **Official documentation** - Any documentation representing brAInwav
+
+  publicly
+
 - **Public-facing materials** - Documentation that external users will see
 
 ### Optional Applications
 
-- **Visual formatting requests** - When user specifically asks for branded styling
-- **Internal documentation** - When consistent branding is desired across team docs
+- **Visual formatting requests** - When user specifically asks for branded
+
+  styling
+
+- **Internal documentation** - When consistent branding is desired across team
+
+  docs
 
 ## Brand Guidelines
 
@@ -29,7 +41,7 @@ This guide ensures all documentation and artifacts follow brAInwav brand guideli
 **Accent Colors:**
 
 - **Orange**: `#d97757` - Primary accent
-- **Blue**: `#6a9bcc` - Secondary accent  
+- **Blue**: `#6a9bcc` - Secondary accent
 - **Green**: `#788c5d` - Tertiary accent
 
 ### Typography
@@ -68,7 +80,7 @@ This guide ensures all documentation and artifacts follow brAInwav brand guideli
 
 **ASCII Fallback (if no images):**
 
-```
+```text
 ┌─────────────────────────────────────┐
 │  brAInwav                          │
 │  ◆ Intelligent Documentation       │
@@ -79,7 +91,7 @@ This guide ensures all documentation and artifacts follow brAInwav brand guideli
 
 Ensure `brand/` directory exists with approved assets:
 
-```
+```text
 brand/
 ├── brand-mark.png          # Main logo (512x512)
 ├── brand-mark@2x.png       # High-DPI version
@@ -144,7 +156,8 @@ brand/
 
 ### Brand Check Script
 
-If available, run the brand compliance checker manually or use available linting tools:
+If available, run the brand compliance checker manually or use available
+linting tools:
 
 ```bash
 # Manual brand compliance check
@@ -190,19 +203,14 @@ If user requests to install brand guidelines:
 
 1. **Copy brand guidelines file:**
 
-   ```bash
-   # Copy brand guidelines to your repository
-   # Source: Official brAInwav brand guidelines
-   cp BRAND_GUIDELINES.md brand/BRAND_GUIDELINES.md
-   ```
+```bash # Copy brand guidelines to your repository # Source: Official brAInwav
+brand guidelines cp BRAND_GUIDELINES.md brand/BRAND_GUIDELINES.md ```
 
 2. **Copy brand assets:**
 
-   ```bash
-   # Copy brand assets to your repository  
-   # Include: brand-mark.png, @2x versions, webp formats
-   cp brand-assets/* brand/
-   ```
+```bash # Copy brand assets to your repository # Include: brand-mark.png, @2x
+
+versions, webp formats cp brand-assets/* brand/ ```
 
 3. **Verify installation:**
    - Check that `brand/` directory contains all required files

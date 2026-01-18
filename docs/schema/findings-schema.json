@@ -18,7 +18,7 @@
         "properties": {
           "ruleID": { "type": "string" },
           "severity": { "type": "string", "enum": ["error", "warning", "info"] },
-          "agent": { "type": "string", "enum": ["codex", "claude"] },
+          "agent": { "type": "string", "enum": ["codex", "claude", "copilot", "codexSkillManager"] },
           "file": { "type": "string" },
           "message": { "type": "string" },
           "line": { "type": "integer", "minimum": 1 },

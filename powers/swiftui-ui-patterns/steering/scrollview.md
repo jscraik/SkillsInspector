@@ -2,15 +2,21 @@
 
 ## Intent
 
-Use `ScrollView` with `LazyVStack`, `LazyHStack`, or `LazyVGrid` when you need custom layout, mixed content, or horizontal/ grid-based scrolling.
+Use `ScrollView` with `LazyVStack`, `LazyHStack`, or `LazyVGrid` when you need
+custom layout, mixed content, or horizontal/ grid-based scrolling.
 
 ## Core patterns
 
 - Prefer `ScrollView` + `LazyVStack` for chat-like or custom feed layouts.
-- Use `ScrollView(.horizontal)` + `LazyHStack` for chips, tags, avatars, and media strips.
+- Use `ScrollView(.horizontal)` + `LazyHStack` for chips, tags, avatars, and
+
+  media strips.
+
 - Use `LazyVGrid` for icon/media grids; prefer adaptive columns when possible.
 - Use `ScrollViewReader` for scroll-to-top/bottom and anchor-based jumps.
-- Use `safeAreaInset(edge:)` for input bars that should stick above the keyboard.
+- Use `safeAreaInset(edge:)` for input bars that should stick above the
+
+  keyboard.
 
 ## Example: vertical custom feed
 
@@ -83,5 +89,8 @@ ScrollView {
 ## Pitfalls
 
 - Avoid nesting scroll views of the same axis; it causes gesture conflicts.
-- Don’t combine `List` and `ScrollView` in the same hierarchy without a clear reason.
+- Don’t combine `List` and `ScrollView` in the same hierarchy without a clear
+
+  reason.
+
 - Overuse of `LazyVStack` for tiny content can add unnecessary complexity.

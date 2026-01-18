@@ -1,7 +1,7 @@
 # Project Organization Summary
 
-**Date**: 2026-01-15  
-**Action**: Project directory structure cleanup and organization
+**Date**: 2026-01-15 **Action**: Project directory structure cleanup and
+organization
 
 ## Changes Made
 
@@ -17,7 +17,9 @@
 **Moved to `docs/archive/`:**
 
 - `UI_IMPROVEMENTS_SUMMARY.md` - Archived UI summary
-- `VERSION_MANAGEMENT_IMPROVEMENTS_SUMMARY.md` - Archived version management summary
+- `VERSION_MANAGEMENT_IMPROVEMENTS_SUMMARY.md` - Archived version management
+
+  summary
 
 **Moved to `docs/planning/`:**
 
@@ -58,7 +60,7 @@
 
 ## Current Structure
 
-```
+```text
 sTools/
 ├── Sources/          # Source code (SkillsCore, SkillsInspector, skillsctl)
 ├── Tests/            # Test suites

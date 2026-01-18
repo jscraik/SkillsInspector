@@ -2,22 +2,38 @@
 
 ## Overview
 
-Successfully implemented all 5 improvement ideas from the idea-wizard prompt with enhanced multi-editor support.
+Successfully implemented all 5 improvement ideas from the idea-wizard prompt
+with enhanced multi-editor support.
 
 ## ✅ Feature #3: Multi-Editor Integration (Enhanced)
 
-**Status:** Complete  
-**Files Created:**
+**Status:** Complete **Files Created:**
 
-- `Sources/SkillsCore/EditorIntegration.swift` - Core editor integration system
-- `Sources/SkillsInspector/SettingsView.swift` - Settings UI for editor preferences
+- `Sources/SkillsCore/EditorIntegration.swift` - Core editor integration
+
+  system
+
+- `Sources/SkillsInspector/SettingsView.swift` - Settings UI for editor
+
+  preferences
 
 **Files Modified:**
 
-- `Sources/SkillsInspector/FindingActions.swift` - Updated `openInEditor()` to accept line numbers and editor selection
-- `Sources/SkillsInspector/FindingDetailView.swift` - Changed "Open in Editor" to Menu with all installed editors
-- `Sources/SkillsInspector/ValidateView.swift` - Updated context menu with multi-editor support
-- `Sources/SkillsInspector/App.swift` - Added Settings command (⌘,) and Settings window
+- `Sources/SkillsInspector/FindingActions.swift` - Updated `openInEditor()` to
+
+  accept line numbers and editor selection
+
+- `Sources/SkillsInspector/FindingDetailView.swift` - Changed "Open in Editor"
+
+  to Menu with all installed editors
+
+- `Sources/SkillsInspector/ValidateView.swift` - Updated context menu with
+
+  multi-editor support
+
+- `Sources/SkillsInspector/App.swift` - Added Settings command (⌘,) and
+
+  Settings window
 
 **Editors Supported:**
 
@@ -41,21 +57,34 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 
 ## ✅ Feature #1: Quick Fix Suggestions
 
-**Status:** Complete  
-**Files Created:**
+**Status:** Complete **Files Created:**
 
 - `Sources/SkillsCore/FixEngine.swift` - Fix generation and application engine
 
 **Files Modified:**
 
-- `Sources/SkillsCore/SkillsCore.swift` - Added `suggestedFix` property to `Finding`
-- `Sources/SkillsInspector/InspectorViewModel.swift` - Generate fixes during scan
-- `Sources/SkillsInspector/FindingDetailView.swift` - UI for suggested fixes and auto-apply
-- `Sources/SkillsInspector/FindingRowView.swift` - Badge showing fix availability
+- `Sources/SkillsCore/SkillsCore.swift` - Added `suggestedFix` property to
+
+  `Finding`
+
+- `Sources/SkillsInspector/InspectorViewModel.swift` - Generate fixes during
+
+  scan
+
+- `Sources/SkillsInspector/FindingDetailView.swift` - UI for suggested fixes
+
+  and auto-apply
+
+- `Sources/SkillsInspector/FindingRowView.swift` - Badge showing fix
+
+  availability
 
 **Fix Types:**
 
-1. **frontmatter-structure** - Add missing or fix malformed frontmatter (automated)
+1. **frontmatter-structure** - Add missing or fix malformed frontmatter
+
+   (automated)
+
 2. **skill-name-format** - Convert to lowercase-hyphenated format (automated)
 3. **description-length** - Manual guidance to shorten description
 4. **required-sections** - Add missing sections (automated)
@@ -73,15 +102,18 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 
 ## ✅ Feature #2: Statistics Dashboard
 
-**Status:** Complete  
-**Files Created:**
+**Status:** Complete **Files Created:**
 
-- `Sources/SkillsInspector/StatsView.swift` - Comprehensive statistics dashboard with charts
+- `Sources/SkillsInspector/StatsView.swift` - Comprehensive statistics
+
+  dashboard with charts
 
 **Files Modified:**
 
 - `Sources/SkillsInspector/App.swift` - Added `.stats` mode to `AppMode` enum
-- `Sources/SkillsInspector/ContentView.swift` - Added Statistics navigation item and view
+- `Sources/SkillsInspector/ContentView.swift` - Added Statistics navigation
+
+  item and view
 
 **Visualizations:**
 
@@ -89,7 +121,9 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 2. **Severity Chart** - Horizontal bar chart showing distribution by severity
 3. **Agent Chart** - Donut chart showing Codex vs. Claude findings
 4. **Top Rules Chart** - Top 10 most common validation rules
-5. **Fix Availability Chart** - Donut chart showing auto-fixable, manual fix, and no fix available
+5. **Fix Availability Chart** - Donut chart showing auto-fixable, manual fix,
+
+   and no fix available
 
 **Features:**
 
@@ -103,19 +137,28 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 
 ## ✅ Feature #4: Export Reports
 
-**Status:** Complete  
-**Files Created:**
+**Status:** Complete **Files Created:**
 
-- `Sources/SkillsCore/ExportService.swift` - Export engine supporting 5 formats
-- `Sources/SkillsInspector/ExportDocument.swift` - FileDocument wrapper for SwiftUI export
+- `Sources/SkillsCore/ExportService.swift` - Export engine supporting 5
+
+  formats
+
+- `Sources/SkillsInspector/ExportDocument.swift` - FileDocument wrapper for
+
+  SwiftUI export
 
 **Files Modified:**
 
-- `Sources/SkillsInspector/ValidateView.swift` - Added Export button and format menu
+- `Sources/SkillsInspector/ValidateView.swift` - Added Export button and
+
+  format menu
 
 **Export Formats:**
 
-1. **JSON** - Structured export with metadata (timestamp, counts, full findings)
+1. **JSON** - Structured export with metadata (timestamp, counts, full
+
+   findings)
+
 2. **CSV** - Spreadsheet-compatible format for analysis
 3. **HTML** - Beautiful standalone report with styling and tables
 4. **Markdown** - GitHub-compatible markdown report
@@ -124,7 +167,10 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 **Features:**
 
 - SwiftUI native file export dialog
-- Format picker with icons (JSON: curlybraces, CSV: tablecells, HTML: globe, etc.)
+- Format picker with icons (JSON: curlybraces, CSV: tablecells, HTML: globe,
+
+  etc.)
+
 - Contextual filename generation (`validation-report.json`)
 - Error grouping by severity in HTML/Markdown
 - CI/CD-ready JUnit format with proper test case structure
@@ -134,14 +180,17 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 
 ## ✅ Feature #5: Live Markdown Preview
 
-**Status:** Complete  
-**Files Created:**
+**Status:** Complete **Files Created:**
 
-- `Sources/SkillsInspector/MarkdownPreviewView.swift` - WebKit-based markdown renderer
+- `Sources/SkillsInspector/MarkdownPreviewView.swift` - WebKit-based markdown
+
+  renderer
 
 **Files Modified:**
 
-- `Sources/SkillsInspector/FindingDetailView.swift` - Added markdown preview toggle
+- `Sources/SkillsInspector/FindingDetailView.swift` - Added markdown preview
+
+  toggle
 
 **Features:**
 
@@ -223,14 +272,14 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 - Task groups for parallel fix generation
 - Proper `await` usage for async scanner
 
-### Performance
+### Architecture performance
 
 - Lazy markdown loading (only when toggled)
 - Parallel fix generation via `TaskGroup`
 - Cache integration preserved
 - WKWebView reuse for markdown rendering
 
-### Code Quality
+### Architecture code quality
 
 - All files follow Swift 6 strict concurrency
 - No compiler warnings (except deprecated FSEventStream API in FileWatcher)
@@ -280,49 +329,56 @@ Successfully implemented all 5 improvement ideas from the idea-wizard prompt wit
 5. `Sources/SkillsInspector/FindingDetailView.swift` (Fixes, markdown preview)
 6. `Sources/SkillsInspector/FindingRowView.swift` (Fix badges)
 7. `Sources/SkillsInspector/InspectorViewModel.swift` (Fix generation)
-8. `Sources/SkillsInspector/ValidateView.swift` (Multi-editor context menu, export)
+8. `Sources/SkillsInspector/ValidateView.swift` (Multi-editor context menu,
+
+   export)
 
 ---
 
 ## Build Status
 
-✅ All features compile without errors
-✅ Swift 6 strict concurrency compliance
-✅ App launches successfully
-✅ All 5 features functional
+✅ All features compile without errors ✅ Swift 6 strict concurrency compliance
+✅ App launches successfully ✅ All 5 features functional
 
 ---
 
-# Feature Flags and Governance Documentation
+## Feature Flags and Governance Documentation
 
-## Overview
+### Feature flags overview
 
-This document describes the feature flags system and governance processes for sTools, including Architecture Decision Records (ADRs), Operational Readiness Review (ORR) checklist, and Launch checklist.
+This document describes the feature flags system and governance processes for
+sTools, including Architecture Decision Records (ADRs), Operational Readiness
+Review (ORR) checklist, and Launch checklist.
 
-## Feature Flags
+### Feature flags
 
-### Configuration
+#### Configuration
 
-Feature flags in sTools allow controlled rollout of capabilities. They can be configured via:
+Feature flags in sTools allow controlled rollout of capabilities. They can be
+configured via:
 
 1. **Environment variables** (highest priority)
 2. **config.json** file
 3. **UserDefaults** (for telemetryOptIn in UI)
 4. **Default values** (when not configured)
 
-### Available Feature Flags
+#### Available feature flags
 
-| Flag | Default | Description | Environment Variable |
-|------|---------|-------------|----------------------|
-| `skillVerification` | `true` | Enable Ed25519 signature and SHA-256 hash verification for skill artifacts | `STOOLS_FEATURE_VERIFICATION` |
-| `pinnedPublishing` | `true` | Require pinned tool versions with checksums for publishing | `STOOLS_FEATURE_PUBLISHING` |
-| `crossIDEAdapters` | `true` | Enable multi-target installation for Codex, Claude Code, and GitHub Copilot | `STOOLS_FEATURE_ADAPTERS` |
-| `telemetryOptIn` | `false` | Opt-in to privacy-first telemetry collection | `STOOLS_FEATURE_TELEMETRY` |
-| `bulkActions` | `true` | Enable bulk operations (verify all, update all, export changelog) | `STOOLS_FEATURE_BULK_ACTIONS` |
+- `skillVerification` (default `true`): Enable Ed25519 signature and SHA-256
+  hash verification for skill artifacts.
+- `pinnedPublishing` (default `true`): Require pinned tool versions with
+  checksums for publishing.
+- `crossIDEAdapters` (default `true`): Enable multi-target installation for
+  Codex, Claude Code, and GitHub Copilot.
+- `telemetryOptIn` (default `false`): Opt in to privacy-first telemetry
+  collection.
+- `bulkActions` (default `true`): Enable bulk operations (verify all, update
+  all, export changelog).
 
-### Configuration via config.json
+#### Configuration via config.json
 
-Create or edit `.skillsctl/config.json` or `~/Library/Application Support/SkillsInspector/config.json`:
+Create or edit `.skillsctl/config.json` or `~/Library/Application
+Support/SkillsInspector/config.json`:
 
 ```json
 {
@@ -337,7 +393,7 @@ Create or edit `.skillsctl/config.json` or `~/Library/Application Support/Skills
 }
 ```
 
-### Environment Variable Override
+#### Environment variable override
 
 Environment variables take precedence over config file values:
 
@@ -347,7 +403,7 @@ export STOOLS_FEATURE_TELEMETRY=true
 swift run skillsctl scan
 ```
 
-### Code Integration
+#### Code integration
 
 Feature flags are loaded using the `FeatureFlags` struct:
 
@@ -367,38 +423,56 @@ if flags.skillVerification {
 
 ---
 
-## Architecture Decision Records (ADRs)
+### Architecture Decision Records (ADRs)
 
 ### ADR-001: Artifact Trust Model
 
-**Status:** Accepted
-**Date:** 2025-01-14
-**Context:** sTools needs to verify the authenticity and integrity of skill artifacts before installation.
+**Status:** Accepted **Date:** 2025-01-14 **Context:** sTools needs to verify
+the authenticity and integrity of skill artifacts before installation.
 
-#### Decision
+#### ADR-001 Decision
 
-sTools uses a fail-closed verification model with Ed25519 signatures and SHA-256 hashes:
+sTools uses a fail-closed verification model with Ed25519 signatures and
+SHA-256 hashes:
 
-1. **Signature Verification**: Ed25519 signatures provide cryptographic proof of artifact origin
+1. **Signature Verification**: Ed25519 signatures provide cryptographic proof
+
+   of artifact origin
+
 2. **Hash Validation**: SHA-256 hashes verify artifact integrity
-3. **Trust Store**: Allowlist of trusted signer keys with support for key rotation
+3. **Trust Store**: Allowlist of trusted signer keys with support for key
+
+   rotation
+
 4. **Revocation List**: Revoked keys are rejected even if previously trusted
-5. **Manifest Format**: JSON manifest includes `sha256`, `signature`, `signerKeyId`, `trustedSigners[]`, and `revokedKeys[]`
+5. **Manifest Format**: JSON manifest includes `sha256`, `signature`,
 
-#### Implementation
+   `signerKeyId`, `trustedSigners[]`, and `revokedKeys[]`
 
-- `RemoteArtifactSecurity.swift` defines `RemoteArtifactManifest`, `RemoteVerificationOutcome`, and `RemoteTrustStore`
-- Verification modes: `.strict` (require both signature and hash) and `.permissive` (hash only)
-- Trust store persisted at `~/Library/Application Support/SkillsInspector/trust.json`
+#### ADR-001 Implementation
 
-#### Consequences
+- `RemoteArtifactSecurity.swift` defines `RemoteArtifactManifest`,
+
+  `RemoteVerificationOutcome`, and `RemoteTrustStore`
+
+- Verification modes: `.strict` (require both signature and hash) and
+
+  `.permissive` (hash only)
+
+- Trust store persisted at `~/Library/Application
+
+  Support/SkillsInspector/trust.json`
+
+#### ADR-001 Consequences
 
 **Positive:**
+
 - Strong cryptographic guarantees for artifact authenticity
 - Support for key rotation without breaking existing installations
 - Clear audit trail with signer key IDs
 
 **Negative:**
+
 - Requires skill maintainers to manage signing keys
 - Unsigned skills cannot be installed in strict mode
 
@@ -406,33 +480,39 @@ sTools uses a fail-closed verification model with Ed25519 signatures and SHA-256
 
 ### ADR-002: Publishing Tool Pinning
 
-**Status:** Accepted
-**Date:** 2025-01-14
-**Context:** Reproducible builds require pinned tool versions to ensure identical artifacts across time and environments.
+**Status:** Accepted **Date:** 2025-01-14 **Context:** Reproducible builds
+require pinned tool versions to ensure identical artifacts across time and
+environments.
 
-#### Decision
+#### ADR-002 Decision
 
-sTools pins the publishing tool (clawdhub) to a specific version with integrity checksum:
+sTools pins the publishing tool (clawdhub) to a specific version with
+integrity checksum:
 
 1. **Pinned Version**: clawdhub@0.1.0 with SHA-512 integrity hash
 2. **Tool Validation**: Publisher validates tool hash before execution
 3. **Attestation**: Build metadata includes tool name, version, and hash
 4. **Deterministic Output**: Same inputs produce byte-identical artifacts
 
-#### Implementation
+#### ADR-002 Implementation
 
-- `PinnedTool` struct in `SkillPublisher.swift` defines version `0.1.0` and SHA-512 hash
+- `PinnedTool` struct in `SkillPublisher.swift` defines version `0.1.0` and
+
+  SHA-512 hash
+
 - `PublishAttestation` includes `toolName`, `toolHash`, and `builtAt` fields
 - `testDeterministicZipProducesSameHash` verifies reproducibility
 
-#### Consequences
+#### ADR-002 Consequences
 
 **Positive:**
+
 - Reproducible builds enable forensic audits
 - Tool version drift prevented
 - Clear build provenance in attestations
 
 **Negative:**
+
 - Tool updates require explicit pin changes
 - Maintainers must verify new tool versions before updating
 
@@ -440,20 +520,27 @@ sTools pins the publishing tool (clawdhub) to a specific version with integrity 
 
 ### ADR-003: Cross-IDE Adapter Layout
 
-**Status:** Accepted
-**Date:** 2025-01-14
-**Context:** Users want one install to register skills across multiple IDEs (Codex, Claude Code, GitHub Copilot).
+**Status:** Accepted **Date:** 2025-01-14 **Context:** Users want one install
+to register skills across multiple IDEs (Codex, Claude Code, GitHub Copilot).
 
-#### Decision
+#### ADR-003 Decision
 
 sTools uses a multi-target adapter architecture:
 
-1. **Adapter Protocol**: `SkillInstallTarget` enum defines `.codex(URL)`, `.claude(URL)`, `.copilot(URL)`, `.custom(URL)`
-2. **Atomic Installation**: Stage to temp, then move; rollback on failure
-3. **Post-Install Validation**: `PostInstallValidator` protocol verifies SKILL.md exists after install
-4. **Best-Effort Semantics**: Failed targets don't roll back successful targets
+1. **Adapter Protocol**: `SkillInstallTarget` enum defines `.codex(URL)`,
 
-#### Implementation
+   `.claude(URL)`, `.copilot(URL)`, `.custom(URL)`
+
+2. **Atomic Installation**: Stage to temp, then move; rollback on failure
+3. **Post-Install Validation**: `PostInstallValidator` protocol verifies
+
+   SKILL.md exists after install
+
+4. **Best-Effort Semantics**: Failed targets don't roll back successful
+
+   targets
+
+#### ADR-003 Implementation
 
 - `MultiTargetSkillInstaller` in `Adapters/MultiTargetSkillInstaller.swift`
 - Default paths:
@@ -462,14 +549,16 @@ sTools uses a multi-target adapter architecture:
   - GitHub Copilot: `~/.copilot/skills/`
 - Ledger records per-target results in `perTargetResults`
 
-#### Consequences
+#### ADR-003 Consequences
 
 **Positive:**
+
 - Single command installs to all configured IDEs
 - Per-target status reporting in UI
 - Failed targets don't block successful ones
 
 **Negative:**
+
 - Partial installation possible (some targets succeed, others fail)
 - Users must verify per-target status after install
 
@@ -477,11 +566,10 @@ sTools uses a multi-target adapter architecture:
 
 ### ADR-004: Preview Cache Policy
 
-**Status:** Accepted
-**Date:** 2025-01-14
-**Context:** Remote skill previews should be cached to avoid repeated downloads while ensuring freshness.
+**Status:** Accepted **Date:** 2025-01-14 **Context:** Remote skill previews
+should be cached to avoid repeated downloads while ensuring freshness.
 
-#### Decision
+#### ADR-004 Decision
 
 sTools uses a time-based cache with ETag validation:
 
@@ -490,28 +578,31 @@ sTools uses a time-based cache with ETag validation:
 3. **Size Cap**: 50MB default with LRU eviction
 4. **ETag Validation**: Cache validates against server ETag on load
 
-#### Implementation
+#### ADR-004 Implementation
 
 - `RemotePreviewCache` in `Remote/RemotePreviewCache.swift`
 - TTL validation in `load()` and `loadManifest()` methods
 - `ensureCacheSizeLimit()` provides two-tier eviction (expired + oldest)
 
-#### Consequences
+#### ADR-004 Consequences
 
 **Positive:**
+
 - Reduced bandwidth usage for repeated preview requests
 - Fast preview loading from cache
 - Automatic eviction prevents unbounded disk usage
 
 **Negative:**
+
 - Stale previews possible if server updates before TTL expires
 - Cache cleared on TTL expiration requires re-fetch
 
 ---
 
-## Operational Readiness Review (ORR) Checklist
+### Operational Readiness Review (ORR) Checklist
 
-**Purpose:** Ensure sTools is ready to enable verification-by-default in production environments.
+**Purpose:** Ensure sTools is ready to enable verification-by-default in
+production environments.
 
 ### Security
 
@@ -562,7 +653,7 @@ sTools uses a time-based cache with ETag validation:
 
 ---
 
-## Launch Checklist
+### Launch Checklist
 
 **Purpose:** Final verification before stable release.
 
@@ -617,7 +708,7 @@ sTools uses a time-based cache with ETag validation:
 
 ---
 
-## Configuration Examples
+### Configuration Examples
 
 ### Example 1: Development Environment
 
@@ -664,9 +755,9 @@ All other flags use their default values.
 
 ---
 
-## Version History
+### Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2025-01-14 | Initial feature flags and governance documentation |
-| 1.1 | 2025-01-14 | Added FeatureFlagsConfig to SkillsConfig, fromConfig() method, comprehensive tests |
+| Version | Date |
+| --------- | ------ |
+| 1.0 | 2025-01-14 |
+| 1.1 | 2025-01-14 |

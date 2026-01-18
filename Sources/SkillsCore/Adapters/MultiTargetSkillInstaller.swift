@@ -57,7 +57,10 @@ public struct MultiTargetSkillInstaller: Sendable {
         manifest: RemoteArtifactManifest,
         policy: RemoteVerificationPolicy = .default,
         trustStore: RemoteTrustStore = .ephemeral,
-        skillSlug: String? = nil
+        skillSlug: String? = nil,
+        securityConfig: SecurityConfig = .default,
+        acipScanner: ACIPScanner = ACIPScanner(),
+        quarantineStore: QuarantineStore = QuarantineStore()
     ) async throws -> MultiTargetInstallOutcome {
         var successes: [AgentKind: RemoteSkillInstallResult] = [:]
         var installed: [AgentKind: RemoteSkillInstallResult] = [:]
@@ -73,6 +76,9 @@ public struct MultiTargetSkillInstaller: Sendable {
                     policy: policy,
                     trustStore: trustStore,
                     skillSlug: skillSlug,
+                    securityConfig: securityConfig,
+                    acipScanner: acipScanner,
+                    quarantineStore: quarantineStore,
                     preserveBackup: true
                 )
 

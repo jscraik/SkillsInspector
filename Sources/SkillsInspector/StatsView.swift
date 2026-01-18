@@ -8,7 +8,7 @@ struct StatsView: View {
     @Binding var severityFilter: Severity?
     @Binding var agentFilter: AgentKind?
     @AccessibilityFocusState private var chartFocused: Bool
-    
+
     private var stats: ValidationStats {
         ValidationStats(findings: viewModel.findings)
     }

@@ -346,6 +346,7 @@ struct IndexView: View {
     @Binding var recursive: Bool
     let excludes: [String]
     let excludeGlobs: [String]
+    @AppStorage("useSharedSkillsRoot") private var useSharedSkillsRoot = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -353,25 +354,29 @@ struct IndexView: View {
             content
         }
         .frame(minWidth: 600)
-        .task(id: viewModel.include) { await autoGenerateIfReady() }
-        .task(id: viewModel.bump) { await autoGenerateIfReady() }
-        .task(id: recursive) { await autoGenerateIfReady() }
-        .task(id: viewModel.existingVersion) {
-            // Debounce version typing to avoid flicker
-            try? await Task.sleep(nanoseconds: 800_000_000)
-            await autoGenerateIfReady()
-        }
-        .task(id: viewModel.changelogNote) {
-            // Debounce changelog typing
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            await autoGenerateIfReady()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in
-            Task { await viewModel.generate(codexRoots: codexRoots, claudeRoot: claudeRoot, codexSkillManagerRoot: codexSkillManagerRoot, copilotRoot: copilotRoot, recursive: recursive, excludes: excludes, excludeGlobs: excludeGlobs) }
-        }
+        // Previous implementation had these auto-generate triggers:
+        // .task(id: viewModel.include) { await autoGenerateIfReady() }
+        // .task(id: viewModel.bump) { await autoGenerateIfReady() }
+        // .task(id: recursive) { await autoGenerateIfReady() }
+        // .task(id: viewModel.existingVersion) { try? await Task.sleep(nanoseconds: 800_000_000); await autoGenerateIfReady() }
+        // .task(id: viewModel.changelogNote) { try? await Task.sleep(nanoseconds: 1_200_000_000); await autoGenerateIfReady() }
+        // .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in Task { await viewModel.generate(...) } }
+        // These caused immediate index generation on view appearance or settings changes, blocking UI responsiveness.
+        // Index generation control is now explicit: users must click "Generate" button to trigger index creation.
         .onReceive(NotificationCenter.default.publisher(for: .cancelScan)) { _ in
             viewModel.cancel()
         }
+    }
+    
+    // Helper to compute effective roots based on shared mode
+    private func effectiveRoots() -> (codexRoots: [URL], claudeRoot: URL, codexSkillManagerRoot: URL?, copilotRoot: URL?) {
+        guard useSharedSkillsRoot else {
+            return (codexRoots, claudeRoot, codexSkillManagerRoot, copilotRoot)
+        }
+        
+        // Single source of truth mode: use only first Codex root for all agents
+        let masterRoot = codexRoots.first ?? claudeRoot
+        return ([masterRoot], masterRoot, nil, nil)
     }
 }
 
@@ -384,7 +389,8 @@ private extension IndexView {
                 // Primary Action Group
                 HStack(spacing: DesignTokens.Spacing.xxxs) {
                     Button {
-                        Task { await viewModel.generate(codexRoots: codexRoots, claudeRoot: claudeRoot, codexSkillManagerRoot: codexSkillManagerRoot, copilotRoot: copilotRoot, recursive: recursive, excludes: excludes, excludeGlobs: excludeGlobs) }
+                        let roots = effectiveRoots()
+                        Task { await viewModel.generate(codexRoots: roots.codexRoots, claudeRoot: roots.claudeRoot, codexSkillManagerRoot: roots.codexSkillManagerRoot, copilotRoot: roots.copilotRoot, recursive: recursive, excludes: excludes, excludeGlobs: excludeGlobs) }
                     } label: {
                         HStack(spacing: DesignTokens.Spacing.xxxs) {
                             if viewModel.isGenerating {
@@ -520,7 +526,10 @@ private extension IndexView {
                         icon: "doc.text.magnifyingglass",
                         title: "Ready to Index",
                         message: "Generate a consolidated skills index from your Codex and Claude roots.",
-                        action: { Task { await viewModel.generate(codexRoots: codexRoots, claudeRoot: claudeRoot, codexSkillManagerRoot: codexSkillManagerRoot, copilotRoot: copilotRoot, recursive: recursive, excludes: excludes, excludeGlobs: excludeGlobs) } },
+                        action: {
+                            let roots = effectiveRoots()
+                            Task { await viewModel.generate(codexRoots: roots.codexRoots, claudeRoot: roots.claudeRoot, codexSkillManagerRoot: roots.codexSkillManagerRoot, copilotRoot: roots.copilotRoot, recursive: recursive, excludes: excludes, excludeGlobs: excludeGlobs) }
+                        },
                         actionLabel: "Generate Index"
                     )
                 } else {

@@ -15,7 +15,7 @@ agents = ".ralph/AGENTS.md"
 # Optional: commands to run after each iteration.
 # If any gate fails, the loop will keep the current task open and will not allow EXIT_SIGNAL=true.
 commands = [
-  "swift build -c debug --product sTools",
+  "swift build -c debug --product SkillsInspector",
   "swift test",
   "swift package skills-lint",
   "swift run skillsctl scan --repo . --allow-empty"

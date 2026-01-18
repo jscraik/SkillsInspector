@@ -1,21 +1,21 @@
 # sTools
 
-**Developer toolkit for Codex/Claude skill trees**
+## Developer toolkit for Codex/Claude skill trees
 
-<p align="center">
-  <img
-    src="brand/sTools-brand-logo.png"
-    srcset="brand/sTools-brand-logo.png 1x, brand/sTools-brand-logo@2x.webp 2x"
-    alt="sTools brand hero: developer toolkit for skill trees"
-    width="720"
-  />
-</p>
+![sTools brand hero: developer toolkit for skill trees](brand/sTools-brand-logo.png)
 
-sTools helps you validate, sync, and manage skill documentation across AI agent platforms (Codex and Claude). It provides three ways to work with your skills:
+sTools helps you validate, sync, and manage skill documentation across AI
+agent platforms (Codex and Claude). It provides three ways to work with your
+skills:
 
-- **sTools app** (formerly SkillsInspector): Interactive macOS app for scanning and syncing skills
-- **skillsctl CLI**: Command-line tool for CI/CD integration and scripting  
-- **SkillsLintPlugin**: SwiftPM plugin for automated validation in your build process
+- **sTools app** (formerly SkillsInspector): Interactive macOS app for
+
+  scanning and syncing skills
+
+- **skillsctl CLI**: Command-line tool for CI/CD integration and scripting
+- **SkillsLintPlugin**: SwiftPM plugin for automated validation in your build
+
+  process
 
 **Core capabilities:**
 
@@ -112,14 +112,28 @@ swift package plugin skills-lint
 
 **Key terms used throughout sTools:**
 
-- **Skill**: A documented capability or instruction set, stored as a SKILL.md file
-- **Skill tree**: A directory structure containing multiple skills for an AI agent
+- **Skill**: A documented capability or instruction set, stored as a SKILL.md
+
+  file
+
+- **Skill tree**: A directory structure containing multiple skills for an AI
+
+  agent
+
 - **Agent**: The AI platform (Codex or Claude) that uses the skills
-- **Root**: The top-level directory containing a skill tree (e.g., `~/.codex/skills`)
-- **Validation**: Checking skills for proper format, required fields, and consistency
+- **Root**: The top-level directory containing a skill tree (e.g.,
+
+  `~/.codex/skills`)
+
+- **Validation**: Checking skills for proper format, required fields, and
+
+  consistency
+
 - **Sync**: Comparing skill trees between different agents to find differences
 - **Baseline**: A saved list of known validation issues to ignore
-- **Finding**: A validation issue discovered during scanning (error, warning, or info)
+- **Finding**: A validation issue discovered during scanning (error, warning,
+
+  or info)
 
 ## CLI Usage
 
@@ -179,9 +193,15 @@ skillsctl remote search "sql"
 skillsctl remote install my-skill --target codex --overwrite
 ```
 
-Common flags: `--config <path>` (defaults to `.skillsctl/config.json`), `--baseline <path>` (defaults to `.skillsctl/baseline.json`), `--ignore <path>` (defaults to `.skillsctl/ignore.json`), `--plain`, `--log-level <level>`, `--schema-version 1`, `--allow-empty`, `--recursive`, `--max-depth <n>`, `--exclude <name>`, `--exclude-glob <pattern>`, `--format text|json`, `--telemetry`.
+Common flags: `--config <path>` (defaults to `.skillsctl/config.json`),
+`--baseline <path>` (defaults to `.skillsctl/baseline.json`), `--ignore
+<path>` (defaults to `.skillsctl/ignore.json`), `--plain`, `--log-level
+<level>`, `--schema-version 1`, `--allow-empty`, `--recursive`, `--max-depth
+<n>`, `--exclude <name>`, `--exclude-glob <pattern>`, `--format text|json`,
+`--telemetry`.
 
-Exit codes: `0` success; `1` when validation errors exist or no skills appear without `--allow-empty`; `2` usage/config error.
+Exit codes: `0` success; `1` when validation errors exist or no skills appear
+without `--allow-empty`; `2` usage/config error.
 
 ## Shell completion
 
@@ -204,7 +224,8 @@ skillsctl completion fish > ~/.config/fish/completions/skillsctl.fish
 swift package plugin skills-lint
 ```
 
-Runs `skillsctl scan --repo . --format json` and surfaces diagnostics. Benefits from automatic caching on later runs.
+Runs `skillsctl scan --repo . --format json` and surfaces diagnostics.
+Benefits from automatic caching on later runs.
 
 ## sTools app (macOS)
 
@@ -216,13 +237,32 @@ swift run sTools
 
 ### Features
 
-- **Modes**: Check (scan + filters), Sync (compare Codex/Claude trees with diff/copy), Index, Remote, Changelog
-- **Quick Actions**: Right-click any finding to open in editor (line-aware), show in Finder, add to baseline (persists to `.skillsctl/baseline.json`), or copy rule ID/path/message
-- **Watch Mode**: Toggle to auto-rescan when SKILL.md files change (500ms debounce)
-- **Cache Stats**: Cache hits surface in the Check tab; clear cache from the app settings
-- **Sync View**: Per-root excludes/globs + depth; see only-in-Codex/Claude and diff buckets with detail pane
+- **Modes**: Check (scan + filters), Sync (compare Codex/Claude trees with
+
+  diff/copy), Index, Remote, Changelog
+
+- **Quick Actions**: Right-click any finding to open in editor (line-aware),
+
+  show in Finder, add to baseline (persists to `.skillsctl/baseline.json`), or
+  copy rule ID/path/message
+
+- **Watch Mode**: Toggle to auto-rescan when SKILL.md files change (500ms
+
+  debounce)
+
+- **Cache Stats**: Cache hits surface in the Check tab; clear cache from the
+
+  app settings
+
+- **Sync View**: Per-root excludes/globs + depth; see only-in-Codex/Claude and
+
+  diff buckets with detail pane
+
 - **Keyboard Shortcuts**: ⌘R scan, ⌘W close
-- **Remote**: Safe preview with signer provenance, download-and-verify gate, bulk verify/update actions
+- **Remote**: Safe preview with signer provenance, download-and-verify gate,
+
+  bulk verify/update actions
+
 - **Changelog**: Export signed audit trails from the local ledger
 
 ## Configuration
@@ -233,56 +273,85 @@ swift run sTools
 - Ignore file (same shape as baseline) supported via `--ignore`.
 
 Remote trust configuration:
-- `STOOLS_KEYSET_ROOT_KEY`: Base64 Ed25519 root public key for verifying signed keysets.
-  When set, the Remote tab fetches `/api/v1/keys` and updates the trust store only if the keyset
-  signature verifies and the keyset is not expired; otherwise it keeps the existing trust store.
+
+- `STOOLS_KEYSET_ROOT_KEY`: Base64 Ed25519 root public key for verifying
+
+  signed keysets. When set, the Remote tab fetches `/api/v1/keys` and updates
+  the trust store only if the keyset signature verifies and the keyset is not
+  expired; otherwise it keeps the existing trust store.
 
 CLI defaults:
 
-- Roots: repo mode scans `.codex/skills` and `.claude/skills` under `--repo`; otherwise `~/.codex/skills` and `~/.claude/skills`.
-- Default excludes: `.git`, `.system`, `__pycache__`, `.DS_Store` (disable with `--no-default-excludes`).
-- Baselining/ignores: auto-load `.skillsctl/baseline.json` and `.skillsctl/ignore.json` when present.
-- Cache: stored at `<repo>/.skillsctl/cache.json` (disable with `--no-cache`; stats via `--show-cache-stats`).
+- Roots: repo mode scans `.codex/skills` and `.claude/skills` under `--repo`;
+
+  otherwise `~/.codex/skills` and `~/.claude/skills`.
+
+- Default excludes: `.git`, `.system`, `__pycache__`, `.DS_Store` (disable
+
+  with `--no-default-excludes`).
+
+- Baselining/ignores: auto-load `.skillsctl/baseline.json` and
+
+  `.skillsctl/ignore.json` when present.
+
+- Cache: stored at `<repo>/.skillsctl/cache.json` (disable with `--no-cache`;
+
+  stats via `--show-cache-stats`).
 
 ## Migration & Security Notes
 
-- Remote installs now enforce ACIP scanning; quarantined content blocks installs until reviewed.
-- Quarantine records are stored at `~/Library/Application Support/SkillsInspector/quarantine.json`.
-- Use `skillsctl quarantine list` to review pending items and `skillsctl quarantine approve <id>` or `skillsctl quarantine block <id>` to resolve.
-- If you need to reset quarantine state for a clean slate, delete the quarantine file and rerun installs.
+- Remote installs now enforce ACIP scanning; quarantined content blocks
+
+  installs until reviewed.
+
+- Quarantine records are stored at `~/Library/Application
+
+  Support/SkillsInspector/quarantine.json`.
+
+- Use `skillsctl quarantine list` to review pending items and
+  `skillsctl quarantine approve <id>` or
+  `skillsctl quarantine block <id>` to resolve.
+
+- If you need to reset quarantine state for a clean slate, delete the
+
+  quarantine file and rerun installs.
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Problem: "No SKILL.md files found" but files exist**
+#### Problem: "No SKILL.md files found" but files exist
 
 ```bash
 # Check if files are being excluded
 skillsctl scan --repo . --no-default-excludes --log-level debug
 ```
 
-**Solution:** Files may be in excluded directories (.git, .system, **pycache**, .DS_Store). Use `--no-default-excludes` or check your exclude patterns.
+**Solution:** Files may be in excluded directories (.git, .system,
+**pycache**, .DS_Store). Use `--no-default-excludes` or check your exclude
+patterns.
 
-**Problem: "Command not found: skillsctl"**
+#### Problem: "Command not found: skillsctl"
 
 ```bash
 # Use full Swift run command
 swift run skillsctl scan --repo .
 ```
 
-**Solution:** skillsctl is not installed globally. Use `swift run skillsctl` or build and install the binary.
+**Solution:** skillsctl is not installed globally. Use `swift run skillsctl`
+or build and install the binary.
 
-**Problem: Validation errors on valid SKILL.md files**
+#### Problem: Validation errors on valid SKILL.md files
 
 ```bash
 # Check specific validation rules
 skillsctl scan --repo . --format json | jq '.findings[] | select(.severity=="error")'
 ```
 
-**Solution:** Review the specific rule violations. Common issues include missing frontmatter, incorrect naming patterns, or missing required sections.
+**Solution:** Review the specific rule violations. Common issues include
+missing frontmatter, incorrect naming patterns, or missing required sections.
 
-**Problem: sTools app won't launch**
+#### Problem: sTools app won't launch
 
 ```bash
 # Check build status
@@ -291,9 +360,10 @@ swift build --product sTools
 swift run sTools 2>&1
 ```
 
-**Solution:** Ensure all dependencies are built. Check console output for specific errors.
+**Solution:** Ensure all dependencies are built. Check console output for
+specific errors.
 
-**Problem: Cache issues or stale results**
+#### Problem: Cache issues or stale results
 
 ```bash
 # Clear cache and rescan
@@ -301,7 +371,8 @@ skillsctl scan --repo . --no-cache
 # Or clear from app settings
 ```
 
-**Solution:** Cache may be corrupted. Disable caching temporarily or clear cache files.
+**Solution:** Cache may be corrupted. Disable caching temporarily or clear
+cache files.
 
 ### Getting Help
 
@@ -383,7 +454,8 @@ Validation rules are now protocol-based, enabling:
 - Configurable severity levels
 - Rule registry for easy management
 
-Built-in rules include frontmatter validation, length checks, naming patterns, and symlink warnings.
+Built-in rules include frontmatter validation, length checks, naming patterns,
+and symlink warnings.
 
 ### JSON Schema Validation
 
@@ -434,7 +506,7 @@ open Docs.doccarchive
 
 - **Audience:** Developers and CI maintainers
 - **Scope:** Build verification and testing procedures
-- **Owner:** sTools maintainers  
+- **Owner:** sTools maintainers
 - **Last updated:** 2026-01-12
 
 **Test the complete build:**
@@ -475,7 +547,9 @@ swift package plugin skills-lint
 ```
 
 - Unit tests: `swift test`
-- JSON schema references: `docs/schema/findings-schema.json`, `docs/config-schema.json`, `docs/baseline-schema.json`
+- JSON schema references: `docs/schema/findings-schema.json`,
+
+  `docs/config-schema.json`, `docs/baseline-schema.json`
 
 ## License
 
@@ -483,15 +557,6 @@ MIT
 
 ---
 
-<img
-  src="./brand/brand-mark.webp"
-  srcset="./brand/brand-mark.webp 1x, ./brand/brand-mark@2x.webp 2x"
-  alt="brAInwav"
-  height="28"
-  align="left"
-/>
+![brAInwav](./brand/brand-mark.webp)
 
-<br clear="left" />
-
-**brAInwav**  
-_from demo to duty_
+**brAInwav** _from demo to duty_

@@ -2,11 +2,15 @@
 
 ## Intent
 
-Use a bottom-anchored input bar for chat, composer, or quick actions without fighting the keyboard.
+Use a bottom-anchored input bar for chat, composer, or quick actions without
+fighting the keyboard.
 
 ## Core patterns
 
-- Use `.safeAreaInset(edge: .bottom)` to anchor the toolbar above the keyboard.
+- Use `.safeAreaInset(edge: .bottom)` to anchor the toolbar above the
+
+  keyboard.
+
 - Keep the main content in a `ScrollView` or `List`.
 - Drive focus with `@FocusState` and set initial focus when needed.
 - Avoid embedding the input bar inside the scroll content; keep it separate.
@@ -47,5 +51,8 @@ struct ConversationView: View {
 
 ## Pitfalls
 
-- Avoid placing the input view inside the scroll stack; it will jump with content.
+- Avoid placing the input view inside the scroll stack; it will jump with
+
+  content.
+
 - Avoid nested scroll views that fight for drag gestures.

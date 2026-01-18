@@ -4,37 +4,74 @@
 
 ### 1. Clarified UI Labels
 
-- **Index Version Bump** → Clearly labeled as "Index Version Bump" with tooltip explaining it affects the generated skills index, not individual skills
-- **Changelog Note** → Enhanced with info icon and tooltip explaining the note goes to a separate changelog file
+- **Index Version Bump** → Clearly labeled as "Index Version Bump" with
+
+  tooltip explaining it affects the generated skills index, not individual
+  skills
+
+- **Changelog Note** → Enhanced with info icon and tooltip explaining the note
+
+  goes to a separate changelog file
+
 - **Existing Version** → Renamed to "Existing Index Version" for clarity
 
 ### 2. Added Skill Version Display
 
-- **Enhanced SkillIndexEntry** → Added `version: String?` property to capture individual skill versions
-- **Version Badge** → Added version badge display in SkillIndexRowView (e.g., "v1.2.3")
-- **Expanded Details** → Shows skill version and last modified date in expanded view
+- **Enhanced SkillIndexEntry** → Added `version: String?` property to capture
+
+  individual skill versions
+
+- **Version Badge** → Added version badge display in SkillIndexRowView (e.g.,
+
+  "v1.2.3")
+
+- **Expanded Details** → Shows skill version and last modified date in
+
+  expanded view
+
 - **Markdown Table** → Updated generated markdown to include Version column
 
 ### 3. Added Changelog File Path Display
 
-- **Path Display** → Shows where changelog will be written (e.g., "~/.codex/public/skills-changelog.md")
-- **Dynamic Path Resolution** → Automatically finds the best location among candidate paths
+- **Path Display** → Shows where changelog will be written (e.g.,
+
+  "~/.codex/public/skills-changelog.md")
+
+- **Dynamic Path Resolution** → Automatically finds the best location among
+
+  candidate paths
+
 - **Visual Feedback** → Path appears when user starts typing changelog note
 
 ## 🚀 Implemented Future Enhancements
 
 ### 4. Individual Skill Version Management
 
-- **Bulk Version Bumping** → New UI section for updating all skill versions at once
-- **Version History Tracking** → `SkillVersionHistoryEntry` struct to track version changes
-- **Frontmatter Updates** → Automatic updating of SKILL.md frontmatter with new versions
+- **Bulk Version Bumping** → New UI section for updating all skill versions at
+
+  once
+
+- **Version History Tracking** → `SkillVersionHistoryEntry` struct to track
+
+  version changes
+
+- **Frontmatter Updates** → Automatic updating of SKILL.md frontmatter with
+
+  new versions
+
 - **Semantic Versioning** → Proper patch/minor/major version bumping logic
 
 ### 5. Enhanced Backend Support
 
-- **Version Extraction** → `extractSkillVersion()` function reads versions from SKILL.md frontmatter
+- **Version Extraction** → `extractSkillVersion()` function reads versions
+
+  from SKILL.md frontmatter
+
 - **Version Validation** → Semantic version parsing and bumping
-- **File Updates** → `updateVersionInFrontmatter()` safely modifies SKILL.md files
+- **File Updates** → `updateVersionInFrontmatter()` safely modifies SKILL.md
+
+  files
+
 - **Regeneration** → Automatic index regeneration after version updates
 
 ## 📁 Files Modified
@@ -65,9 +102,14 @@
 
 ### Version Separation
 
-- **Index Versioning** → Controls the version of the generated skills index document
+- **Index Versioning** → Controls the version of the generated skills index
+
+  document
+
 - **Skill Versioning** → Controls individual SKILL.md file versions
-- **Clear UI Distinction** → Separate sections and clear labeling prevent confusion
+- **Clear UI Distinction** → Separate sections and clear labeling prevent
+
+  confusion
 
 ### Automation
 
@@ -85,12 +127,12 @@
 
 ### Data Flow
 
-```
-User selects version bump → 
-IndexViewModel.bumpAllSkillVersions() → 
-For each skill: updateVersionInFrontmatter() → 
-Write updated SKILL.md → 
-Record in version history → 
+```text
+User selects version bump →
+IndexViewModel.bumpAllSkillVersions() →
+For each skill: updateVersionInFrontmatter() →
+Write updated SKILL.md →
+Record in version history →
 Regenerate index with new versions
 ```
 
@@ -137,4 +179,6 @@ Regenerate index with new versions
 5. **Flexibility** → Supports both manual and automated workflows
 6. **User-Friendly** → Improved labels, tooltips, and visual feedback
 
-The implementation provides a comprehensive version management system that addresses the original wiring issues while adding powerful new capabilities for managing skill versions at scale.
+The implementation provides a comprehensive version management system that
+addresses the original wiring issues while adding powerful new capabilities
+for managing skill versions at scale.

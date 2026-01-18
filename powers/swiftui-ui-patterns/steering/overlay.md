@@ -2,13 +2,19 @@
 
 ## Intent
 
-Use overlays for transient UI (toasts, banners, loaders) without affecting layout.
+Use overlays for transient UI (toasts, banners, loaders) without affecting
+layout.
 
 ## Core patterns
 
-- Use `.overlay(alignment:)` to place global UI without changing the underlying layout.
+- Use `.overlay(alignment:)` to place global UI without changing the
+
+  underlying layout.
+
 - Keep overlays lightweight and dismissible.
-- Use a dedicated `ToastCenter` (or similar) for global state if multiple features trigger toasts.
+- Use a dedicated `ToastCenter` (or similar) for global state if multiple
+
+  features trigger toasts.
 
 ## Example: toast overlay
 

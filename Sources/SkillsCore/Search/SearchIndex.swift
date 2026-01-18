@@ -17,21 +17,23 @@ public enum SearchIndex {
 
     /// Get all standard skill root paths
     public static func standardRootPaths() -> [URL] {
-        var roots: [URL] = []
+        standardScanRoots().map { $0.rootURL }
+    }
 
-        // Codex
+    /// Get all standard skill scan roots with agent identity
+    public static func standardScanRoots() -> [ScanRoot] {
+        var roots: [ScanRoot] = []
+
         if let codexRoot = getCodexRoot() {
-            roots.append(codexRoot)
+            roots.append(ScanRoot(agent: .codex, rootURL: codexRoot, recursive: true))
         }
 
-        // Claude
         if let claudeRoot = getClaudeRoot() {
-            roots.append(claudeRoot)
+            roots.append(ScanRoot(agent: .claude, rootURL: claudeRoot, recursive: true))
         }
 
-        // Copilot
         if let copilotRoot = getCopilotRoot() {
-            roots.append(copilotRoot)
+            roots.append(ScanRoot(agent: .copilot, rootURL: copilotRoot, recursive: true))
         }
 
         return roots
@@ -39,67 +41,53 @@ public enum SearchIndex {
 
     /// Scan a root path for all skills
     public static func scanRoots(_ roots: [URL]) async throws -> [SkillSearchEngine.Skill] {
+        let scanRootList = roots.map { ScanRoot(agent: .codex, rootURL: $0, recursive: true) }
+        return try await scanRoots(scanRootList, excludeDirNames: [".git", ".system", "__pycache__", ".DS_Store"], excludeGlobs: [])
+    }
+
+    /// Scan roots for skills with exclusion support
+    public static func scanRoots(
+        _ roots: [ScanRoot],
+        excludeDirNames: Set<String> = [".git", ".system", "__pycache__", ".DS_Store"],
+        excludeGlobs: [String] = []
+    ) async throws -> [SkillSearchEngine.Skill] {
+        let filesByRoot = SkillsScanner.findSkillFiles(
+            roots: roots,
+            excludeDirNames: excludeDirNames,
+            excludeGlobs: excludeGlobs
+        )
         var skills: [SkillSearchEngine.Skill] = []
 
         for root in roots {
-            let found = try scanRoot(root)
-            skills.append(contentsOf: found)
+            let files = filesByRoot[root] ?? []
+            for skillFile in files {
+                skills.append(makeSkill(from: skillFile, root: root))
+            }
         }
 
         return skills
     }
 
-    /// Scan a single root for skills
-    private static func scanRoot(_ root: URL) throws -> [SkillSearchEngine.Skill] {
-        var skills: [SkillSearchEngine.Skill] = []
-        let fm = FileManager.default
-
-        guard let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: nil,
-                                                  options: [.skipsHiddenFiles, .skipsPackageDescendants]) else {
-            return skills
+    private static func makeSkill(from skillFile: URL, root: ScanRoot) -> SkillSearchEngine.Skill {
+        let skillDir = skillFile.deletingLastPathComponent()
+        let content = try? String(contentsOf: skillFile, encoding: .utf8)
+        let frontmatter = content.map { FrontmatterParser.parseTopBlock($0) } ?? [:]
+        let tags = frontmatter["tags"]?.split(separator: ",").map {
+            String($0).trimmingCharacters(in: .whitespaces)
         }
+        let attrs = try? FileManager.default.attributesOfItem(atPath: skillFile.path)
+        let fileSize = attrs?[.size] as? Int
 
-        for case let dirURL as URL in enumerator {
-            guard dirURL.hasDirectoryPath else { continue }
-
-            // Check for SKILL.md
-            let skillFile = dirURL.appendingPathComponent("SKILL.md")
-            guard fm.fileExists(atPath: skillFile.path) else { continue }
-
-            // Read metadata
-            let content = try? String(contentsOf: skillFile, encoding: .utf8)
-            let frontmatter = content.map { FrontmatterParser.parseTopBlock($0) } ?? [:]
-
-            // Determine agent from path
-            let agent: AgentKind
-            let pathLower = dirURL.path.lowercased()
-            if pathLower.contains("claude") {
-                agent = .claude
-            } else if pathLower.contains("copilot") {
-                agent = .copilot
-            } else {
-                agent = .codex
-            }
-
-            // Get file size
-            let attrs = try? fm.attributesOfItem(atPath: dirURL.path)
-            let fileSize = attrs?[.size] as? Int
-
-            let skill = SkillSearchEngine.Skill(
-                slug: dirURL.lastPathComponent,
-                name: frontmatter["name"],
-                description: frontmatter["description"],
-                agent: agent,
-                rootPath: dirURL.path,
-                tags: frontmatter["tags"]?.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) },
-                rank: nil,
-                fileSize: fileSize
-            )
-
-            skills.append(skill)
-        }
-
-        return skills
+        return SkillSearchEngine.Skill(
+            slug: skillDir.lastPathComponent,
+            name: frontmatter["name"],
+            description: frontmatter["description"],
+            agent: root.agent,
+            rootPath: skillDir.path,
+            tags: tags,
+            rank: nil,
+            fileSize: fileSize
+        )
     }
 
     /// Get Codex skills root

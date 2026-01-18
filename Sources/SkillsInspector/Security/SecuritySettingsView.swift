@@ -7,10 +7,13 @@ public struct SecuritySettingsView: View {
     @State private var quarantineStore = QuarantineStore()
     @State private var quarantinedCount = 0
     @State private var isLoading = false
+    @State private var isHydrating = false
     @State private var allowlistDraft = ""
     @State private var blocklistDraft = ""
     @State private var isAllowlistSheetPresented = false
     @State private var isBlocklistSheetPresented = false
+
+    private let settingsStore = SecuritySettingsStore()
 
     public init() {}
 
@@ -22,6 +25,7 @@ public struct SecuritySettingsView: View {
                     Text("Default").tag(Preset.default)
                     Text("Permissive").tag(Preset.permissive)
                     Text("Strict").tag(Preset.strict)
+                    Text("Custom").tag(Preset.custom)
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: securityPreset) { _, newValue in
@@ -157,6 +161,16 @@ public struct SecuritySettingsView: View {
         .task {
             await loadSettings()
         }
+        .onChange(of: securityConfig) { _, newValue in
+            guard !isHydrating else { return }
+            let resolvedPreset = preset(for: newValue)
+            if securityPreset != resolvedPreset {
+                securityPreset = resolvedPreset
+            }
+            Task {
+                await settingsStore.save(newValue)
+            }
+        }
         .sheet(isPresented: $isAllowlistSheetPresented) {
             patternSheet(
                 title: "Add Allowlist Pattern",
@@ -187,6 +201,7 @@ public struct SecuritySettingsView: View {
         case `default`
         case permissive
         case strict
+        case custom
     }
 
     @State private var securityPreset: Preset = .default
@@ -198,7 +213,9 @@ public struct SecuritySettingsView: View {
         case .permissive:
             return "Reduced security checks, allows more content through."
         case .strict:
-            return "Maximum security with all patterns enabled and strict validation."
+            return "Strict scanning with maximum coverage."
+        case .custom:
+            return "Custom configuration based on your overrides."
         }
     }
 
@@ -333,6 +350,8 @@ public struct SecuritySettingsView: View {
             securityConfig = .permissive
         case .strict:
             securityConfig = .strict
+        case .custom:
+            break
         }
     }
 
@@ -362,12 +381,24 @@ public struct SecuritySettingsView: View {
         securityConfig.blocklist.removeAll { $0 == pattern }
     }
 
+    private func preset(for config: SecurityConfig) -> Preset {
+        if config == .default { return .default }
+        if config == .permissive { return .permissive }
+        if config == .strict { return .strict }
+        return .custom
+    }
+
     private func loadSettings() async {
         isLoading = true
-        defer { isLoading = false }
+        isHydrating = true
+        defer {
+            isHydrating = false
+            isLoading = false
+        }
 
-        // Load default config
-        applyPreset(securityPreset)
+        let stored = await settingsStore.load()
+        securityConfig = stored
+        securityPreset = preset(for: stored)
 
         // Load quarantine count
         let items = await quarantineStore.list()

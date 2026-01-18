@@ -2,14 +2,17 @@
 
 ## Intent
 
-Use `@FocusState` to control keyboard focus, chain fields, and coordinate focus across complex forms.
+Use `@FocusState` to control keyboard focus, chain fields, and coordinate
+focus across complex forms.
 
 ## Core patterns
 
 - Use an enum to represent focusable fields.
 - Set initial focus in `onAppear`.
 - Use `.onSubmit` to move focus to the next field.
-- For dynamic lists of fields, use an enum with associated values (e.g., `.option(Int)`).
+- For dynamic lists of fields, use an enum with associated values (e.g.,
+
+  `.option(Int)`).
 
 ## Example: single field focus
 

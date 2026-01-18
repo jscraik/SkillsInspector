@@ -62,9 +62,15 @@ public actor SkillLedger {
         }
     }
 
-    public static func defaultStoreURL(appName: String = "sTools") -> URL {
+    public static func defaultStoreURL(appName: String = "SkillsInspector") -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent(appName, isDirectory: true).appendingPathComponent("ledger.sqlite3")
+        let newRoot = base.appendingPathComponent(appName, isDirectory: true)
+        let legacyRoot = base.appendingPathComponent("sTools", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: newRoot.path),
+           FileManager.default.fileExists(atPath: legacyRoot.path) {
+            return legacyRoot.appendingPathComponent("ledger.sqlite3")
+        }
+        return newRoot.appendingPathComponent("ledger.sqlite3")
     }
 
     public func record(_ input: LedgerEventInput) throws -> LedgerEvent {

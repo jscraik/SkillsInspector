@@ -1,12 +1,17 @@
 # Design Guidelines (canonical, all projects)
-Last updated: 2026-01-12  
-Audience: Developers (beginner–intermediate)  
-Scope: Task-focused instructions; applies to ChatGPT widgets and standalone apps across *all* projects.  
+
+Last updated: 2026-01-12
+Audience: Developers (beginner–intermediate)
+Scope: Task-focused instructions; applies to ChatGPT widgets and standalone apps
+across *all* projects.
 Owner/Review cadence: TBD
 
-> Use this as the canonical reference. Load when working on shared UI/UX or aligning any project to the common token/system. For a quick summary see `design-guidelines-summary.md`.
+> Use this as the canonical reference. Load when working on shared UI/UX or
+> aligning any project to the common token/system. For a quick summary see
+> `design-guidelines-summary.md`.
 
 ## Table of contents
+
 - Core principles
 - Component usage
 - Layout and spacing
@@ -20,68 +25,113 @@ Owner/Review cadence: TBD
 - Tokens (DTCG) — see `index.dtcg.json`
 
 ## Core principles
-- **Use Apps SDK UI first.** Prefer `@openai/apps-sdk-ui` components and your shared UI wrappers.
-- **Avoid raw tokens in production UI.** Tokens packages are for audits and extensions only.
-- **Match the system defaults.** Stick to component defaults before adding custom styling.
-- **Accessibility is non-negotiable.** Every interactive control must be usable by keyboard and assistive tech.
+
+- **Use Apps SDK UI first.** Prefer `@openai/apps-sdk-ui` components and your
+
+  shared UI wrappers.
+
+- **Avoid raw tokens in production UI.** Tokens packages are for audits and
+
+  extensions only.
+
+- **Match the system defaults.** Stick to component defaults before adding
+
+  custom styling.
+
+- **Accessibility is non-negotiable.** Every interactive control must be
+
+  usable by keyboard and assistive tech.
 
 ## Component usage
+
 - Use the UI library exports:
+
   ```tsx
   import { Button, Card, IconButton } from "@your/ui";
   ```
+
 - For tree-shaking:
+
   ```tsx
   import { Button, SectionHeader } from "@your/ui/base";
   ```
+
 - Avoid direct imports from underlying libraries:
   - Do **not** import `@radix-ui/*` outside primitives.
   - Do **not** import `lucide-react` directly; use the shared icons adapter.
 
 ## Layout and spacing
-- Use layout components (`Card`, `SectionHeader`, `CollapsibleSection`) before custom containers.
-- Keep layouts simple: one primary column, consistent padding, predictable section breaks.
-- Prefer `flex`/`grid` with Tailwind utilities; avoid absolute positioning unless required.
+
+- Use layout components (`Card`, `SectionHeader`, `CollapsibleSection`) before
+
+  custom containers.
+
+- Keep layouts simple: one primary column, consistent padding, predictable
+
+  section breaks.
+
+- Prefer `flex`/`grid` with Tailwind utilities; avoid absolute positioning
+
+  unless required.
 
 ## Colors and typography
+
 - Use component defaults and semantic classes from Apps SDK UI.
 - Do **not** hardcode hex colors or raw CSS variables in new UI code.
-- If you need a token, add it to the shared UI layer/Apps SDK UI, not directly in the page.
+- If you need a token, add it to the shared UI layer/Apps SDK UI, not directly
+
+  in the page.
 
 ## Icons and imagery
+
 - Use existing icons from the adapter before adding new SVGs.
-- Provide accessible names for icon-only controls (aria-label, title, or visually hidden text).
+- Provide accessible names for icon-only controls (aria-label, title, or
+
+  visually hidden text).
 
 ## Accessibility checklist
+
 Every new UI surface should pass:
+
 - All interactive elements reachable by keyboard.
 - Visible focus styles (not color-only).
 - Icon-only buttons have accessible labels.
 - Dialogs and menus announced correctly by screen readers.
 
 Tests:
+
 - `pnpm test:a11y:widgets`
 - `docs/KEYBOARD_NAVIGATION_TESTS.md`
 
 ## Review standard
+
 - Component/styling choices align with Apps SDK UI.
 - No raw tokens/hex colors introduced.
 - A11y checks satisfied; tests updated if needed.
 
 ## Verify
+
 - `pnpm lint:compliance` catches forbidden imports/token misuse.
-- `pnpm test:a11y:widgets` confirms keyboard and screen reader paths for widgets.
+- `pnpm test:a11y:widgets` confirms keyboard and screen reader paths for
+
+  widgets.
 
 ## Related docs
+
 - `packages/ui/README.md`
 - `docs/guides/PAGES_QUICK_START.md`
 - `docs/KEYBOARD_NAVIGATION_TESTS.md`
 
 ## Appendices
-Appendix A–J contain UI/UX/Brand patterns, anti-patterns, decisions, and sharp edges. Apply them in SwiftUI surfaces too.
+
+Appendix A–J contain UI/UX/Brand patterns, anti-patterns, decisions, and sharp
+edges. Apply them in SwiftUI surfaces too.
 
 ## Tailwind preset (bind tokens to Tailwind)
-Use this preset to wire DTCG-derived CSS variables into Tailwind (adapt package names as needed):
+
+Use this preset to wire DTCG-derived CSS variables into Tailwind (adapt
+package names as needed):
+
 ```ts
 import type { Config } from "tailwindcss";
 
@@ -108,16 +158,21 @@ const preset: Config = {
           "icon-dark-inverted": "var(--foundation-icon-dark-inverted)",
           "icon-dark-accent": "var(--foundation-icon-dark-accent)",
           "icon-dark-status-error": "var(--foundation-icon-dark-status-error)",
-          "icon-dark-status-warning": "var(--foundation-icon-dark-status-warning)",
-          "icon-dark-status-success": "var(--foundation-icon-dark-status-success)",
+          "icon-dark-status-warning":
+            "var(--foundation-icon-dark-status-warning)",
+          "icon-dark-status-success":
+            "var(--foundation-icon-dark-status-success)",
           "icon-light-primary": "var(--foundation-icon-light-primary)",
           "icon-light-secondary": "var(--foundation-icon-light-secondary)",
           "icon-light-tertiary": "var(--foundation-icon-light-tertiary)",
           "icon-light-inverted": "var(--foundation-icon-light-inverted)",
           "icon-light-accent": "var(--foundation-icon-light-accent)",
-          "icon-light-status-error": "var(--foundation-icon-light-status-error)",
-          "icon-light-status-warning": "var(--foundation-icon-light-status-warning)",
-          "icon-light-status-success": "var(--foundation-icon-light-status-success)",
+          "icon-light-status-error":
+            "var(--foundation-icon-light-status-error)",
+          "icon-light-status-warning":
+            "var(--foundation-icon-light-status-warning)",
+          "icon-light-status-success":
+            "var(--foundation-icon-light-status-success)",
           "border-light": "var(--foundation-border-light)",
           "border-heavy": "var(--foundation-border-heavy)",
           "border-dark-default": "var(--foundation-border-dark-default)",
@@ -157,59 +212,115 @@ const preset: Config = {
       fontSize: {
         "heading-1": [
           "var(--foundation-heading-1-size)",
-          { lineHeight: "var(--foundation-heading-1-line)", letterSpacing: "var(--foundation-heading-1-tracking)", fontWeight: "var(--foundation-heading-1-weight)" },
+          {
+            lineHeight: "var(--foundation-heading-1-line)",
+            letterSpacing: "var(--foundation-heading-1-tracking)",
+            fontWeight: "var(--foundation-heading-1-weight)"
+          },
         ],
         "heading-2": [
           "var(--foundation-heading-2-size)",
-          { lineHeight: "var(--foundation-heading-2-line)", letterSpacing: "var(--foundation-heading-2-tracking)", fontWeight: "var(--foundation-heading-2-weight)" },
+          {
+            lineHeight: "var(--foundation-heading-2-line)",
+            letterSpacing: "var(--foundation-heading-2-tracking)",
+            fontWeight: "var(--foundation-heading-2-weight)"
+          },
         ],
         "heading-3": [
           "var(--foundation-heading-3-size)",
-          { lineHeight: "var(--foundation-heading-3-line)", letterSpacing: "var(--foundation-heading-3-tracking)", fontWeight: "var(--foundation-heading-3-weight)" },
+          {
+            lineHeight: "var(--foundation-heading-3-line)",
+            letterSpacing: "var(--foundation-heading-3-tracking)",
+            fontWeight: "var(--foundation-heading-3-weight)"
+          },
         ],
         body: [
           "var(--foundation-body-size)",
-          { lineHeight: "var(--foundation-body-line)", letterSpacing: "var(--foundation-body-tracking)", fontWeight: "var(--foundation-body-weight-regular)" },
+          {
+            lineHeight: "var(--foundation-body-line)",
+            letterSpacing: "var(--foundation-body-tracking)",
+            fontWeight: "var(--foundation-body-weight-regular)"
+          },
         ],
         "body-emphasis": [
           "var(--foundation-body-size)",
-          { lineHeight: "var(--foundation-body-line)", letterSpacing: "var(--foundation-body-tracking)", fontWeight: "var(--foundation-body-weight-emphasis)" },
+          {
+            lineHeight: "var(--foundation-body-line)",
+            letterSpacing: "var(--foundation-body-tracking)",
+            fontWeight: "var(--foundation-body-weight-emphasis)"
+          },
         ],
         "body-small": [
           "var(--foundation-body-small-size)",
-          { lineHeight: "var(--foundation-body-small-line)", letterSpacing: "var(--foundation-body-small-tracking)", fontWeight: "var(--foundation-body-small-weight-regular)" },
+          {
+            lineHeight: "var(--foundation-body-small-line)",
+            letterSpacing: "var(--foundation-body-small-tracking)",
+            fontWeight: "var(--foundation-body-small-weight-regular)"
+          },
         ],
         "body-small-emphasis": [
           "var(--foundation-body-small-size)",
-          { lineHeight: "var(--foundation-body-small-line)", letterSpacing: "var(--foundation-body-small-tracking)", fontWeight: "var(--foundation-body-small-weight-emphasis)" },
+          {
+            lineHeight: "var(--foundation-body-small-line)",
+            letterSpacing: "var(--foundation-body-small-tracking)",
+            fontWeight: "var(--foundation-body-small-weight-emphasis)"
+          },
         ],
         caption: [
           "var(--foundation-caption-size)",
-          { lineHeight: "var(--foundation-caption-line)", letterSpacing: "var(--foundation-caption-tracking)", fontWeight: "var(--foundation-caption-weight-regular)" },
+          {
+            lineHeight: "var(--foundation-caption-line)",
+            letterSpacing: "var(--foundation-caption-tracking)",
+            fontWeight: "var(--foundation-caption-weight-regular)"
+          },
         ],
         "caption-emphasis": [
           "var(--foundation-caption-size)",
-          { lineHeight: "var(--foundation-caption-line)", letterSpacing: "var(--foundation-caption-tracking)", fontWeight: "var(--foundation-caption-weight-emphasis)" },
+          {
+            lineHeight: "var(--foundation-caption-line)",
+            letterSpacing: "var(--foundation-caption-tracking)",
+            fontWeight: "var(--foundation-caption-weight-emphasis)"
+          },
         ],
         "card-title": [
           "var(--foundation-card-title-size)",
-          { lineHeight: "var(--foundation-card-title-line)", letterSpacing: "var(--foundation-card-title-tracking)", fontWeight: "var(--foundation-card-title-weight)" },
+          {
+            lineHeight: "var(--foundation-card-title-line)",
+            letterSpacing: "var(--foundation-card-title-tracking)",
+            fontWeight: "var(--foundation-card-title-weight)"
+          },
         ],
         "list-title": [
           "var(--foundation-list-title-size)",
-          { lineHeight: "var(--foundation-list-title-line)", letterSpacing: "var(--foundation-list-title-tracking)", fontWeight: "var(--foundation-list-title-weight)" },
+          {
+            lineHeight: "var(--foundation-list-title-line)",
+            letterSpacing: "var(--foundation-list-title-tracking)",
+            fontWeight: "var(--foundation-list-title-weight)"
+          },
         ],
         "list-subtitle": [
           "var(--foundation-list-subtitle-size)",
-          { lineHeight: "var(--foundation-list-subtitle-line)", letterSpacing: "var(--foundation-list-subtitle-tracking)", fontWeight: "var(--foundation-list-subtitle-weight)" },
+          {
+            lineHeight: "var(--foundation-list-subtitle-line)",
+            letterSpacing: "var(--foundation-list-subtitle-tracking)",
+            fontWeight: "var(--foundation-list-subtitle-weight)"
+          },
         ],
         "button-label": [
           "var(--foundation-button-label-size)",
-          { lineHeight: "var(--foundation-button-label-line)", letterSpacing: "var(--foundation-button-label-tracking)", fontWeight: "var(--foundation-button-label-weight)" },
+          {
+            lineHeight: "var(--foundation-button-label-line)",
+            letterSpacing: "var(--foundation-button-label-tracking)",
+            fontWeight: "var(--foundation-button-label-weight)"
+          },
         ],
         "button-label-small": [
           "var(--foundation-button-label-small-size)",
-          { lineHeight: "var(--foundation-button-label-small-line)", letterSpacing: "var(--foundation-button-label-small-tracking)", fontWeight: "var(--foundation-button-label-small-weight)" },
+          {
+            lineHeight: "var(--foundation-button-label-small-line)",
+            letterSpacing: "var(--foundation-button-label-small-tracking)",
+            fontWeight: "var(--foundation-button-label-small-weight)"
+          },
         ],
       },
       fontFamily: {
@@ -267,5 +378,6 @@ export default preset;
 ```
 
 ## Tokens
+
 - Canonical DTCG token source: `references/index.dtcg.json`.
 - Do **not** copy raw values; consume semantic tokens via platform adapters.

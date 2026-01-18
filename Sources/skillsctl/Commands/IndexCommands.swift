@@ -34,24 +34,24 @@ struct Build: AsyncParsableCommand {
         let engine = try SkillSearchEngine.default()
 
         // Get root paths
-        let rootURLs: [URL]
+        let scanRoots: [ScanRoot]
         if let rootsString = roots {
-            rootURLs = rootsString.split(separator: ",").map {
-                URL(fileURLWithPath: String($0).trimmingCharacters(in: .whitespaces))
+            scanRoots = rootsString.split(separator: ",").map {
+                ScanRoot(agent: .codex, rootURL: URL(fileURLWithPath: String($0).trimmingCharacters(in: .whitespaces)), recursive: true)
             }
         } else {
-            rootURLs = SearchIndex.standardRootPaths()
+            scanRoots = SearchIndex.standardScanRoots()
         }
 
         if verbose {
-            print("Scanning \(rootURLs.count) root path(s)...")
-            for root in rootURLs {
-                print("  - \(root.path)")
+            print("Scanning \(scanRoots.count) root path(s)...")
+            for root in scanRoots {
+                print("  - \(root.rootURL.path)")
             }
         }
 
         // Scan for skills
-        let skills = try await SearchIndex.scanRoots(rootURLs)
+        let skills = try await SearchIndex.scanRoots(scanRoots)
 
         if verbose {
             print("Found \(skills.count) skill(s)")
@@ -135,21 +135,21 @@ struct Rebuild: AsyncParsableCommand {
         }
 
         // Get root paths
-        let rootURLs: [URL]
+        let scanRoots: [ScanRoot]
         if let rootsString = roots {
-            rootURLs = rootsString.split(separator: ",").map {
-                URL(fileURLWithPath: String($0).trimmingCharacters(in: .whitespaces))
+            scanRoots = rootsString.split(separator: ",").map {
+                ScanRoot(agent: .codex, rootURL: URL(fileURLWithPath: String($0).trimmingCharacters(in: .whitespaces)), recursive: true)
             }
         } else {
-            rootURLs = SearchIndex.standardRootPaths()
+            scanRoots = SearchIndex.standardScanRoots()
         }
 
         if verbose {
-            print("Rebuilding index from \(rootURLs.count) root path(s)...")
+            print("Rebuilding index from \(scanRoots.count) root path(s)...")
         }
 
         // Rebuild
-        try await engine.rebuildIndex(roots: rootURLs)
+        try await engine.rebuildIndex(roots: scanRoots)
 
         print("Index rebuilt successfully")
 

@@ -216,7 +216,7 @@ This is the work queue for the meta-skill-integration feature. Each item should 
     - `--format` option (text|json) for stats
     - Added Search and SearchIndexCmd to main.swift subcommands
 
-### Story S5: Add QuarantineReviewView to sTools app
+### Story S5: Add QuarantineReviewView to SkillsInspector app
 
 - [x] **Task 1**: Create QuarantineReviewView
   - Spec reference: `.ralph/prd.json` story S5 acceptance (lines 96-102)
@@ -248,7 +248,7 @@ This is the work queue for the meta-skill-integration feature. Each item should 
     - SwiftUI preview
     - Integration with SecurityConfig and QuarantineStore
 
-### Story S8: Add SearchView to sTools app
+### Story S8: Add SearchView to SkillsInspector app
 
 - [x] **Task 1**: Create SearchView
   - Spec reference: `.ralph/prd.json` story S8 acceptance (lines 163-171)
@@ -379,7 +379,7 @@ This is the work queue for the meta-skill-integration feature. Each item should 
     - Template discovery with `find(named:)` and `builtInTemplates()`
     - Added to main.swift subcommands as WorkflowCommand
 
-### Story S11: Add WorkflowDashboardView to sTools app
+### Story S11: Add WorkflowDashboardView to SkillsInspector app
 
 - [x] **Task 1**: Create WorkflowDashboardView
   - Spec reference: `.ralph/prd.json` story S11 acceptance (lines 236-243)

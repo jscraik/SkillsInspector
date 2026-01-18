@@ -1,15 +1,20 @@
 # Code Documentation Standards
 
-This guide covers in-code documentation standards for TypeScript/JavaScript/React, Swift, and configuration files.
+This guide covers in-code documentation standards for
+TypeScript/JavaScript/React, Swift, and configuration files.
 
 ## TypeScript/JavaScript + React (JSDoc/TSDoc)
 
-Document public APIs (exports), non-obvious utilities, hooks, and any function/component with constraints.
+Document public APIs (exports), non-obvious utilities, hooks, and any
+function/component with constraints.
 
 ### Required Content for Public Symbols
 
 - **One-line summary** starting with a verb (e.g., "Creates...", "Renders...")
-- **`@param`** for non-trivial params (include units, allowed values, defaults)
+- **`@param`** for non-trivial params (include units, allowed values,
+
+  defaults)
+
 - **`@returns`** (or React render contract if it returns JSX)
 - **`@throws`** for thrown errors (name + condition)
 - **`@example`** for anything with more than one "correct" usage
@@ -17,8 +22,14 @@ Document public APIs (exports), non-obvious utilities, hooks, and any function/c
 
 ### React-Specific Documentation
 
-- Document props contract (required/optional, default behavior, controlled/uncontrolled)
-- Document accessibility contract: keyboard behavior, focus management, ARIA expectations
+- Document props contract (required/optional, default behavior,
+
+  controlled/uncontrolled)
+
+- Document accessibility contract: keyboard behavior, focus management, ARIA
+
+  expectations
+
 - For hooks: document dependencies, side effects, and SSR constraints
 
 ### Example: Function Documentation
@@ -27,13 +38,13 @@ Document public APIs (exports), non-obvious utilities, hooks, and any function/c
 /**
  * Creates a debounced version of the provided function that delays invoking
  * until after wait milliseconds have elapsed since the last time it was invoked.
- * 
+ *
  * @param func - The function to debounce
  * @param wait - The number of milliseconds to delay (default: 300)
  * @param immediate - If true, trigger on leading edge instead of trailing
  * @returns A debounced version of the original function
  * @throws {TypeError} When func is not a function
- * 
+ *
  * @example
  * ```typescript
  * const debouncedSave = debounce(saveData, 500);
@@ -54,7 +65,7 @@ export function debounce<T extends (...args: any[]) => any>(
 ```typescript
 /**
  * Renders an accessible button with loading state and icon support.
- * 
+ *
  * @param children - Button text or content
  * @param variant - Visual style variant (default: "primary")
  * @param size - Button size (default: "medium")
@@ -62,7 +73,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * @param icon - Optional icon component to display
  * @param onClick - Click handler function
  * @returns JSX element with proper ARIA attributes and keyboard support
- * 
+ *
  * @example
  * ```tsx
  * <Button variant="secondary" loading={isSubmitting} onClick={handleSubmit}>
@@ -85,15 +96,19 @@ export function Button({
 
 ### Rules
 
-- For public symbols, explain what the code does (behavior/contract), not just why
+- For public symbols, explain what the code does (behavior/contract), not just
+
+  why
+
 - Inline comments explain why/constraints, not what the code already says
 - Do not invent; docs must match implementation and tests
 
 ## Swift (DocC / SwiftDoc)
 
-Use `///` DocC comments for public types/methods, and anything with tricky invariants.
+Use `///` DocC comments for public types/methods, and anything with tricky
+invariants.
 
-### Required Content for Public Symbols
+### Required Content for Public Symbols (Swift)
 
 - **Summary sentence**
 - **`- Parameters:`** and **`- Returns:`** (when applicable)
@@ -106,8 +121,14 @@ Use `///` DocC comments for public types/methods, and anything with tricky invar
 
 - Add **`### Discussion`** to explain behavior, edge cases, and tradeoffs
 - Add **`- Complexity:`** when time/space cost is non-trivial
-- Use **`- Note:`** for usage guidance and **`- Attention:`** for user-impacting caveats
-- Use **`## Topics`** and **`### <Group>`** to cluster related symbols on type docs
+- Use **`- Note:`** for usage guidance and **`- Attention:`** for
+
+  user-impacting caveats
+
+- Use **`## Topics`** and **`### {Group}`** to cluster related symbols on type
+
+  docs
+
 - Add a "See Also" list when there are close alternatives or companion APIs
 
 ### Example: Swift Function Documentation
@@ -186,7 +207,8 @@ public class ExpiringCache<Key: Hashable, Value> {
 
 ### Concurrency Documentation
 
-Document actor/isolation expectations (`@MainActor`, thread-safety) explicitly:
+Document actor/isolation expectations (`@MainActor`, thread-safety)
+explicitly:
 
 ```swift
 /// Updates the user interface with new data.
@@ -257,7 +279,7 @@ Goal: readers can safely edit config without guessing.
         "url": {
           "type": "string",
           "format": "uri",
-          "description": "Database connection URL (keep secure - do not commit real values)"
+          "description": "Database connection URL (do not commit real values)"
         },
         "maxConnections": {
           "type": "integer",
@@ -283,13 +305,13 @@ Goal: readers can safely edit config without guessing.
 server:
   port: 3000              # Port number (1024-65535)
   host: "localhost"       # Hostname to bind to
-  
-# Database Configuration  
+
+# Database Configuration
 database:
   # Connection URL - SECURITY: Use environment variables in production
   # Format: postgresql://user:password@host:port/database
   url: "${DATABASE_URL}"
-  
+
   # Connection pool settings
   maxConnections: 10      # Maximum concurrent connections (default: 10)
   timeout: 30000          # Connection timeout in milliseconds
@@ -298,7 +320,7 @@ database:
 features:
   enableMetrics: true     # Enable Prometheus metrics endpoint
   enableDebug: false      # Enable debug logging (never true in production)
-  
+
 # Migration Notes:
 # v2.0.0: Renamed 'db' to 'database'
 # v1.5.0: Added 'features' section
@@ -306,26 +328,42 @@ features:
 
 ### Validation Rule
 
-Config docs must reference the validating mechanism (Zod schema, JSON Schema, or typed config loader).
+Config docs must reference the validating mechanism (Zod schema, JSON Schema,
+or typed config loader).
 
 ## Code Documentation QA Checklist
 
 ### TypeScript/JavaScript/React
 
 - [ ] All exported/public functions/classes/hooks/components have docblocks
-- [ ] Docblocks include constraints: units, allowed values, defaults, side effects
+- [ ] Docblocks include constraints: units, allowed values, defaults, side
+
+  effects
+
 - [ ] `@throws` used where errors can occur; conditions are explicit
 - [ ] At least one `@example` for multi-step or easy-to-misuse APIs
-- [ ] React components document a11y contract (keyboard/focus/ARIA) when interactive
+- [ ] React components document a11y contract (keyboard/focus/ARIA) when
+
+  interactive
+
 - [ ] No "narration" comments; comments explain intent/tradeoffs
 
 ### Swift
 
 - [ ] Public APIs have DocC (`///`) with Parameters/Returns/Throws as needed
-- [ ] Concurrency expectations documented (MainActor, thread-safety, isolation)
+- [ ] Concurrency expectations documented (MainActor, thread-safety,
+
+  isolation)
+
 - [ ] Invariants/footguns captured with Important/Warning
-- [ ] Rich DocC used: Discussion for behavior/edge cases, Complexity included when non-trivial
-- [ ] Type docs group related symbols with Topics, and include See Also when close alternatives exist
+- [ ] Rich DocC used: Discussion for behavior/edge cases, Complexity included
+
+  when non-trivial
+
+- [ ] Type docs group related symbols with Topics, and include See Also when
+
+  close alternatives exist
+
 - [ ] Note used for usage tips or common pitfalls when they exist
 
 ### JSON / TOML / YAML

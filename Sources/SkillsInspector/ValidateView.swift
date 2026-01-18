@@ -50,7 +50,7 @@ struct ValidateView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in
-            Task { await viewModel.scan() }
+            Task { await viewModel.scan(userInitiated: true) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .cancelScan)) { _ in
             viewModel.cancelScan()
@@ -74,7 +74,7 @@ private extension ValidateView {
                 // Primary Action Group
                 HStack(spacing: DesignTokens.Spacing.xxxs) {
                     Button {
-                        Task { await viewModel.scan() }
+                        Task { await viewModel.scan(userInitiated: true) }
                     } label: {
                         HStack(spacing: DesignTokens.Spacing.xxxs) {
                             if viewModel.isScanning {
@@ -249,21 +249,15 @@ private extension ValidateView {
                     }
                 }
                 .padding(.horizontal, DesignTokens.Spacing.sm)
-                .padding(.vertical, 6)
-                .background(DesignTokens.Colors.Background.tertiary.opacity(0.3))
-                
-                Divider()
+                .padding(.vertical, DesignTokens.Spacing.xxs)
+                .background(cleanToolbarStyle(cornerRadius: 0))
             }
         }
-        // Auto-scan on critical setting changes (Debounced)
-        .task(id: viewModel.recursive) { 
-            try? await Task.sleep(nanoseconds: 800_000_000)
-            await autoScanIfReady() 
-        }
-        .task(id: viewModel.effectiveExcludes) { 
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            await autoScanIfReady() 
-        }
+        // Previous implementation had these auto-scan triggers:
+        // .task(id: viewModel.recursive) { try? await Task.sleep(nanoseconds: 800_000_000); await autoScanIfReady() }
+        // .task(id: viewModel.effectiveExcludes) { try? await Task.sleep(nanoseconds: 1_200_000_000); await autoScanIfReady() }
+        // These caused immediate scans on view appearance, triggering "Scanning..." state before UI was responsive.
+        // Scan control is now explicit: users click "Scan Rules" button (⌘R) or enable watch mode for automatic re-scanning on file changes.
     }
 
     private func severityBadge(count: Int, severity: Severity, isActive: Bool) -> some View {
@@ -348,7 +342,7 @@ private extension ValidateView {
                         }
                         
                         Button("Start Scan") {
-                            Task { await viewModel.scan() }
+                            Task { await viewModel.scan(userInitiated: true) }
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.regular)
@@ -522,10 +516,11 @@ private extension ValidateView {
 
 // MARK: - Actions
 private extension ValidateView {
-    private func autoScanIfReady() async {
-        guard !viewModel.isScanning else { return }
-        await viewModel.scan()
-    }
+    // Auto-scan on settings changes has been disabled to prevent launch flicker/unresponsiveness.
+    // Users can now trigger scans explicitly via:
+    // - "Scan Rules" button (⌘R)
+    // - "Run Scan" menu command (⌘R)
+    // - Enabling watch mode (⌘⇧W) for automatic re-scanning on file changes
 
     private func addToBaseline(_ finding: Finding) {
         let baselineURL: URL
@@ -541,7 +536,7 @@ private extension ValidateView {
             toastMessage = ToastMessage(style: .success, message: "Added to baseline")
             Task {
                 try? await Task.sleep(nanoseconds: 500_000_000)
-                await viewModel.scan()
+                await viewModel.scan(userInitiated: true)
             }
         } catch {
             toastMessage = ToastMessage(style: .error, message: "Failed to add to baseline")
@@ -562,7 +557,7 @@ private extension ValidateView {
         toastMessage = ToastMessage(style: .success, message: "Applied \(successCount) fixes successfully! Re-scanning...")
         Task {
             try? await Task.sleep(nanoseconds: 500_000_000)
-            await viewModel.scan()
+            await viewModel.scan(userInitiated: true)
         }
     }
 }

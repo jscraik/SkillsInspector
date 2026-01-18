@@ -4,9 +4,9 @@ This file is the authoritative source of truth for what we're building. Treat it
 
 ## Purpose
 
-sTools is a **Trustworthy Skills Inspector** for macOS that installs, updates, and publishes skills with explicit consent, cryptographic verification, reproducible builds, versioned history, and unified compatibility across Codex, Claude Code, and GitHub Copilot. It provides:
+SkillsInspector is a **Trustworthy Skills Inspector** for macOS that installs, updates, and publishes skills with explicit consent, cryptographic verification, reproducible builds, versioned history, and unified compatibility across Codex, Claude Code, and GitHub Copilot. It provides:
 
-- **sTools app** (macOS): Interactive GUI with provenance badges, consent gates, and safe preview
+- **SkillsInspector app** (macOS): Interactive GUI with provenance badges, consent gates, and safe preview
 - **skillsctl CLI**: Command-line tool for CI/CD integration with verify/install/publish commands
 - **SkillsLintPlugin**: SwiftPM plugin for automated validation
 
@@ -59,7 +59,7 @@ Code and workflow conventions to follow:
   - `swift test` - Run unit tests including security fixtures
   - `swift build` - Verify compilation
   - `swift run skillsctl --help` - Test CLI interface
-  - `open sTools.app` - Launch GUI after build
+  - `open SkillsInspector.app` - Launch GUI after build
 
 ## Known System Areas / Links
 

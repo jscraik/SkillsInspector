@@ -77,6 +77,7 @@ struct SettingsView: View {
 
 struct GeneralTabView: View {
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = false
+    @AppStorage("useSharedSkillsRoot") private var useSharedSkillsRoot = false
     @AppStorage("showFileCounts") private var showFileCounts = true
     @AppStorage("confirmDeletion") private var confirmDeletion = true
     
@@ -102,6 +103,19 @@ struct GeneralTabView: View {
                     Text("Auto-scan on launch")
                         .font(.callout)
                     Text("Automatically start scanning when the app launches")
+                        .captionText()
+                        .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            
+            Divider()
+            
+            Toggle(isOn: $useSharedSkillsRoot) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Single source of truth")
+                        .font(.callout)
+                    Text("Use the first Codex root as the master for all agents. Sync/Index won't compare agents in this mode.")
                         .captionText()
                         .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 }
@@ -398,7 +412,7 @@ struct PrivacyTabView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Share anonymous usage data")
                         .font(.callout)
-                    Text("Help improve sTools by sharing anonymous metrics")
+                    Text("Help improve SkillsInspector by sharing anonymous metrics")
                         .captionText()
                         .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 }
@@ -553,7 +567,7 @@ struct PrivacyNoticeSheet: View {
                     bulletPoint("Number of verified skill installs")
                     bulletPoint("Number of blocked downloads (with reason category)")
                     bulletPoint("Number of publish runs (success/failure)")
-                    bulletPoint("sTools app version")
+                    bulletPoint("SkillsInspector app version")
                     bulletPoint("Anonymized installer ID (random 8-character identifier)")
                 }
             }
@@ -585,7 +599,7 @@ struct PrivacyNoticeSheet: View {
                 }
             }
 
-            Text("By enabling telemetry, you help improve sTools while maintaining your privacy.")
+            Text("By enabling telemetry, you help improve SkillsInspector while maintaining your privacy.")
                 .font(.callout)
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 .padding(.top, DesignTokens.Spacing.xs)
@@ -606,7 +620,7 @@ struct PrivacyNoticeSheet: View {
 // MARK: - Privacy Notice Text
 
 private let PRIVACY_NOTICE = """
-sTools collects anonymous usage data to help improve the app. This data is stored locally on your Mac and automatically deleted after 30 days.
+SkillsInspector collects anonymous usage data to help improve the app. This data is stored locally on your Mac and automatically deleted after 30 days.
 
 We do not collect any personally identifiable information (PII). File paths, usernames, and skill names are redacted before storage.
 """

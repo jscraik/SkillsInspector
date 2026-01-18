@@ -4,7 +4,7 @@ This document describes the organization of the sTools project.
 
 ## Root Directory
 
-```
+```text
 sTools/
 ├── .github/          # GitHub workflows and CI/CD
 ├── .ralph/           # Ralph AI assistant logs and planning
@@ -29,12 +29,12 @@ sTools/
   - Artifact fetcher and sanitizer
   - Cross-IDE adapters
   - Ledger and publisher
-  
+
 - **SkillsInspector/** - macOS SwiftUI application
   - Main app views and navigation
   - Remote skill browser with provenance
   - Design tokens and styling
-  
+
 - **skillsctl/** - Command-line interface
   - verify/install/publish commands
   - CI/CD integration
@@ -54,7 +54,7 @@ sTools/
 - **SkillsCoreTests/** - Unit tests for core logic
   - Trust and verification tests
   - Security fixture tests
-  
+
 - **SkillsInspectorTests/** - UI and integration tests
   - View model tests
   - Snapshot tests

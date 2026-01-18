@@ -2,14 +2,27 @@
 
 ## Intent
 
-Use a centralized sheet routing pattern so any view can present modals without prop-drilling. This keeps sheet state in one place and scales as the app grows.
+Use a centralized sheet routing pattern so any view can present modals without
+prop-drilling. This keeps sheet state in one place and scales as the app
+grows.
 
 ## Core architecture
 
-- Define a `SheetDestination` enum that describes every modal and is `Identifiable`.
-- Store the current sheet in a router object (`presentedSheet: SheetDestination?`).
-- Create a view modifier like `withSheetDestinations(...)` that maps the enum to concrete sheet views.
-- Inject the router into the environment so child views can set `presentedSheet` directly.
+- Define a `SheetDestination` enum that describes every modal and is
+
+  `Identifiable`.
+
+- Store the current sheet in a router object (`presentedSheet:
+
+  SheetDestination?`).
+
+- Create a view modifier like `withSheetDestinations(...)` that maps the enum
+
+  to concrete sheet views.
+
+- Inject the router into the environment so child views can set
+
+  `presentedSheet` directly.
 
 ## Example: SheetDestination enum
 
@@ -76,11 +89,18 @@ struct StatusRow: View {
 ## Required wiring
 
 For the child view to work, a parent view must:
-- own the router instance,
-- attach `withSheetDestinations(sheet: $router.presentedSheet)` (or an equivalent `sheet(item:)` handler), and
-- inject it with `.environment(router)` after the sheet modifier so the modal content inherits it.
 
-This makes the child assignment to `router.presentedSheet` drive presentation at the root.
+- own the router instance,
+- attach `withSheetDestinations(sheet: $router.presentedSheet)` (or an
+
+  equivalent `sheet(item:)` handler), and
+
+- inject it with `.environment(router)` after the sheet modifier so the modal
+
+  content inherits it.
+
+This makes the child assignment to `router.presentedSheet` drive presentation
+at the root.
 
 ## Example: sheets that need their own navigation
 
@@ -101,13 +121,32 @@ struct NavigationSheet<Content: View>: View {
 
 ## Design choices to keep
 
-- Centralize sheet routing so features can present modals without wiring bindings through many layers.
-- Use `sheet(item:)` to guarantee a single sheet is active and to drive presentation from the enum.
-- Group related sheets under the same `id` when they are mutually exclusive (e.g., editor flows).
-- Keep sheet views lightweight and composed from smaller views; avoid large monoliths.
+- Centralize sheet routing so features can present modals without wiring
+
+  bindings through many layers.
+
+- Use `sheet(item:)` to guarantee a single sheet is active and to drive
+
+  presentation from the enum.
+
+- Group related sheets under the same `id` when they are mutually exclusive
+
+  (e.g., editor flows).
+
+- Keep sheet views lightweight and composed from smaller views; avoid large
+
+  monoliths.
 
 ## Pitfalls
 
-- Avoid mixing `sheet(isPresented:)` and `sheet(item:)` for the same concern; prefer a single enum.
-- Do not store heavy state inside `SheetDestination`; pass lightweight identifiers or models.
-- If multiple sheets can appear from the same screen, give them distinct `id` values.
+- Avoid mixing `sheet(isPresented:)` and `sheet(item:)` for the same concern;
+
+  prefer a single enum.
+
+- Do not store heavy state inside `SheetDestination`; pass lightweight
+
+  identifiers or models.
+
+- If multiple sheets can appear from the same screen, give them distinct `id`
+
+  values.

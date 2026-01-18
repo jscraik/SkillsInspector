@@ -1,8 +1,10 @@
 # Code documentation templates
 
-One sentence: reusable doc comment templates for common languages, with space for constraints, errors, and examples.
+One sentence: reusable doc comment templates for common languages, with space
+for constraints, errors, and examples.
 
 ## Table of contents
+
 - [General guidance](#general-guidance)
 - [JSDoc / TSDoc (TS, JS)](#jsdoc--tsdoc-ts-js)
 - [React component docblock](#react-component-docblock)
@@ -13,6 +15,7 @@ One sentence: reusable doc comment templates for common languages, with space fo
 - [Kotlin KDoc / JavaDoc](#kotlin-kdoc--javadoc)
 
 ## General guidance
+
 - State purpose in the first line. Use a verb and name the object.
 - Document constraints: units, ranges, defaults, side effects, and invariants.
 - Include `@throws` or the language equivalent when errors can occur.
@@ -20,6 +23,7 @@ One sentence: reusable doc comment templates for common languages, with space fo
 - For UI components, document accessibility behavior (keyboard, focus, ARIA).
 
 ## JSDoc / TSDoc (TS, JS)
+
 ```ts
 /**
  * <Verb> <object> to <result>.
@@ -40,6 +44,7 @@ One sentence: reusable doc comment templates for common languages, with space fo
 ```
 
 ## React component docblock
+
 ```tsx
 /**
  * <ComponentName> renders <purpose> for <audience>.
@@ -59,6 +64,7 @@ One sentence: reusable doc comment templates for common languages, with space fo
 ```
 
 ## Python docstring (Google style)
+
 ```py
 def function_name(arg1: Type, arg2: Type) -> ReturnType:
     """<Verb> <object> to <result>.
@@ -85,6 +91,7 @@ def function_name(arg1: Type, arg2: Type) -> ReturnType:
 ```
 
 ## Rust doc comment
+
 ```rust
 /// <Verb> <object> to <result>.
 ///
@@ -109,6 +116,7 @@ pub fn function_name(arg: Type) -> Result<ReturnType, Error> {
 ```
 
 ## Go doc comment
+
 ```go
 // FunctionName <verbs> <object> to <result>.
 //
@@ -123,6 +131,7 @@ func FunctionName(arg Type) (ReturnType, error) {
 ```
 
 ## Swift DocC
+
 ```swift
 /// <Verb> <object> to <result>.
 ///
@@ -146,6 +155,7 @@ func functionName(_ name: Type) throws -> ReturnType {
 ```
 
 ## Kotlin KDoc / JavaDoc
+
 ```kotlin
 /**
  * <Verb> <object> to <result>.
@@ -160,6 +170,7 @@ fun functionName(name: Type): ReturnType {
     // ...
 }
 ```
+
 ```java
 /**
  * <Verb> <object> to <result>.

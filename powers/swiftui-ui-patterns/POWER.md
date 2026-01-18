@@ -10,16 +10,24 @@ author: "Jamie Craik"
 
 ## Overview
 
-This power provides comprehensive guidance for building SwiftUI applications with modern patterns and best practices. It covers everything from basic component composition to complex navigation architectures, emphasizing native SwiftUI patterns over heavy abstractions.
+This power provides comprehensive guidance for building SwiftUI applications
+with modern patterns and best practices. It covers everything from basic
+component composition to complex navigation architectures, emphasizing native
+SwiftUI patterns over heavy abstractions.
 
-The power includes detailed component-specific guides accessible through steering files, covering 25+ SwiftUI components and patterns with real-world examples and best practices from production iOS apps.
+The power includes detailed component-specific guides accessible through
+steering files, covering 25+ SwiftUI components and patterns with real-world
+examples and best practices from production iOS apps.
 
 ## Philosophy
 
 - **Prefer native SwiftUI patterns** over heavy view-model scaffolding
 - **Keep views small, composable, and predictable**
 - **Preserve project conventions** and avoid premature abstraction
-- **Use modern SwiftUI state** (`@State`, `@Binding`, `@Observable`, `@Environment`)
+- **Use modern SwiftUI state** (`@State`, `@Binding`, `@Observable`,
+
+  `@Environment`)
+
 - **Favor composition** over complex inheritance hierarchies
 
 ## When to Use This Power
@@ -37,21 +45,38 @@ Use this power when you're:
 
 ### Core Architecture & Wiring
 
-- **app-wiring** - Complete app shell setup with TabView + NavigationStack + sheets and dependency injection patterns
-- **components-index** - Master index of all available component guides with usage recommendations
+- **app-wiring** - Complete app shell setup with TabView + NavigationStack +
+
+  sheets and dependency injection patterns
+
+- **components-index** - Master index of all available component guides with
+
+  usage recommendations
 
 ### Navigation & Structure
 
 - **tabview** - Tab-based app architecture and per-tab navigation patterns
-- **navigationstack** - Push navigation, programmatic routing, and navigation state management
-- **sheets** - Modal presentation patterns with enum-driven routing and proper state management
+- **navigationstack** - Push navigation, programmatic routing, and navigation
+
+  state management
+
+- **sheets** - Modal presentation patterns with enum-driven routing and proper
+
+  state management
+
 - **deeplinks** - URL routing and in-app navigation from external links
 - **split-views** - iPad/macOS multi-column layouts and adaptive interfaces
 
 ### Lists & Data Display
 
-- **list** - Feed-style content, settings rows, and list performance optimization
-- **scrollview** - Custom layouts, horizontal scrollers, and lazy loading patterns
+- **list** - Feed-style content, settings rows, and list performance
+
+  optimization
+
+- **scrollview** - Custom layouts, horizontal scrollers, and lazy loading
+
+  patterns
+
 - **grids** - Icon pickers, media galleries, and tiled layout patterns
 - **searchable** - Native search UI with scopes, filtering, and async results
 
@@ -65,20 +90,34 @@ Use this power when you're:
 ### Media & Content
 
 - **media** - Remote images, video previews, and media viewer patterns
-- **loading-placeholders** - Skeleton screens, empty states, and loading UX patterns
-- **matched-transitions** - Smooth animations between source and destination views
+- **loading-placeholders** - Skeleton screens, empty states, and loading UX
+
+  patterns
+
+- **matched-transitions** - Smooth animations between source and destination
+
+  views
 
 ### Layout & Styling
 
 - **theming** - App-wide theme tokens, colors, and dynamic type scaling
-- **design-guidelines-summary** - Quick reference for design tokens and styling
-- **design-guidelines-canonical** - Complete design system guidelines and standards
+- **design-guidelines-summary** - Quick reference for design tokens and
+
+  styling
+
+- **design-guidelines-canonical** - Complete design system guidelines and
+
+  standards
+
 - **overlay** - Transient UI like banners, toasts, and temporary overlays
 - **top-bar** - Pinned selectors and pills above scroll content
 
 ### Advanced Patterns
 
-- **lightweight-clients** - Small, closure-based API clients for dependency injection
+- **lightweight-clients** - Small, closure-based API clients for dependency
+
+  injection
+
 - **haptics** - Tactile feedback patterns tied to user actions
 - **title-menus** - Filter and context menus in navigation titles
 
@@ -86,17 +125,38 @@ Use this power when you're:
 
 ### For Existing Projects
 
-1. **Identify your feature** - Determine the primary interaction model (list, detail, editor, settings, tabbed)
-2. **Find similar patterns** - Use the components-index steering file to locate relevant guides
-3. **Read the specific guide** - Load the appropriate steering file for detailed patterns
-4. **Apply local conventions** - Adapt patterns to your project's existing style
+1. **Identify your feature** - Determine the primary interaction model (list,
+
+   detail, editor, settings, tabbed)
+
+2. **Find similar patterns** - Use the components-index steering file to
+
+   locate relevant guides
+
+3. **Read the specific guide** - Load the appropriate steering file for
+
+   detailed patterns
+
+4. **Apply local conventions** - Adapt patterns to your project's existing
+
+   style
+
 5. **Build incrementally** - Start with small, focused subviews and expand
 
 ### For New Projects
 
-1. **Start with app wiring** - Read the app-wiring steering file for TabView + NavigationStack setup
-2. **Choose your first component** - Pick the UI pattern you need first (TabView, List, Form, etc.)
-3. **Read the component guide** - Load the specific steering file for detailed implementation
+1. **Start with app wiring** - Read the app-wiring steering file for TabView +
+
+   NavigationStack setup
+
+2. **Choose your first component** - Pick the UI pattern you need first
+
+   (TabView, List, Form, etc.)
+
+3. **Read the component guide** - Load the specific steering file for detailed
+
+   implementation
+
 4. **Expand gradually** - Add routes and sheets as new screens are needed
 
 ## Core Principles
@@ -146,7 +206,7 @@ Use this power when you're:
 
 To access detailed guidance for any component or pattern:
 
-```
+```text
 Call action "readSteering" with powerName="swiftui-ui-patterns", steeringFile="{filename}.md"
 ```
 
@@ -166,7 +226,10 @@ Each steering file contains:
 
 ## Best Practices Summary
 
-- Use modern SwiftUI state (`@State`, `@Binding`, `@Observable`, `@Environment`)
+- Use modern SwiftUI state (`@State`, `@Binding`, `@Observable`,
+
+  `@Environment`)
+
 - Prefer composition; keep views small and focused
 - Use async/await with `.task` and explicit loading/error states
 - Maintain existing project conventions when editing legacy files
@@ -187,6 +250,5 @@ For projects using design tokens and shared styling:
 
 ---
 
-**Framework:** SwiftUI  
-**Platform:** iOS, macOS, watchOS, tvOS  
-**Minimum Version:** iOS 14.0+
+**Framework:** SwiftUI **Platform:** iOS, macOS, watchOS, tvOS **Minimum
+Version:** iOS 14.0+

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Configuration for security scanning and pattern matching
-public struct SecurityConfig: Codable, Sendable {
+public struct SecurityConfig: Codable, Sendable, Equatable {
     /// List of pattern IDs that are enabled for scanning
     /// Empty array means all built-in patterns are enabled
     public var enabledPatterns: [String]
@@ -41,7 +41,26 @@ public struct SecurityConfig: Codable, Sendable {
     }
 
     /// Default security configuration for production use
-    public static let `default` = SecurityConfig()
+    /// Allowlist Mermaid start/end state markers to avoid false positives in docs.
+    public static let `default` = SecurityConfig(
+        allowlist: [
+            "\\[\\*\\]\\s*-->",
+            "-->\\s*\\[\\*\\]",
+            "You'?ve probably run into this\\.",
+            "Reveal the hidden issues \\(race conditions, cleanup\\)",
+            "Run these when available and record results:",
+            "Run a fast QA pass \\(clarity, missing steps, top 3 failure points\\)\\.",
+            "If `\\.vale\\.ini` exists, run `vale <doc>` and record results\\.",
+            "If markdownlint config exists, run `markdownlint-cli2 <doc> --config <config>`\\.",
+            "If `scripts/check_readability\\.py` exists, run it and record the score and target range .*",
+            "If `scripts/check_brand_guidelines\\.py` exists, run it against the repo root\\.",
+            "python scripts/check_readability\\.py <doc>",
+            "python scripts/check_brand_guidelines\\.py --repo \\. --docs <doc>",
+            "vale <doc>",
+            "markdownlint-cli2 <doc> --config <config>",
+            "Use `str_replace` to make edits \\(never reprint the whole doc\\)"
+        ]
+    )
 
     /// Permissive configuration for trusted sources
     public static let permissive = SecurityConfig(

@@ -311,12 +311,20 @@ public actor SkillSearchEngine {
     }
 
     /// Rebuild the entire index from skill roots
-    public func rebuildIndex(roots: [URL]) async throws {
+    public func rebuildIndex(
+        roots: [ScanRoot],
+        excludeDirNames: Set<String> = [".git", ".system", "__pycache__", ".DS_Store"],
+        excludeGlobs: [String] = []
+    ) async throws {
         // Clear existing index
         try clear()
 
         // Re-index all skills using SearchIndex helper
-        let skills = try await SearchIndex.scanRoots(roots)
+        let skills = try await SearchIndex.scanRoots(
+            roots,
+            excludeDirNames: excludeDirNames,
+            excludeGlobs: excludeGlobs
+        )
 
         for skill in skills {
             let skillURL = URL(fileURLWithPath: skill.rootPath)
@@ -325,6 +333,12 @@ public actor SkillSearchEngine {
                 try? indexSkill(skill, content: content)
             }
         }
+    }
+
+    /// Rebuild the entire index from raw URLs (defaults to Codex agent)
+    public func rebuildIndex(roots: [URL]) async throws {
+        let scanRoots = roots.map { ScanRoot(agent: .codex, rootURL: $0, recursive: true) }
+        try await rebuildIndex(roots: scanRoots)
     }
 
     /// Optimize the FTS index

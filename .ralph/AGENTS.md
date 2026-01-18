@@ -30,7 +30,7 @@ swift build
 swift build
 
 # Build specific product
-swift build -c debug --product sTools
+swift build -c debug --product SkillsInspector
 swift build --product skillsctl
 ```
 
@@ -79,7 +79,7 @@ Commands that MUST pass before marking a task done:
 
 ```bash
 # 1. Build check (Swift 6 compilation)
-swift build -c debug --product sTools
+swift build -c debug --product SkillsInspector
 
 # 2. Tests
 swift test
@@ -98,7 +98,7 @@ swift run skillsctl scan --repo . --allow-empty
 - **File organization**:
   - `Sources/SkillsCore/` - Core scanning/validation/sync engine
   - `Sources/skillsctl/` - CLI
-  - `Sources/SkillsInspector/` - SwiftUI app (sTools)
+  - `Sources/SkillsInspector/` - SwiftUI app (SkillsInspector)
   - `Plugins/SkillsLintPlugin/` - SwiftPM command plugin
   - `Tests/` - Unit tests (core + inspector view models)
 - **Code length**: ~300 LOC per file, ~30 LOC per function
@@ -140,13 +140,13 @@ tags: [tag1, tag2]
 
 ### Product Targets
 
-1. **sTools** (macOS app): Formerly SkillsInspector - GUI for skill validation/sync
+1. **SkillsInspector** (macOS app): Formerly SkillsInspector - GUI for skill validation/sync
 2. **skillsctl** (CLI): Command-line tool for CI/CD and scripting
 3. **SkillsLintPlugin** (SwiftPM): Build-time validation plugin
 
 ### Current Development Focus
 
-**Integration of meta_skill patterns into sTools** (without external dependencies):
+**Integration of meta_skill patterns into SkillsInspector** (without external dependencies):
 1. Structured SkillSpec type (SKILL.md ↔ JSON round-trip)
 2. ACIP security scanning (prompt-injection quarantine)
 3. SQLite FTS search (O(log n) full-text search)

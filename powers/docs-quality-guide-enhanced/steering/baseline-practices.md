@@ -1,17 +1,26 @@
 # Documentation Baseline Practices
 
-This guide covers the core standards and practices for creating high-quality documentation that gets useful information into readers' heads quickly, with minimal cognitive load.
+This guide covers the core standards and practices for creating high-quality
+documentation that gets useful information into readers' heads quickly, with
+minimal cognitive load.
 
 ## Mission
 
-Produce documentation that gets useful information into a reader's head quickly, with minimal cognitive load, and with practical paths to success (examples + troubleshooting).
+Produce documentation that gets useful information into a reader's head
+quickly, with minimal cognitive load, and with practical paths to success
+(examples + troubleshooting).
 
 ## Operating Procedure
 
 ### 1) Locate and Scope
 
-- Identify the canonical doc surface(s): README, /docs, /guides, /runbooks, /api, etc.
-- Do not rewrite everything. Pick the smallest set of files that solves the user task.
+- Identify the canonical doc surface(s): README, /docs, /guides, /runbooks,
+
+  /api, etc.
+
+- Do not rewrite everything. Pick the smallest set of files that solves the
+
+  user task.
 
 ### 1a) Capture Doc Requirements
 
@@ -37,20 +46,29 @@ Apply these rules aggressively:
 - Put the topic words at the beginning of topic sentences
 - Put takeaways before procedure (results first, then steps)
 - Use bullets and tables whenever they reduce scanning time
-- Bold truly important phrases sparingly (what to do, what not to do, critical constraints)
+- Bold truly important phrases sparingly (what to do, what not to do, critical
+
+  constraints)
 
 ### 4) Write Clean, Unambiguous Prose
 
 - Prefer simple sentences; split long ones
 - Remove filler/adverbs and needless phrasing
 - Avoid hard-to-parse phrasing and ambiguous sentence starts
-- Prefer right-branching phrasing (tell readers early what the sentence connects to)
-- Avoid "this/that" references across sentences; repeat the specific noun instead
+- Prefer right-branching phrasing (tell readers early what the sentence
+
+  connects to)
+
+- Avoid "this/that" references across sentences; repeat the specific noun
+
+  instead
+
 - Be consistent (terminology, casing, naming conventions, punctuation style)
 
 ### 4a) Capture Risk and Assumptions
 
-If the doc involves operational steps, safety, or data impact, add a "Risks and assumptions" section that includes:
+If the doc involves operational steps, safety, or data impact, add a "Risks
+and assumptions" section that includes:
 
 - Assumptions the doc relies on
 - Failure modes and blast radius
@@ -62,9 +80,15 @@ Optimize for beginners without annoying experts:
 
 - Explain simply; do not assume English fluency
 - Avoid abbreviations; write terms out on first use
-- Proactively address likely failure points (env vars, PATH, permissions, ports, tokens)
+- Proactively address likely failure points (env vars, PATH, permissions,
+
+  ports, tokens)
+
 - Prefer specific, accurate terminology over insider jargon
-- Keep examples general and exportable (minimal dependencies, self-contained snippets)
+- Keep examples general and exportable (minimal dependencies, self-contained
+
+  snippets)
+
 - Focus on common/high-value tasks over edge cases
 - Do not teach bad habits (e.g., hardcoding secrets, unsafe defaults)
 
@@ -79,23 +103,34 @@ Optimize for beginners without annoying experts:
 ### 7) Security, Privacy, and Safety Pass
 
 - Never expose real secrets, tokens, or internal endpoints; use placeholders
-- Avoid encouraging destructive or irreversible commands without warnings and backups
+- Avoid encouraging destructive or irreversible commands without warnings and
+
+  backups
+
 - Call out PII handling and data retention considerations when relevant
 - Prefer least-privilege guidance for credentials, access, and permissions
 
 ### 8) Check Content Against the Repo
 
 - Never invent commands, flags, file paths, outputs, or version numbers
-- Cross-check installation steps with actual configs (package scripts, Makefile, Dockerfile, CI)
+- Cross-check installation steps with actual configs (package scripts,
+
+  Makefile, Dockerfile, CI)
+
 - If you cannot verify a detail, flag it as needing confirmation
 
 ### 9) Run Doc Linters (when available)
 
-- If `.vale.ini` exists, run `vale <doc>` and record results
-- If markdownlint config exists, run `markdownlint-cli2 <doc> --config <config>`
+- If `.vale.ini` exists, run `vale {doc}` and record results
+- If markdownlint config exists, run `markdownlint-cli2 {doc} --config
+
+  {config}`
+
 - If link-check tooling exists, run it and record results
 - If tooling is missing, state what is missing and how to enable it
-- If readability checking is available, run it and record the score and target range (default target: 45-70 Flesch Reading Ease)
+- If readability checking is available, run it and record the score and target
+
+  range (default target: 45-70 Flesch Reading Ease)
 
 ### 10) Finish with Verification Hooks
 
@@ -118,7 +153,9 @@ If branding, visual formatting, or a root README is in scope:
 Add a short acceptance checklist and an evidence bundle at the end of the doc:
 
 - Acceptance criteria: 5-10 checkboxes that must be true before completion
-- Evidence bundle: lint output, brand check output, readability output, and checklist snapshot
+- Evidence bundle: lint output, brand check output, readability output, and
+
+  checklist snapshot
 
 ## Quality Checklist
 
@@ -127,7 +164,9 @@ Add a short acceptance checklist and an evidence bundle at the end of the doc:
 - [ ] Title states the doc's purpose (not a vague label)
 - [ ] Headings are informative sentences where possible
 - [ ] Table of contents exists if the doc is long/sectioned
-- [ ] Reader can find: prerequisites → quickstart → common tasks → troubleshooting
+- [ ] Reader can find: prerequisites → quickstart → common tasks →
+
+  troubleshooting
 
 ### Skimmability
 
@@ -160,7 +199,10 @@ Add a short acceptance checklist and an evidence bundle at the end of the doc:
 
 ### Requirements, Risks, and Lifecycle
 
-- [ ] Doc requirements recorded (audience tier, scope/non-scope, owner, review cadence)
+- [ ] Doc requirements recorded (audience tier, scope/non-scope, owner, review
+
+  cadence)
+
 - [ ] Risks and assumptions documented when operational or data impact exists
 - [ ] "Last updated" and owner are present for top-level docs
 - [ ] Acceptance criteria included (5-10 items)
@@ -196,8 +238,13 @@ When you finish edits, include:
 1. Summary of changes (3-7 bullets)
 2. Doc QA checklist results
 3. Open questions / requires confirmation (explicit list, no hand-waving)
-4. Brand compliance results (if applicable) with evidence of signature and assets
-5. Evidence bundle (lint output, brand check output, readability output, checklist snapshot)
+4. Brand compliance results (if applicable) with evidence of signature and
+
+   assets
+
+5. Evidence bundle (lint output, brand check output, readability output,
+
+   checklist snapshot)
 
 ## Automation Hooks (Optional)
 

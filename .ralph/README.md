@@ -48,7 +48,7 @@ This directory contains your Ralph Loop configuration and state.
 Current gates (from `ralph.toml`):
 
 ```bash
-swift build -c debug --product sTools
+swift build -c debug --product SkillsInspector
 swift test
 swift package skills-lint
 swift run skillsctl scan --repo . --allow-empty

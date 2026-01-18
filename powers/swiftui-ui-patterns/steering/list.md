@@ -2,7 +2,8 @@
 
 ## Intent
 
-Use `List` for feed-style content and settings-style rows where built-in row reuse, selection, and accessibility matter.
+Use `List` for feed-style content and settings-style rows where built-in row
+reuse, selection, and accessibility matter.
 
 ## Core patterns
 
@@ -10,10 +11,21 @@ Use `List` for feed-style content and settings-style rows where built-in row reu
 - Use `Section` headers to group related rows.
 - Pair with `ScrollViewReader` when you need scroll-to-top or jump-to-id.
 - Use `.listStyle(.plain)` for modern feed layouts.
-- Use `.listStyle(.grouped)` for multi-section discovery/search pages where section grouping helps.
-- Apply `.scrollContentBackground(.hidden)` + a custom background when you need a themed surface.
-- Use `.listRowInsets(...)` and `.listRowSeparator(.hidden)` to tune row spacing and separators.
-- Use `.environment(\\.defaultMinListRowHeight, ...)` to control dense list layouts.
+- Use `.listStyle(.grouped)` for multi-section discovery/search pages where
+
+  section grouping helps.
+
+- Apply `.scrollContentBackground(.hidden)` + a custom background when you
+
+  need a themed surface.
+
+- Use `.listRowInsets(...)` and `.listRowSeparator(.hidden)` to tune row
+
+  spacing and separators.
+
+- Use `.environment(\\.defaultMinListRowHeight, ...)` to control dense list
+
+  layouts.
 
 ## Example: feed list with scroll-to-top
 
@@ -77,10 +89,20 @@ struct SettingsView: View {
 
 - Use `List` for dynamic feeds, settings, and any UI where row semantics help.
 - Use stable IDs for rows to keep animations and scroll positioning reliable.
-- Prefer `.contentShape(Rectangle())` on rows that should be tappable end-to-end.
-- Use `.refreshable` for pull-to-refresh feeds when the data source supports it.
+- Prefer `.contentShape(Rectangle())` on rows that should be tappable
+
+  end-to-end.
+
+- Use `.refreshable` for pull-to-refresh feeds when the data source supports
+
+  it.
 
 ## Pitfalls
 
-- Avoid heavy custom layouts inside a `List` row; use `ScrollView` + `LazyVStack` instead.
-- Be careful mixing `List` and nested `ScrollView`; it can cause gesture conflicts.
+- Avoid heavy custom layouts inside a `List` row; use `ScrollView` +
+
+  `LazyVStack` instead.
+
+- Be careful mixing `List` and nested `ScrollView`; it can cause gesture
+
+  conflicts.

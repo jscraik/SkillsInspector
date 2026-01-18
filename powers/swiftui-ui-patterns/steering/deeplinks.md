@@ -2,13 +2,20 @@
 
 ## Intent
 
-Route external URLs into in-app destinations while falling back to system handling when needed.
+Route external URLs into in-app destinations while falling back to system
+handling when needed.
 
 ## Core patterns
 
-- Centralize URL handling in the router (`handle(url:)`, `handleDeepLink(url:)`).
+- Centralize URL handling in the router (`handle(url:)`,
+
+  `handleDeepLink(url:)`).
+
 - Inject an `OpenURLAction` handler that delegates to the router.
-- Use `.onOpenURL` for app scheme links and convert them to web URLs if needed.
+- Use `.onOpenURL` for app scheme links and convert them to web URLs if
+
+  needed.
+
 - Let the router decide whether to navigate or open externally.
 
 ## Example: router entry points

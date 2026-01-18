@@ -2,13 +2,17 @@
 
 ## Intent
 
-Use consistent patterns for loading images, previewing media, and presenting a full-screen viewer.
+Use consistent patterns for loading images, previewing media, and presenting a
+full-screen viewer.
 
 ## Core patterns
 
 - Use `LazyImage` (or `AsyncImage`) for remote images with loading states.
 - Prefer a lightweight preview component for inline media.
-- Use a shared viewer state (e.g., `QuickLook`) to present a full-screen media viewer.
+- Use a shared viewer state (e.g., `QuickLook`) to present a full-screen media
+
+  viewer.
+
 - Use `openWindow` for desktop/visionOS and a sheet for iOS.
 
 ## Example: inline media preview

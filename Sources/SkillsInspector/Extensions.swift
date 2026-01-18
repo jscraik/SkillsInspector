@@ -3,6 +3,9 @@ import SkillsCore
 #if canImport(UIKit)
 import UIKit
 #endif
+#if os(macOS)
+import AppKit
+#endif
 
 // MARK: - Severity Color Extension
 
@@ -179,31 +182,49 @@ struct StatusBarView: View {
 
 // MARK: - Shimmer Loading Effect
 
+private struct ActivePaneKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var isActivePane: Bool {
+        get { self[ActivePaneKey.self] }
+        set { self[ActivePaneKey.self] = newValue }
+    }
+}
+
 struct ShimmerModifier: ViewModifier {
-    @State private var phase: CGFloat = 0
+    let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isActivePane) private var isActivePane
+    @State private var phase: CGFloat = -200
     
     func body(content: Content) -> some View {
-        content
-            .overlay(
-                LinearGradient(
-                    colors: [.clear, .white.opacity(0.4), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
+        if !isActive || !isActivePane || reduceMotion {
+            content
+        } else {
+            content
+                .overlay(
+                    LinearGradient(
+                        colors: [.clear, .white.opacity(0.4), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .offset(x: phase)
                 )
-                .offset(x: phase)
-            )
-            .mask(content)
-            .onAppear {
-                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                    phase = 200
+                .mask(content)
+                .onAppear {
+                    withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                        phase = 200
+                    }
                 }
-            }
+        }
     }
 }
 
 extension View {
-    func shimmer() -> some View {
-        modifier(ShimmerModifier())
+    func shimmer(active: Bool = true) -> some View {
+        modifier(ShimmerModifier(isActive: active))
     }
 }
 
@@ -333,10 +354,12 @@ extension View {
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
                     .fill(DesignTokens.Colors.Background.primary)
+                    .allowsHitTesting(false)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
                     .stroke(selected ? tint : DesignTokens.Colors.Border.light, lineWidth: selected ? 2 : 1)
+                    .allowsHitTesting(false)
             )
             .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
             .shadow(color: selected ? tint.opacity(0.1) : .clear, radius: selected ? 8 : 0, y: 0)
@@ -347,6 +370,7 @@ extension View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(DesignTokens.Colors.Background.secondary)
             .shadow(color: .black.opacity(0.03), radius: 1, y: 0.5)
+            .allowsHitTesting(false)
     }
 
     /// Subtle toolbar background
@@ -356,7 +380,9 @@ extension View {
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(DesignTokens.Colors.Border.light, lineWidth: 0.5)
+                    .allowsHitTesting(false)
             )
+            .allowsHitTesting(false)
     }
 }
 
@@ -629,6 +655,49 @@ extension ButtonStyle where Self == CleanButtonStyle {
 extension ButtonStyle where Self == CleanProminentButtonStyle {
     static var cleanProminent: CleanProminentButtonStyle { CleanProminentButtonStyle() }
 }
+
+// MARK: - Window Access (macOS Only)
+
+#if os(macOS)
+/// NSViewRepresentable that provides access to the hosting NSWindow for runtime configuration.
+/// Calls the provided closure once with the host window, guarding against repeat invocations.
+struct WindowAccessor: NSViewRepresentable {
+    let onWindow: (NSWindow) -> Void
+    
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            // Access the window after the view hierarchy is established
+            if let window = view.window {
+                context.coordinator.configure(window)
+            }
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onWindow: onWindow)
+    }
+    
+    class Coordinator {
+        private var onWindow: (NSWindow) -> Void
+        private var hasConfigured = false
+        
+        init(onWindow: @escaping (NSWindow) -> Void) {
+            self.onWindow = onWindow
+        }
+        
+        func configure(_ window: NSWindow) {
+            // Guard: only configure once to prevent repeat invocations
+            guard !hasConfigured else { return }
+            hasConfigured = true
+            onWindow(window)
+        }
+    }
+}
+#endif
 
 struct EmptyStateView_Previews: PreviewProvider {
     static var previews: some View {
