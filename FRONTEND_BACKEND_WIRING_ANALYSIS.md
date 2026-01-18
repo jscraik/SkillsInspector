@@ -65,7 +65,7 @@ follows a **ViewModel-based reactive pattern** where:
 
 ## Key Wiring Patterns
 
-### 1. Scan Flow (Validate Tab)
+### 1. Scan Flow (`Validate` Tab)
 
 #### User Action → UI → ViewModel → Backend → Results
 
@@ -558,7 +558,7 @@ public class RemoteSkillClient {
 - ✅ **Verification**: Manifest validation before installation
 - ✅ **Trust Store**: Cryptographic verification of signers
 - ✅ **Ledger Recording**: Installation events recorded for audit trail
-- ✅ **Multi-Target**: Can install to multiple agent roots simultaneously
+- ✅ **Multi-Target**: Can install to more than one agent root simultaneously
 
 ---
 
@@ -577,7 +577,7 @@ public class RemoteSkillClient {
 - Severity filter:
   `$severityFilter` → filter findings in-memory
 - "Apply Fix" button:
-  `FixEngine.applyFix(fix)` → modify file on disk
+  `FixEngine.applyFix(fix)` → update file on disk
 
 ### Sync Controls (SyncView)
 
@@ -820,7 +820,7 @@ CommandMenu("Scan") {
 - **Caching**: Integrated throughout scan operations
 - **Persistence**: Settings saved to UserDefaults
 
-### 2. ⚠️ Areas to Monitor
+### 2. ⚠️ Areas to Watch
 
 - **Watch Mode**: FileWatcher integration appears complete but should verify
 
@@ -830,7 +830,7 @@ CommandMenu("Scan") {
 
   them to UI
 
-- **Concurrent Operations**: Multiple simultaneous scans could race; scanID
+- **Concurrent Operations**: Concurrent scans could race; scanID
 
   tracking mitigates this
 
@@ -849,7 +849,7 @@ CommandMenu("Scan") {
 
 ## Summary
 
-The sTools frontend-backend wiring is **well-structured and comprehensive**:
+The sTools frontend-backend wiring stays **well-structured and comprehensive**:
 
 ✅ **Clear separation of concerns** - Views don't call backend directly ✅
 **Reactive state management** - @Published properties drive UI updates ✅

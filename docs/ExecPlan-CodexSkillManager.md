@@ -1,20 +1,20 @@
 # Remote Skill Catalog & Import (CodexSkillManager parity for sTools)
 
-This ExecPlan is a living document. The sections `Progress`, `Surprises &
-Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up
-to date as work proceeds. Follow
+This ExecPlan stays a living document. Keep the sections `Progress`,
+`Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` up to
+date as work proceeds. Follow
 `/Users/jamiecraik/.codex/instructions/plans.md` for required structure.
 
 ## Purpose / Big Picture
 
-Deliver CodexSkillManager-equivalent capabilities inside sTools
+Deliver CodexSkillManager-matching capabilities inside sTools
 (SkillsInspector + SkillsCore + skillsctl) so operators can browse Clawdhub,
 search and filter remote skills, preview metadata/owners/changelogs,
 download/install/update skills into Codex/Claude paths (or custom roots),
-import local zips/folders, and render reference previews inline. The goal is a
-single app/CLI that manages both local and remote skill lifecycles with
-evidence-backed operations (downloads, installs, publishes) and clear status
-tags.
+import local zips/folders, and render reference previews inline. The goal
+remains a single app/CLI that manages both local and remote skill lifecycles
+with evidence-backed operations (downloads, installs, publishes) and clear
+status tags.
 
 ## Progress
 
@@ -42,7 +42,7 @@ tags.
 - [ ] (2026-01-11T00:00Z) Inline reference previews in detail pane.
 - [ ] (2026-01-11T00:00Z) Sparkle update channel wiring (if retained) or
 
-  equivalent in-app update notice.
+    matching in-app update notice.
 
 - [ ] (2026-01-11T00:00Z) Tests added (unit + integration) and telemetry for
 
@@ -65,8 +65,8 @@ tags.
 ## Context and Orientation
 
 Current repo (`sTools`) provides SkillsCore (scan/sync/index engine),
-skillsctl CLI, and SkillsInspector macOS UI (run via `swift run sTools`).
-Remote catalog features are absent. Key entry points:
+skillsctl CLI, and SkillsInspector macOS UI (run via `swift run SkillsInspector`).
+Remote catalog features remain absent. Key entry points:
 
 - CLI: `Sources/skillsctl/main.swift` (argument parsing, commands), shared
 
@@ -126,15 +126,15 @@ available), detail panel with owner info, changelog, stats, tags (Codex/Claude
 installed), version picker, download/install buttons, open in Finder, delete.
 Integrate status badges matching CodexSkillManager TagView semantics. Add
 inline reference previews to existing detail view using Markdown rendering
-plus collapsible reference list (similar to CodexSkillManager
+plus collapsible reference list (like CodexSkillManager
 ReferenceDetailInlineView/ReferenceListView). Provide import dialogs for
 folder/zip and install target selection, with progress HUD and error toasts.
 Add caching indicator and manual refresh.
 
-5) Import/export parity Implement `ImportSkillView`-equivalent flows in
-SkillsInspector: pick folder/zip, validate contents, choose target roots,
+5) Import/export parity Build `ImportSkillView`-matching flows in
+SkillsInspector: pick folder/zip, check contents, choose target roots,
 handle conflicts (prompt overwrite/rename/skip), and show summary. Add CLI
-counterparts (`skillsctl import --path <zip|dir> --target ...`). Add
+counterparts (proposed `skillsctl import --path <zip|dir> --target ...`). Add
 export/share action from detail to zip. Reuse `ExportService` where possible;
 extend with zipping and target selection.
 
@@ -142,9 +142,9 @@ extend with zipping and target selection.
 store in SkillsCore to cache owners/changelogs with TTL (configurable). Expose
 update availability by comparing installed version (from SKILL.md frontmatter
 or metadata) with `fetchLatestVersion`. Surface update badges in UI and
-`skillsctl remote list --with-updates`.
+proposed `skillsctl remote list --with-updates` (not yet implemented).
 
-7) Packaging/update channel decision Evaluate need for Sparkle update flow. If
+7) Packaging/update channel decision Assess need for Sparkle update flow. If
 we keep Sparkle, align Scripts/ signing instructions (reuse existing
 `Scripts/` in CodexSkillManager). Otherwise, add in-app update notification
 (link to release page). Document in README and app About view.
@@ -155,14 +155,15 @@ parsing, JSON output). Add UI snapshot/unit tests for Remote tab view models
 (no network). Extend telemetry to include network metrics (bytes, latency,
 cache hits). Ensure tests avoid real network (use DI).
 
-9) Documentation and governance Update README (sTools app section) and docs
+9) Documentation and governance Update README (SkillsInspector app section)
+and docs
 (config schema additions for remote endpoints/cache/targets). Add architecture
 note describing remote data flow and security posture (no auth, HTTPS only,
 caching, redaction). Ensure AGENTS.md and CODESTYLE compliance (no hard-coded
 secrets, deterministic tests).
 
 10) Validation and rollout Manual QA: `swift test`, `swift run skillsctl
-remote list --repo . --format json`, `swift run skillsctl remote install
+remote list --format json`, `swift run skillsctl remote install
 <slug> --target codex --allow-empty` in a sandbox directory, and UI manual run
 of Remote tab. Capture before/after evidence. Prepare migration notes (new
 config keys) and feature flag toggles if needed.
@@ -175,7 +176,7 @@ config keys) and feature flag toggles if needed.
   (RemoteSkillClient/ImportSkillView/etc.) and map into
   SkillsCore/SkillsInspector/skillsctl design.
 
-- Implement core client/models/tests in `Sources/SkillsCore/Remote/` (new
+- Build core client/models/tests in `Sources/SkillsCore/Remote/` (new
 
   folder) and wiring in existing services.
 
@@ -198,14 +199,14 @@ config keys) and feature flag toggles if needed.
 
 - Commands to run during implementation/validation:
   - `swift test`
-  - `swift run skillsctl remote list --repo . --format json --allow-empty`
-  - `swift run sTools` (manual QA of Remote tab)
-  - Optional: `swift run skillsctl import --help`,
+  - `swift run skillsctl remote list --format json`
+  - `swift run SkillsInspector` (manual QA of Remote tab)
+  - Optional (after import lands): `swift run skillsctl import --help`,
     `swift run skillsctl remote install --help`
 
 ## Validation and Acceptance
 
-Change is acceptable when:
+Change qualifies as acceptable when:
 
 - All tests pass (`swift test`).
 - `skillsctl remote list/search/detail/install/update/import` work with mock
@@ -229,10 +230,10 @@ Change is acceptable when:
 
 ## Idempotence and Recovery
 
-Remote operations must be retryable: downloads write to temp dir then move
-atomically; installs validate and rollback on failure; caches can be cleared
-from UI/CLI; repeated imports skip/rename on conflict. CLI commands should be
-safe to rerun. Provide `--dry-run` where feasible.
+Remote operations must stay retryable: downloads write to temp dir then move
+atomically; installs check and rollback on failure; caches clear from UI/CLI;
+repeated imports skip/rename on conflict. CLI commands should stay safe to
+rerun. Provide `--dry-run` where practical.
 
 ## Artifacts and Notes
 
@@ -249,9 +250,9 @@ safe to rerun. Provide `--dry-run` where feasible.
 ## Interfaces and Dependencies
 
 - New dependency: none beyond Foundation/SwiftUI; reuse existing Markdown
-
-  renderer. If HTTP image loading is needed, use `AsyncImage` with caching or
-  lightweight loader; avoid third-party additions unless justified.
+  renderer. If HTTP image loading becomes necessary, use `AsyncImage` with
+  caching or a lightweight loader; avoid third-party additions unless
+  justified.
 
 - RemoteSkillClient interface: fetchLatest(limit:Int) async throws ->
 

@@ -17,7 +17,7 @@ Built from this SwiftPM package. From the repo root:
 swift build -c release
 ```
 
-The binary will be under `.build/release/skillsctl`.
+The binary lives under `.build/release/skillsctl`.
 
 ## Common commands
 
@@ -45,7 +45,7 @@ The binary will be under `.build/release/skillsctl`.
 - `--format json|text` (default: text)
 - `--config <path>`: load `.skillsctl/config.json` (see Config Schema article)
 - `--baseline <path>`: suppress known findings
-- `--ignore <path>`: additional ignore list
+- `--ignore <path>`: extra ignore list
 - `--default-excludes`: skip common system dirs
 - `--exclude <glob>` (repeatable): extra directory globs to skip
 - `--recursive`: recursively scan for SKILL.md

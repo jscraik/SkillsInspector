@@ -59,7 +59,7 @@
 1. **Schema integration** - Better link schema docs to usage examples
 2. **Migration guides** - Add guides for configuration changes
 3. **User journey docs** - Create persona-based documentation paths
-4. **Doc linting setup** - Implement Vale/markdownlint for consistency
+4. **Doc linting setup** - Add Vale/markdownlint for consistency
 
 ### Medium Priority
 
@@ -96,7 +96,7 @@
 
 ### Structure and Navigation
 
-- [x] Titles state document purpose clearly
+- [x] Titles state document purpose
 - [x] Informative headings used throughout
 - [x] Table of contents for longer documents
 - [x] Logical flow: prerequisites → quickstart → details → troubleshooting
@@ -132,7 +132,7 @@
 
 ## Next Steps
 
-1. **Implement doc linting** - Set up Vale and markdownlint
+1. **Doc linting** - Set up Vale and markdownlint
 2. **Create user personas** - Define documentation paths for different users
 3. **Add schema examples** - Integrate schema docs with usage guides
 4. **Performance guide** - Create detailed performance tuning documentation
@@ -165,9 +165,9 @@
 
 - [x] All major commands include verification steps
 - [x] Troubleshooting covers common failure modes
-- [x] Terminology is consistent across all docs
+- [x] Terminology stays consistent across all docs
 - [x] Document requirements specified for major docs
-- [x] Information hierarchy is logical and scannable
+- [x] Information hierarchy stays logical and scannable
 - [x] Examples include expected outputs
 - [x] Security best practices followed
 - [x] Accessibility guidelines met

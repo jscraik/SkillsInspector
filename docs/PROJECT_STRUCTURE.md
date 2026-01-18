@@ -8,7 +8,8 @@ This document describes the organization of the sTools project.
 sTools/
 ├── .github/          # GitHub workflows and CI/CD
 ├── .ralph/           # Ralph AI assistant logs and planning
-├── .spec/            # Product specifications and technical specs
+├── .spec/            # Product specifications and technical specs (reserved)
+├── .skillsctl/       # Local CLI config, baseline, and cache
 ├── bin/              # Build and utility scripts
 ├── brand/            # Brand assets (logos, icons)
 ├── docs/             # Documentation
@@ -16,7 +17,7 @@ sTools/
 ├── powers/           # Kiro AI powers for development
 ├── Sources/          # Source code
 ├── Tests/            # Test suites
-├── sTools.app/       # Built macOS application
+├── SkillsInspector.app/ # Built macOS application
 ├── AGENTS.md         # AI agent instructions
 ├── Package.swift     # Swift package definition
 └── README.md         # Project overview
@@ -36,8 +37,8 @@ sTools/
   - Design tokens and styling
 
 - **skillsctl/** - Command-line interface
-  - verify/install/publish commands
-  - CI/CD integration
+  - scan, sync-check, index, search, security, quarantine
+  - publish, spec, remote, workflow
 
 ## Documentation (`docs/`)
 
@@ -63,11 +64,11 @@ sTools/
 
 - **.build/** - Swift build artifacts (gitignored)
 - **.tmp/** - Temporary build files (gitignored)
-- **sTools.app/** - Built application bundle
+- **SkillsInspector.app/** - Built application bundle
 
 ## Configuration
 
-- **.spec/** - Product and technical specifications
+- **.spec/** - Product and technical specifications (reserved)
 - **.ralph/** - Ralph AI assistant state
 - **.github/** - CI/CD workflows
 - **version.env** - Version configuration
@@ -77,7 +78,7 @@ sTools/
 - **package_app.sh** - Main build and packaging script
 - **make-dmg.sh** - DMG creation for distribution
 - **configure-sparkle.sh** - Auto-update configuration
-- Various utility scripts for development
+- Utility scripts for development
 
 ## Key Files
 

@@ -11,13 +11,13 @@ change.
 - StatsView (Charts-based) — uses deterministic renderer.
 - MarkdownPreviewView — rendered markdown content.
 
-## How snapshots are produced
+## How snapshot generation works
 
 - `Tests/SkillsInspectorTests/UISnapshotsTests.swift` uses `ImageRenderer` to
 
   render SwiftUI views offscreen and SHA256s the raw image bytes.
 
-- Hashes are asserted in tests; update them only after visual review/approval.
+- Tests assert hashes; update them only after visual review/approval.
 
 ## Running tests
 
@@ -44,6 +44,6 @@ confirm green. 5) Commit with a note explaining the intentional visual change.
 ## Accessibility & preferences
 
 - Prefer Reduced Motion safe states in snapshots to avoid animation variance.
-- Use light mode unless a dark/HC variant is explicitly added with its own
+- Use light mode unless a dark/HC variant gets explicitly added with its own
 
   hash.

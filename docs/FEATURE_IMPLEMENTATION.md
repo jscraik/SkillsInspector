@@ -201,7 +201,7 @@ with enhanced multi-editor support.
 - Syntax highlighting for inline code
 - External link handling (opens in default browser)
 - Only shown for `.md` files
-- Lazy loading: content loaded only when preview is toggled on
+- Lazy loading: content loads only when the preview toggles on
 
 **Markdown Support:**
 
@@ -354,8 +354,8 @@ Review (ORR) checklist, and Launch checklist.
 
 #### Configuration
 
-Feature flags in sTools allow controlled rollout of capabilities. They can be
-configured via:
+Feature flags in sTools allow controlled rollout of capabilities. Configure
+via:
 
 1. **Environment variables** (highest priority)
 2. **config.json** file
@@ -405,7 +405,7 @@ swift run skillsctl scan
 
 #### Code integration
 
-Feature flags are loaded using the `FeatureFlags` struct:
+Feature flags load through the `FeatureFlags` struct:
 
 ```swift
 // Load from config with environment overrides
@@ -444,7 +444,7 @@ SHA-256 hashes:
 
    rotation
 
-4. **Revocation List**: Revoked keys are rejected even if previously trusted
+4. **Revocation List**: Reject revoked keys even if trusted earlier
 5. **Manifest Format**: JSON manifest includes `sha256`, `signature`,
 
    `signerKeyId`, `trustedSigners[]`, and `revokedKeys[]`
@@ -474,7 +474,7 @@ SHA-256 hashes:
 **Negative:**
 
 - Requires skill maintainers to manage signing keys
-- Unsigned skills cannot be installed in strict mode
+- Strict mode blocks unsigned skills
 
 ---
 
@@ -521,7 +521,7 @@ integrity checksum:
 ### ADR-003: Cross-IDE Adapter Layout
 
 **Status:** Accepted **Date:** 2025-01-14 **Context:** Users want one install
-to register skills across multiple IDEs (Codex, Claude Code, GitHub Copilot).
+to register skills across Codex, Claude Code, and GitHub Copilot.
 
 #### ADR-003 Decision
 
@@ -567,7 +567,7 @@ sTools uses a multi-target adapter architecture:
 ### ADR-004: Preview Cache Policy
 
 **Status:** Accepted **Date:** 2025-01-14 **Context:** Remote skill previews
-should be cached to avoid repeated downloads while ensuring freshness.
+cache previews to avoid repeated downloads while ensuring freshness.
 
 #### ADR-004 Decision
 
@@ -595,20 +595,20 @@ sTools uses a time-based cache with ETag validation:
 **Negative:**
 
 - Stale previews possible if server updates before TTL expires
-- Cache cleared on TTL expiration requires re-fetch
+- TTL expiry clears cache and requires re-fetch
 
 ---
 
 ### Operational Readiness Review (ORR) Checklist
 
-**Purpose:** Ensure sTools is ready to enable verification-by-default in
+**Purpose:** Ensure sTools readiness to enable verification-by-default in
 production environments.
 
 ### Security
 
 - [x] Ed25519 signature verification tested with tampered fixtures
 - [x] SHA-256 hash validation rejects mismatched artifacts
-- [x] Revoked keys are rejected even if previously trusted
+- [x] Reject revoked keys even if trusted earlier
 - [x] Trust store persistence verified (load/save cycles)
 - [x] Fail-closed behavior: invalid signatures prevent file writes
 - [x] Archive sanitization enforces size/file-count limits
@@ -617,7 +617,7 @@ production environments.
 
 - [x] Atomic install: stage to temp, then move
 - [x] Rollback restores last-known-good version on failure
-- [x] Ledger is append-only (no DELETE operations)
+- [x] Ledger stays append-only (no DELETE operations)
 - [x] Per-target validation runs after each adapter install
 - [x] Cross-IDE registration success rate >=90% in testing
 
@@ -682,7 +682,7 @@ production environments.
 
 - [x] Keyboard navigation works for all controls
 - [x] WCAG 2.2 AA compliance verified
-- [x] Error messages are clear and actionable
+- [x] Error messages stay clear and actionable
 - [x] Consent gates ("Download and verify") explicit
 - [x] "Safe preview from server" label visible
 

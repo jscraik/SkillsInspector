@@ -42,7 +42,7 @@ organization
 
 **Kept:**
 
-- `sTools.app/` - Current built application
+- `SkillsInspector.app/` - Current built application
 - `.build/` - Active build artifacts
 - `.tmp/` - Recent temporary files
 
@@ -76,7 +76,7 @@ sTools/
 ├── brand/            # Brand assets
 ├── Plugins/          # SwiftPM plugins
 ├── powers/           # Kiro AI powers
-└── sTools.app/       # Built application
+└── SkillsInspector.app/ # Built application
 ```
 
 ## Benefits

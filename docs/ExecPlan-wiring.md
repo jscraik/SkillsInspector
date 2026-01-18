@@ -1,15 +1,15 @@
 # sTools wiring and settings integration
 
-This ExecPlan is a living document. The sections `Progress`, `Surprises &
-Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up
-to date as work proceeds. Followed according to
+This ExecPlan stays a living document. Keep the sections `Progress`,
+`Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` up to
+date as work proceeds. Followed according to
 `/Users/jamiecraik/.codex/instructions/plans.md`.
 
 ## Purpose / Big Picture
 
 Enable users to: (a) trigger scan/sync/index from menu shortcuts in any mode,
 (b) pick and persist Codex/Claude skill roots via UI, and (c) index all Codex
-roots instead of only the first. Acceptance is observable through UI
+roots instead of only the first. Acceptance shows through UI
 interactions and tests.
 
 ## Progress
@@ -84,14 +84,14 @@ tests for notification handling and UserDefaults serialization.
 
 ## Concrete Steps
 
-1) Implement UserSettings persistence in `InspectorViewModel` with load/save
+1) Add UserSettings persistence in `InspectorViewModel` with load/save
 on change (use `@Published` observers). Add shared `defaultExcludes`. 2)
 Update `ContentView` sidebar: iterate codexRoots with `RootRow`, add
 add/remove buttons, bind recursive/excludes/maxDepth inputs; ensure alert
 shows validation errors. 3) Update `SyncView` to accept bindings for settings
 and to listen to menu notifications; remove local state copies. 4) Update
 `IndexViewModel` to accept `[URL]`; update `IndexView` to use shared settings
-and add `.onReceive` for menu commands. 5) Modify `SkillsCore/Indexer.swift`
+and add `.onReceive` for menu commands. 5) Update `SkillsCore/Indexer.swift`
 with overload taking `[URL]` merging entries; keep legacy single-root API
 delegating. 6) Add tests in `Tests/SkillsInspectorTests` for multi-root index
 generation and settings persistence. 7) Run `swift test` (or subset) and
@@ -99,15 +99,15 @@ record results.
 
 ## Validation and Acceptance
 
-- Menu shortcuts (`⌘R`, `⌘.`) trigger sync/index when respective mode is
+- Menu shortcuts (`⌘R`, `⌘.`) trigger sync/index when the mode runs
 
   active; observe operations start/stop.
 
-- Roots can be added/removed and persist across relaunch (UserDefaults);
+- Add/remove roots and persist across relaunch (UserDefaults);
 
-  invalid paths show alert and are not saved.
+invalid paths show alert and do not save.
 
-- Index includes entries from multiple Codex roots (e.g., two temp dirs with
+- Index includes entries from more than one Codex root (e.g., two temp dirs with
 
   distinct skills yield combined list).
 
@@ -115,8 +115,8 @@ record results.
 
 ## Idempotence and Recovery
 
-UserDefaults-backed settings are overwritten atomically on change; reloading
-app restores last saved settings. Notification handlers are guarded against
+UserDefaults-backed settings overwrite atomically on change; reloading
+app restores last saved settings. Notification handlers guard against
 invalid roots to avoid crashes. Operations cancel previous tasks before
 starting new ones.
 

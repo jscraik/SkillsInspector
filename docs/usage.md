@@ -1,4 +1,4 @@
-# skillsctl / SkillsLintPlugin / sTools app usage
+# skillsctl / SkillsLintPlugin / SkillsInspector app (sTools) usage
 
 **Document Requirements:**
 
@@ -84,8 +84,8 @@ swift run skillsctl index --repo . --write --bump patch
 
 **Verify index generation:**
 
-- Skills.md created/updated in skill roots
-- Version numbers incremented according to --bump flag
+- `Skills.md` written to the current directory (or `--out <path>` if set)
+- Version numbers incremented according to `--bump` flag
 - Index includes all discovered skills with metadata
 
 ### Security & Quarantine
@@ -104,6 +104,74 @@ swift run skillsctl quarantine list
 swift run skillsctl quarantine approve <id>
 swift run skillsctl quarantine block <id>
 # Expected: Approved/rejected status updates for the quarantine item
+```
+
+### Search (full-text)
+
+**Search indexed skills:**
+
+```bash
+swift run skillsctl search "async/await" --agent codex --limit 10
+# Expected: Ranked results with snippets and paths
+```
+
+Notes:
+
+- Search uses the local full-text index. If results return empty, build the
+  index in the app or via CLI when the search-index subcommands appear in
+  `skillsctl help`.
+
+**JSON output:**
+
+```bash
+swift run skillsctl search "async/await" --format json
+```
+
+### Remote catalog
+
+**Browse and install remote skills:**
+
+```bash
+swift run skillsctl remote list --limit 10 --format json
+swift run skillsctl remote search "security"
+swift run skillsctl remote preview my-skill --format json
+swift run skillsctl remote verify my-skill --mode strict
+swift run skillsctl remote install my-skill --target codex --overwrite
+swift run skillsctl remote update my-skill --target codex
+```
+
+### Publish
+
+**Build and publish a signed artifact:**
+
+```bash
+swift run skillsctl publish \
+  --skill-dir path/to/skill \
+  --tool-path /path/to/publish-tool \
+  --signing-key-path /path/to/key.base64
+```
+
+Notes:
+
+- Provide `--skill-dir` and `--tool-path`.
+- Provide `--signing-key-path` or `--signing-key-base64` for attestation.
+- For non-default tools, provide `--tool-sha256` or `--tool-sha512`.
+- Use `--dry-run` to build the artifact and attestation without publishing.
+
+### Spec export/import/diff
+
+```bash
+swift run skillsctl spec export path/to/skill --output spec.json
+swift run skillsctl spec import spec.json --validate --agent codex
+swift run skillsctl spec diff spec-old.json spec-new.json --format json
+```
+
+### Workflow (lifecycle automation)
+
+```bash
+swift run skillsctl workflow create "My Skill" --description "..." --agent codex
+swift run skillsctl workflow validate path/to/skill --agent codex
+swift run skillsctl workflow --help
 ```
 
 ## Command plugin (SkillsLintPlugin)
@@ -147,7 +215,7 @@ swift run SkillsInspector
 skillsctl scan --repo . --no-default-excludes --log-level debug
 ```
 
-**Solution:** Files may be in excluded directories. Review exclude patterns or
+**Solution:** Files can sit in excluded directories. Review exclude patterns or
 use `--no-default-excludes`.
 
 #### Problem: Validation errors on seemingly valid files
@@ -171,11 +239,11 @@ skillsctl scan --repo . --jobs 8 --show-cache-stats
 
 ### App Issues
 
-#### Problem: sTools app won't launch
+#### Problem: SkillsInspector app won't launch
 
 ```bash
 # Check build and launch with error output
-swift build --product sTools && swift run sTools 2>&1
+swift build --product SkillsInspector && swift run SkillsInspector 2>&1
 ```
 
 **Solution:** Ensure clean build. Check console for specific errors.
@@ -191,7 +259,7 @@ swift build --product sTools && swift run sTools 2>&1
 #### Problem: Config validation errors
 
 - Check JSON syntax in `.skillsctl/config.json`
-- Validate against schema in `docs/config-schema.json`
+- Check against schema in `docs/config-schema.json`
 - Use minimal config and add options incrementally
 
 **Getting Help:**
@@ -206,7 +274,7 @@ swift build --product sTools && swift run sTools 2>&1
 
   installs until reviewed.
 
-- Quarantine records are stored at `~/Library/Application
+- Quarantine records live at `~/Library/Application
 
   Support/SkillsInspector/quarantine.json`.
 

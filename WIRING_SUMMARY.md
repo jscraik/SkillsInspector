@@ -28,7 +28,7 @@ ContentView.RootRow (lines 180-219):
 Result: Users stuck with defaults, can't test other repos
 ```
 
-### 3. Index Ignores Multiple Roots
+### 3. Index Ignores More Than One Root
 
 ```text
 IndexViewModel.generate() (line 19):
@@ -70,7 +70,7 @@ Recommendation: Define SkillsConfig.defaultExcludes
 
 ## ✅ What Works
 
-- Validate mode: Full scan/watch/cache/export/baseline
+- `Validate` mode: Full scan/watch/cache/export/baseline
 - Stats mode: Charts display correctly
 - Sync/Index core logic: SyncChecker, SkillIndexer APIs functional
 - File watchers, caching, fix suggestions all operational

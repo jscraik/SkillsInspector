@@ -1,6 +1,10 @@
 import SwiftUI
 import AppKit
 import SkillsCore
+// NEW: Import aStudio modules
+import AStudioFoundation
+import AStudioThemes
+import AStudioComponents
 
 @main
 struct SkillsInspectorApp: App {

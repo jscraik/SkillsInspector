@@ -2,92 +2,53 @@
 
 ## Project summary
 
-This is a React + Vite + Tailwind web app. Primary dev target is **mobile
-Safari (iOS)** and the iOS Simulator.
+sTools provides a macOS SwiftUI app plus a Swift CLI and SwiftPM plugin:
+
+- `SkillsInspector`: SwiftUI macOS app
+- `skillsctl`: CLI for scanning, sync-check, indexing, security, and workflow
+- `SkillsLintPlugin`: SwiftPM command plugin for CI validation
 
 ## Working agreements for Codex
 
-- Prefer **small, targeted diffs**. Avoid refactors unless explicitly
+- Prefer small, targeted diffs. Avoid refactors unless explicitly requested.
+- Do not add new dependencies without approval.
+- Follow existing patterns and naming conventions.
+- Keep accessibility intact when touching UI.
 
-  requested.
+## Build, test, run
 
-- Do **not** add new production dependencies unless the user asks. If a new
+- Build app: `swift build -c debug --product SkillsInspector`
+- Launch app after build: `open SkillsInspector.app`
+- Run CLI: `swift run skillsctl --help`
+- Run tests: `swift test` (set `ALLOW_CHARTS_SNAPSHOT=1` to include chart
+  snapshots)
+- Plugin: `swift package plugin skills-lint`
 
-  dev dependency seems necessary, explain why first.
+## Coding style and naming
 
-- Use existing project conventions (file structure, component patterns,
+- Swift indent 4 spaces; keep trailing commas in multiline literals.
+- Use DesignTokens for colors/spacing; prefer `glassBarStyle` and
+  `glassPanelStyle`.
+- View ordering: Environment/let -> @State/@ObservedObject -> computed vars ->
+  `body` -> helpers.
+- Naming: PascalCase types; camelCase vars/functions.
 
-  naming).
+## Testing guidelines
 
-- When changing UI/CSS:
-  - Prefer Tailwind utilities and existing design tokens.
-  - Avoid introducing one-off global CSS unless necessary.
-  - Keep accessibility intact (tap targets, focus states, contrast).
-- When you’re unsure about the intended design, **ask** or propose options
+- SwiftPM tests; snapshots live in `Tests/SkillsInspectorTests`.
+- Update snapshot hashes only for intentional UI changes.
+- Add focused tests for new logic.
+- Required before PR: `swift test`.
 
-  (but keep the default minimal).
+## Commit and PR guidelines
 
-## Package manager rule
+- Commit messages: short, imperative, signed via 1Password SSH agent.
+- Avoid `--no-verify`; keep unrelated changes out of commits.
+- PRs include summary, scope, tests, and screenshots for UI changes.
 
-Use the package manager indicated by the lockfile and do not mix:
+## Security and configuration
 
-- `pnpm-lock.yaml` → `pnpm`
-- `yarn.lock` → `yarn`
-- otherwise → `npm`
-
-## Commands: discover, don’t guess
-
-Before running checks, read `package.json` and use existing scripts. Common
-scripts (if present):
-
-- `dev`: start Vite
-- `build`: production build
-- `lint`: lint
-- `typecheck`: TypeScript checks (sometimes `tsc -p . --noEmit`)
-- `test`: unit tests
-
-If a needed script is missing, prefer running the underlying tool via the
-package manager (e.g. `pnpm eslint .`) only if it already exists in
-`devDependencies`.
-
-## iOS Simulator workflow (UI issues)
-
-Use a tight “snapshot → change → snapshot” loop:
-
-1. Capture a **before** screenshot on iOS Simulator Safari.
-2. Identify the minimal root cause (safe-area, viewport units, overflow, font
-
-   sizing, sticky, etc.).
-
-3. Implement the smallest fix.
-4. Run the fastest available checks (`lint`/`typecheck`/`test` as available).
-5. Capture an **after** screenshot and confirm the issue is resolved.
-
-### Screenshot artifacts
-
-Store temporary screenshots and reports under:
-
-- `.ios-web/` (or your project’s equivalent)
-
-Do not commit these artifacts unless asked.
-
-## iOS Safari gotchas to consider (common causes)
-
-- Safe areas / notch: `env(safe-area-inset-*)`, padding, and
-
-  `viewport-fit=cover` interactions.
-
-- `100vh` / address bar: prefer `dvh/svh/lvh` or CSS that doesn’t rely on
-
-  fixed `100vh` on mobile.
-
-- `position: sticky` inside overflow containers.
-- `overflow-x` from long words / transforms / full-width elements.
-- Touch hit areas (minimum ~44px) and fixed headers overlapping content.
-
-## Codex automation helpers (optional but recommended)
-
-- `bin/ui-codex triage --issue "…" --profile iphone_pro --path /…`
-- `bin/ui-codex fix --issue "…" --profile iphone_pro --path /…`
-
-These produce a structured JSON report using `codex exec --output-schema`.
+- Never hardcode secrets; use 1Password or environment variables.
+- Respect `PathValidator` and avoid path traversal.
+- Keep design tokens authoritative; add tokens before raw hex/spacing.
+- Remote flows follow schemas in `docs/schema/`; document API changes.

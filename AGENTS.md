@@ -2,7 +2,8 @@
 
 ## Project Structure & Modules
 
-- `Sources/SkillsInspector/`: macOS SwiftUI app (Validate, Stats, Sync, Index,
+- `Sources/SkillsInspector/`: macOS SwiftUI app (`Validate`, `Stats`, `Sync`,
+  `Index`,
 
   Remote, Changelog) plus glass styling helpers.
 
@@ -19,8 +20,8 @@
 
 ## Build, Test, Run
 
-- Build app: `swift build -c debug --product sTools`
-- Launch app after build: `open sTools.app`
+- Build app: `swift build -c debug --product SkillsInspector`
+- Launch app after build: `open SkillsInspector.app`
 - Run CLI: `swift run skillsctl --help`
 - CLI security scan: `swift run skillsctl security scan {skill-path}`
 - CLI quarantine review:
@@ -51,7 +52,7 @@
 - Framework: SwiftPM tests; snapshots in `UISnapshotsTests`.
 - Update snapshot hashes only when intentional UI changes occur.
 - Add focused tests for new logic; prefer async/await for concurrency flows.
-- Minimum requirement before PR: `swift test`; note skipped chart snapshot
+- Required before PR: `swift test`; note skipped chart snapshot
 
   unless env set.
 

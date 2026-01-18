@@ -66,14 +66,15 @@ struct EmptyStateView: View {
     let message: String
     var action: (() -> Void)? = nil
     var actionLabel: String = "Try Again"
-    
+    var compactMode: Bool = false
+
     @State private var iconScale: CGFloat = 0.8
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    
+
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.xs) {
+        VStack(spacing: compactMode ? DesignTokens.Spacing.sm : DesignTokens.Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 48))
+                .font(.system(size: compactMode ? 40 : 48))
                 .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
                 .scaleEffect(iconScale)
                 .onAppear {
@@ -85,25 +86,27 @@ struct EmptyStateView: View {
                         iconScale = 1.0
                     }
                 }
-            
+
             Text(title)
-                .heading3()
-            
+                .font(.system(size: compactMode ? 16 : 18, weight: .semibold))
+                .foregroundColor(DesignTokens.Colors.Text.primary)
+
             Text(message)
-                .bodyText()
+                .bodySmallText()
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
-            
+                .frame(maxWidth: compactMode ? 280 : 340)
+
             if let action {
                 Button(actionLabel) {
                     action()
                 }
                 .buttonStyle(.cleanProminent)
-                .controlSize(.large)
+                .controlSize(.regular)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(compactMode ? DesignTokens.Spacing.lg : DesignTokens.Spacing.xl)
         .background(cleanPanelStyle(cornerRadius: 18))
     }
 }
@@ -175,7 +178,7 @@ struct StatusBarView: View {
         .captionText()
         .padding(.horizontal, DesignTokens.Spacing.xxxs)
         .padding(.vertical, DesignTokens.Spacing.hair)
-        .background(count > 0 ? severity.color.opacity(0.1) : Color.clear)
+        .background(count > 0 ? severity.color.opacity(0.15) : Color.clear)
         .cornerRadius(DesignTokens.Radius.sm)
     }
 }
@@ -557,13 +560,25 @@ extension View {
             .tracking(DesignTokens.Typography.BodySmall.tracking)
             .lineSpacing(DesignTokens.Typography.BodySmall.line - DesignTokens.Typography.BodySmall.size)
     }
-    
+
+    func bodySmallText(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.BodySmall.size, weight: emphasis ? DesignTokens.Typography.BodySmall.emphasis : DesignTokens.Typography.BodySmall.weight))
+            .tracking(DesignTokens.Typography.BodySmall.tracking)
+            .lineSpacing(DesignTokens.Typography.BodySmall.line - DesignTokens.Typography.BodySmall.size)
+    }
+
     func captionText(emphasis: Bool = false) -> some View {
         self.font(.system(size: DesignTokens.Typography.Caption.size, weight: emphasis ? DesignTokens.Typography.Caption.emphasis : DesignTokens.Typography.Caption.weight))
             .tracking(DesignTokens.Typography.Caption.tracking)
             .lineSpacing(DesignTokens.Typography.Caption.line - DesignTokens.Typography.Caption.size)
     }
-    
+
+    func subcaptionText(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.Subcaption.size, weight: emphasis ? DesignTokens.Typography.Subcaption.emphasis : DesignTokens.Typography.Subcaption.weight))
+            .tracking(DesignTokens.Typography.Subcaption.tracking)
+            .lineSpacing(DesignTokens.Typography.Subcaption.line - DesignTokens.Typography.Subcaption.size)
+    }
+
     func cornerRadius(_ radius: CGFloat, corners: RectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
     }

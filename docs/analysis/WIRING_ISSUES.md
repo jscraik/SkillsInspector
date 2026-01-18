@@ -44,7 +44,7 @@ relevant notifications
 
 ### 2. **No UI to Change Skill Roots** 🔴
 
-**Problem**: Codex/Claude root paths are hardcoded with no UI affordance to
+**Problem**: Codex/Claude root paths stay hardcoded with no UI affordance to
 change them
 
 **Current State**:
@@ -62,7 +62,7 @@ claudeRoot = home.appendingPathComponent(".claude/skills")
   displays roots in sidebar (read-only)
 - `Sources/SkillsInspector/ContentView.swift` (lines 180-219) has
   complete `RootRow` component **but never used**
-- `validateRoot()` helper exists but is **dead code**
+- `validateRoot()` helper exists but remains **dead code**
 
 **What Exists but Unused**:
 
@@ -84,7 +84,7 @@ func validateRoot(_ url: URL) -> Bool {
 **Impact**:
 
 - Users stuck with default ~/.codex/skills and ~/.claude/skills
-- No way to validate custom repos or test different configurations
+- No way to check custom repos or test different configurations
 - All scans/sync/index operations fail silently if default roots don't exist
 
 **Fix Required**:
@@ -105,7 +105,7 @@ from InspectorViewModel
 
 **Current State**:
 
-- **InspectorViewModel** (Validate mode):
+- **InspectorViewModel** (`Validate` mode):
   - `recursive: Bool` at line 8
   - Uses hardcoded excludes in `scan()`: `[".git", ".system", "__pycache__",
     ".DS_Store"]`
@@ -131,7 +131,7 @@ from InspectorViewModel
 
 **Design Questions**:
 
-1. Should recursive/excludes be **global app settings** (shared)?
+1. Should recursive/excludes serve as **global app settings** (shared)?
 2. Or **per-mode settings** (current behavior but not reflected in UI)?
 
 **Fix Required**:
@@ -155,7 +155,7 @@ from InspectorViewModel
 - [ContentView.swift](Sources/SkillsInspector/ContentView.swift#L28) switches
   on `.stats` case → shows `StatsView(viewModel: viewModel)`
 - [ContentView.swift](Sources/SkillsInspector/ContentView.swift#L60-L74)
-  sidebar only shows Validate/Stats/Sync/Index links
+  sidebar only shows `Validate`/Stats/Sync/Index links
 
 Wait — checking again:
 
@@ -169,13 +169,13 @@ NavigationLink(value: AppMode.stats) {
 
 This **does** exist at line 63-66!
 
-**Resolution**: Stats mode IS wired correctly. No issue here. ✅
+**Resolution**: Stats mode wires correctly. No issue here. ✅
 
 ---
 
 ### 5. **Index Mode Only Uses First Codex Root** ⚠️
 
-**Problem**: IndexViewModel ignores multiple codex roots
+**Problem**: IndexViewModel ignores more than one codex root
 
 **Location**: [IndexView.swift](Sources/SkillsInspector/IndexView.swift#L19)
 
@@ -193,7 +193,7 @@ func generate(codexRoots: [URL], claudeRoot: URL) async {
 
 ```
 
-**Impact**: If user has multiple codex roots (e.g., `.codex/skills` +
+**Impact**: If a user has more than one codex root (e.g., `.codex/skills` +
 `.codex/public/skills`), index only scans first one
 
 **Core API Support**:
@@ -239,9 +239,9 @@ SyncView(
 
 **Impact**:
 
-- If `codexRoots` is empty, silently falls back to hardcoded path
+- If `codexRoots` stays empty, silently falls back to hardcoded path
 - Inconsistent with IndexView which trusts `codexRoots` array
-- User might think they're syncing their custom root but actually using
+- User might think they sync their custom root but actually using
 
   default
 
@@ -254,7 +254,7 @@ user to pick)
 
 ### Hardcoded Excludes Across Codebase
 
-Multiple hardcoded exclude lists should be centralized:
+Hardcoded exclude lists need centralization:
 
 1. **InspectorViewModel.scan()** (line 126):
 
@@ -289,7 +289,7 @@ public extension SkillsConfig {
 
 ## Architecture Observations
 
-### Notification-Based Menu Commands (Working for Validate Only)
+### Notification-Based Menu Commands (Working for `Validate` Only)
 
 **Current Flow**:
 
@@ -378,7 +378,7 @@ Decide on shared vs per-mode settings:
 
 ### Priority 4: Multi-Root Index Support
 
-Update SkillIndexer.generate() to handle multiple codex roots or call it in a
+Update SkillIndexer.generate() to handle more than one codex root or call it in a
 loop and merge results
 
 ---
@@ -419,13 +419,13 @@ loop and merge results
 
 **Design Clarifications Needed**:
 
-1. Should recursive/exclude settings be shared or per-mode?
+1. Should recursive/exclude settings stay shared or per-mode?
 2. How should multi-root codex scanning work for index generation?
-3. Should roots be persisted in UserDefaults, config file, or app state?
+3. Should roots persist in UserDefaults, config file, or app state?
 
 **Working Correctly**:
 
-- ✅ Validate mode full feature set (scan/watch/cache/export/baseline)
+- ✅ `Validate` mode full feature set (scan/watch/cache/export/baseline)
 - ✅ Stats mode displays charts and metrics
 - ✅ Sync mode logic (just needs menu wiring)
 - ✅ Index mode generation (just needs menu wiring + multi-root)

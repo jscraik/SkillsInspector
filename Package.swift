@@ -15,7 +15,11 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
         .package(url: "https://github.com/gonzalezreal/swift-markdown-ui.git", from: "2.4.1"),
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.0.0")
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.0.0"),
+        // NEW: Add aStudio local packages
+        .package(path: "../aStudio/platforms/apple/swift/AStudioFoundation"),
+        .package(path: "../aStudio/platforms/apple/swift/AStudioThemes"),
+        .package(path: "../aStudio/platforms/apple/swift/AStudioComponents")
     ],
     targets: [
         .target(
@@ -37,7 +41,11 @@ let package = Package(
             dependencies: [
                 "SkillsCore",
                 .product(name: "MarkdownUI", package: "swift-markdown-ui"),
-                .product(name: "Sparkle", package: "Sparkle")
+                .product(name: "Sparkle", package: "Sparkle"),
+                // NEW: Add aStudio module dependencies
+                "AStudioFoundation",
+                "AStudioThemes",
+                "AStudioComponents"
             ],
             resources: [
                 .process("Resources/Icon.icns")

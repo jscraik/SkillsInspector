@@ -1,7 +1,7 @@
 # Build SwiftPM Skills Tools (scan/sync + CLI/UI/plugin)
 
-This ExecPlan is a living document. Keep `Progress`, `Surprises &
-Discoveries`, `Decision Log`, and `Outcomes & Retrospective` up to date as
+This ExecPlan stays a living document. Keep `Progress`, `Surprises &
+Discoveries`, `Decision Log`, and `Outcomes & Retrospective` up to date.
 work proceeds. Follow `/Users/jamiecraik/.codex/instructions/plans.md` for
 required structure.
 
@@ -11,7 +11,7 @@ Deliver a SwiftPM package that validates and compares Codex/Claude skill trees
 (`SKILL.md` files) with three entry points: a reusable library, a CLI
 (`skillsctl`), and a SwiftUI macOS inspector (`SkillsInspector`). Also include
 a SwiftPM command plugin so external projects can run the scan in CI. Users
-will be able to scan repo or home skill roots, detect missing/differing
+will scan repo or home skill roots, detect missing/differing
 skills, and view results in text/JSON or an interactive UI.
 
 ## Progress
@@ -20,16 +20,16 @@ skills, and view results in text/JSON or an interactive UI.
 
   skillsctl, SkillsInspector; Plugin: SkillsLintPlugin; Tests folder).
 
-- [x] (2026-01-10) Implement SkillsCore: scanning, frontmatter parser,
+- [x] (2026-01-10) Build SkillsCore: scanning, frontmatter parser,
 
   validation rules, sync-check logic.
 
-- [x] (2026-01-10) Implement `skillsctl` CLI with `scan` and `sync-check`
+- [x] (2026-01-10) Build `skillsctl` CLI with `scan` and `sync-check`
 
   commands (text/JSON output, exit codes).
 
-- [x] (2026-01-10) Implement SwiftUI app `SkillsInspector` with basic scan UI.
-- [x] (2026-01-10) Implement SwiftPM command plugin `SkillsLintPlugin`
+- [x] (2026-01-10) Build SwiftUI app `SkillsInspector` with basic scan UI.
+- [x] (2026-01-10) Build SwiftPM command plugin `SkillsLintPlugin`
 
   invoking skillsctl and emitting diagnostics.
 
@@ -67,11 +67,11 @@ skills, and view results in text/JSON or an interactive UI.
 - Test suite (5 tests) passes via `swift test`. CLI help commands succeed.
 - Remaining future work: add Outcomes section updates when extending features
 
-  (index/changelog, additional rules).
+(index/changelog, extra rules).
 
 ## Context and Orientation
 
-Repository `cLog` is newly created and currently contains only `Package.swift`
+Repository `cLog` started recently and currently contains only `Package.swift`
 from `swift package init --type empty`. We will add:
 
 - `Sources/SkillsCore/` for the reusable engine.
@@ -90,7 +90,7 @@ Skill roots the tools operate on:
 1. Scaffold package layout and update `Package.swift` to declare products:
    `SkillsCore` (library), `skillsctl` and `SkillsInspector` (executables),
    `SkillsLintPlugin` (command plugin), and `SkillsCoreTests`.
-2. Implement `SkillsCore`:
+2. Build `SkillsCore`:
    - Data models: `AgentKind`, `Severity`, `RuleID`, `Finding`, `SkillDoc`,
      `ScanRoot`, `SyncReport`.
    - Frontmatter parser (strict top-of-file `---` block, simple `key: value`
@@ -100,20 +100,20 @@ Skill roots the tools operate on:
    - Validators with rule IDs: missing frontmatter, missing name/description,
      length/pattern limits per agent, symlinked skill dir warning/error hook.
    - Sync checker by skill `name` comparing SHA-256 hashes.
-3. Implement CLI `skillsctl` (ArgumentParser):
+3. Build CLI `skillsctl` (ArgumentParser):
    - Commands: `scan` and `sync-check`.
    - Options: roots (repo/home), excludes, default excludes toggle, JSON/text
      output, exit codes (errors -> 1, usage -> 2).
-4. Implement SwiftUI app `SkillsInspector`:
+4. Build SwiftUI app `SkillsInspector`:
    - Folder pickers (hidden files enabled), default to home roots.
    - Run scan using SkillsCore, display findings list with severity filters
      and counts.
-5. Implement SwiftPM command plugin `SkillsLintPlugin`:
+5. Build SwiftPM command plugin `SkillsLintPlugin`:
    - Command `skills-lint` invoking SkillsCore scan for repo roots.
    - Emit diagnostics for errors/warnings; fail on errors.
 6. Add tests in `SkillsCoreTests` with fixtures for valid/invalid SKILL.md,
    length and pattern checks, sync-check diff detection.
-7. Validate:
+7. Verification:
    - `swift test`
    - `swift run skillsctl scan --help`
    - `swift run skillsctl sync-check --help`
@@ -138,7 +138,7 @@ Expected outcomes:
 
 ## Validation and Acceptance
 
-Implementation is acceptable when:
+Implementation qualifies as acceptable when:
 
 - `swift test` passes.
 - `swift run skillsctl scan --help` and `sync-check --help` work without
@@ -153,13 +153,13 @@ Implementation is acceptable when:
 
 ## Idempotence and Recovery
 
-All steps are additive. Re-running `swift build`/`swift test` is safe. If a
-scan fails due to bad SKILL.md content, fix the files and rerun. No
-destructive actions are planned.
+All steps remain additive. Re-running `swift build`/`swift test` stays safe.
+If a scan fails due to bad SKILL.md content, fix the files and rerun. No
+destructive actions remain unplanned.
 
 ## Artifacts and Notes
 
-Artifacts to be produced:
+Artifacts to produce:
 
 - `Package.swift` defining products and dependencies.
 - Source files under `Sources/SkillsCore/`, `Sources/skillsctl/`,

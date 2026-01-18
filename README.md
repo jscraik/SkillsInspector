@@ -2,13 +2,13 @@
 
 ## Developer toolkit for Codex/Claude skill trees
 
-![sTools brand hero: developer toolkit for skill trees](brand/sTools-brand-logo.png)
+![sTools brand hero: developer toolkit for skill trees](brand/SkillsInspector-brand-logo.png)
 
-sTools helps you validate, sync, and manage skill documentation across AI
+sTools helps you check, sync, and manage skill documentation across AI
 agent platforms (Codex and Claude). It provides three ways to work with your
 skills:
 
-- **sTools app** (formerly SkillsInspector): Interactive macOS app for
+- **SkillsInspector app (sTools)**: Interactive macOS app for
 
   scanning and syncing skills
 
@@ -19,7 +19,7 @@ skills:
 
 **Core capabilities:**
 
-- Scan and validate SKILL.md files with parallel processing
+- Scan and check SKILL.md files with parallel processing
 - Compare skill trees between Codex and Claude platforms
 - Generate skill indexes and manage versions
 - Incremental caching for fast re-validation
@@ -38,7 +38,7 @@ skills:
 - [CLI Usage](#cli-usage)
 - [Shell completion](#shell-completion)
 - [SwiftPM plugin (CI)](#swiftpm-plugin-ci)
-- [sTools app](#stools-app-macos)
+- [SkillsInspector app (sTools)](#skillsinspector-app-stools-macos)
 - [Configuration](#configuration)
 - [Performance Features](#performance-features)
 - [Troubleshooting](#troubleshooting)
@@ -49,8 +49,8 @@ skills:
 
 ## Prerequisites
 
-- macOS 15+ SDK (Xcode 16+ or Xcode-beta)
-- Swift 6.0+ toolchain
+- macOS 14+ SDK
+- Swift 6.2 toolchain (swift-tools-version: 6.2)
 
 ## Build & Test
 
@@ -92,8 +92,8 @@ swift run skillsctl scan --repo .
 **For GUI users:**
 
 ```bash
-# Launch the sTools app
-swift run sTools
+# Launch the SkillsInspector app
+swift run SkillsInspector
 
 # The app will open with folder pickers for Codex and Claude skill roots
 # Default locations: ~/.codex/skills and ~/.claude/skills
@@ -116,7 +116,7 @@ swift package plugin skills-lint
 
   file
 
-- **Skill tree**: A directory structure containing multiple skills for an AI
+- **Skill tree**: A directory structure containing many skills for an AI
 
   agent
 
@@ -143,8 +143,8 @@ swift package plugin skills-lint
 # Scan repository skills (preferred for CI)
 skillsctl scan --repo . --format json
 
-# Scan home directories with parallel validation
-skillsctl scan --codex ~/.codex/skills --claude ~/.claude/skills --default-excludes
+# Scan home directories with parallel validation (default excludes enabled)
+skillsctl scan --codex ~/.codex/skills --claude ~/.claude/skills
 
 # Watch mode for development (auto-rescan on file changes)
 skillsctl scan --repo . --watch
@@ -164,8 +164,8 @@ skillsctl scan --repo . --skip-claude
 # Turn off default excludes (.git, .system, __pycache__, .DS_Store)
 skillsctl scan --repo . --no-default-excludes
 
-# Interactive fix mode - apply suggested fixes with confirmation
-skillsctl fix --repo . --interactive
+# Interactive fix mode - apply suggested fixes with confirmation (default)
+skillsctl fix --repo .
 
 # Auto-apply all fixes without prompting
 skillsctl fix --repo . --yes
@@ -227,12 +227,12 @@ swift package plugin skills-lint
 Runs `skillsctl scan --repo . --format json` and surfaces diagnostics.
 Benefits from automatic caching on later runs.
 
-## sTools app (macOS)
+## SkillsInspector app (sTools, macOS)
 
 Run with SwiftPM:
 
 ```bash
-swift run sTools
+swift run SkillsInspector
 ```
 
 ### Features
@@ -277,8 +277,8 @@ Remote trust configuration:
 - `STOOLS_KEYSET_ROOT_KEY`: Base64 Ed25519 root public key for verifying
 
   signed keysets. When set, the Remote tab fetches `/api/v1/keys` and updates
-  the trust store only if the keyset signature verifies and the keyset is not
-  expired; otherwise it keeps the existing trust store.
+the trust store only if the keyset signature verifies and the keyset has not
+expired; otherwise it keeps the existing trust store.
 
 CLI defaults:
 
@@ -304,7 +304,7 @@ CLI defaults:
 
   installs until reviewed.
 
-- Quarantine records are stored at `~/Library/Application
+- Quarantine records live at `~/Library/Application
 
   Support/SkillsInspector/quarantine.json`.
 
@@ -312,7 +312,7 @@ CLI defaults:
   `skillsctl quarantine approve <id>` or
   `skillsctl quarantine block <id>` to resolve.
 
-- If you need to reset quarantine state for a clean slate, delete the
+- If you need to reset quarantine state for a fresh start, delete the
 
   quarantine file and rerun installs.
 
@@ -327,7 +327,7 @@ CLI defaults:
 skillsctl scan --repo . --no-default-excludes --log-level debug
 ```
 
-**Solution:** Files may be in excluded directories (.git, .system,
+**Solution:** Files can sit in excluded directories (.git, .system,
 **pycache**, .DS_Store). Use `--no-default-excludes` or check your exclude
 patterns.
 
@@ -338,7 +338,7 @@ patterns.
 swift run skillsctl scan --repo .
 ```
 
-**Solution:** skillsctl is not installed globally. Use `swift run skillsctl`
+**Solution:** skillsctl does not install globally by default. Use `swift run skillsctl`
 or build and install the binary.
 
 #### Problem: Validation errors on valid SKILL.md files
@@ -351,16 +351,16 @@ skillsctl scan --repo . --format json | jq '.findings[] | select(.severity=="err
 **Solution:** Review the specific rule violations. Common issues include
 missing frontmatter, incorrect naming patterns, or missing required sections.
 
-#### Problem: sTools app won't launch
+#### Problem: SkillsInspector app won't launch
 
 ```bash
 # Check build status
-swift build --product sTools
+swift build --product SkillsInspector
 # Launch with error output
-swift run sTools 2>&1
+swift run SkillsInspector 2>&1
 ```
 
-**Solution:** Ensure all dependencies are built. Check console output for
+**Solution:** Build all dependencies. Check console output for
 specific errors.
 
 #### Problem: Cache issues or stale results
@@ -371,7 +371,7 @@ skillsctl scan --repo . --no-cache
 # Or clear from app settings
 ```
 
-**Solution:** Cache may be corrupted. Disable caching temporarily or clear
+**Solution:** Cache might contain corruption. Disable caching temporarily or clear
 cache files.
 
 ### Getting Help
@@ -447,7 +447,7 @@ Features:
 
 ### Pluggable Rule System
 
-Validation rules are now protocol-based, enabling:
+Validation rules now use protocols, enabling:
 
 - Custom validation rules via `ValidationRule` protocol
 - Agent-specific rules (Codex vs Claude)
@@ -459,7 +459,7 @@ and symlink warnings.
 
 ### JSON Schema Validation
 
-Config files are validated against schemas on load:
+Config files undergo schema checks on load:
 
 - Validates `config.json`, `baseline.json`, and `ignore.json`
 - Clear error messages when validation fails
@@ -529,8 +529,8 @@ swift run skillsctl scan --repo . --allow-empty
 
 ```bash
 # Build and launch GUI
-swift build --product sTools
-swift run sTools
+swift build --product SkillsInspector
+swift run SkillsInspector
 # Expected: macOS app opens with folder pickers
 ```
 

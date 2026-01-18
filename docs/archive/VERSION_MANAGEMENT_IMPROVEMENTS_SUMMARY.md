@@ -4,7 +4,7 @@
 
 ### 1. Clarified UI Labels
 
-- **Index Version Bump** → Clearly labeled as "Index Version Bump" with
+- **Index Version Bump** → Labeled as "Index Version Bump" with
 
   tooltip explaining it affects the generated skills index, not individual
   skills
@@ -33,7 +33,7 @@
 
 ### 3. Added Changelog File Path Display
 
-- **Path Display** → Shows where changelog will be written (e.g.,
+- **Path Display** → Shows where changelog writes (e.g.,
 
   "~/.codex/public/skills-changelog.md")
 
@@ -155,26 +155,26 @@ Regenerate index with new versions
 1. Set "Existing Index Version" field (e.g., "1.0.0")
 2. Choose "Index Version Bump" (None/Patch/Minor/Major)
 3. Add optional changelog note
-4. Generate index - version will be bumped automatically
+4. Generate index - version bumps automatically
 
 ### Skill Version Management
 
 1. Choose "Skill Version Bump" (None/Patch/Minor/Major)
 2. Click "Bump All" to update all SKILL.md files
-3. Individual versions are updated in frontmatter
+3. Individual versions update in frontmatter
 4. Index regenerates to show new versions
 
 ### Changelog
 
-- Notes are written to separate changelog file
-- Path is automatically resolved and displayed
+- Notes write to separate changelog file
+- Path resolves automatically and displays
 - Format: "- [timestamp] — [note] (v[version])"
 
 ## 🎉 Benefits
 
 1. **Clear Separation** → No more confusion between index and skill versions
 2. **Automation** → Bulk operations save time on large skill collections
-3. **Transparency** → Clear display of where files are written
+3. **Transparency** → Clear display of where files write
 4. **History** → Version change tracking for audit purposes
 5. **Flexibility** → Supports both manual and automated workflows
 6. **User-Friendly** → Improved labels, tooltips, and visual feedback

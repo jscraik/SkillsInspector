@@ -38,11 +38,11 @@ See `docs/config-schema.json` for the full JSON Schema.
 
   errors).
 
-- `sync.aliases`: optional map to treat skill names as equivalent during sync.
+- `sync.aliases`: optional map to treat skill names as matching during sync.
 
 ## Baseline (`.skillsctl/baseline.json`)
 
-Use to suppress known findings until they are fixed. Shape matches
+Use to suppress known findings until fixed. Shape matches
 `FindingOutput` subset.
 
 ### Baseline example
@@ -68,7 +68,7 @@ Same shape as baseline; intended for local ignores. Pass via `--ignore
 
 - `--config <path>`: load config.
 - `--baseline <path>`: apply baseline suppression.
-- `--ignore <path>`: apply additional ignores.
+- `--ignore <path>`: apply extra ignores.
 
 ## See Also
 

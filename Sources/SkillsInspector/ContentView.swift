@@ -1,5 +1,9 @@
 import SwiftUI
 import SkillsCore
+// NEW: Import aStudio modules
+import AStudioFoundation
+import AStudioThemes
+import AStudioComponents
 
 struct LegacyContentView: View {
     @StateObject private var viewModel = InspectorViewModel()
@@ -359,7 +363,7 @@ private extension LegacyContentView {
     private var sidebarResizer: some View {
         let baseColor = DesignTokens.Colors.Border.light
         let strokeColor = isSidebarResizerHover ? baseColor.opacity(0.9) : baseColor.opacity(0.6)
-        Rectangle()
+        return Rectangle()
             .fill(strokeColor)
             .frame(width: 1)
             .overlay(
@@ -392,15 +396,24 @@ private extension LegacyContentView {
     private func sidebarSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
             Text(title)
-                .font(.system(size: 10, weight: .black))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(DesignTokens.Colors.Text.tertiary)
                 .textCase(.uppercase)
+                .tracking(0.5)
                 .padding(.horizontal, DesignTokens.Spacing.hair)
-                .padding(.bottom, 2)
-            
+                .padding(.bottom, 4)
+
             content()
         }
         .padding(.top, DesignTokens.Spacing.xs)
+        .padding(.bottom, DesignTokens.Spacing.xs)
+        .overlay(
+            // Bottom border for section separation
+            Rectangle()
+                .fill(DesignTokens.Colors.Border.light)
+                .frame(height: 1),
+            alignment: .bottom
+        )
     }
 
     private func sidebarRow<V: View>(title: String, icon: String, value: AppMode, tint: Color, @ViewBuilder trailing: () -> V = { EmptyView() }) -> some View {
@@ -409,37 +422,51 @@ private extension LegacyContentView {
         } label: {
             HStack(spacing: DesignTokens.Spacing.xxs) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(mode == value ? .white : tint)
                     .frame(width: 24)
-                
+
                 Text(title)
-                    .font(.system(size: 14, weight: mode == value ? .bold : .medium))
-                
+                    .font(.system(size: 14, weight: mode == value ? .semibold : .medium))
+                    .foregroundColor(mode == value ? .white : DesignTokens.Colors.Text.primary)
+
                 Spacer()
-                
+
                 trailing()
             }
             .padding(.horizontal, DesignTokens.Spacing.xs)
             .padding(.vertical, DesignTokens.Spacing.xxs)
-            .foregroundStyle(mode == value ? .white : DesignTokens.Colors.Text.primary)
             .background {
                 if mode == value {
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                        .fill(tint.gradient)
-                        .shadow(color: tint.opacity(0.4), radius: 8, x: 0, y: 4)
-                } else {
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                        .fill(Color.clear)
+                    HStack(spacing: 0) {
+                        // 3px accent border on left
+                        Rectangle()
+                            .fill(.white.opacity(0.9))
+                            .frame(width: 3)
+
+                        // Subtle gradient background
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        tint.opacity(0.15),
+                                        tint.opacity(0.08)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    }
                 }
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private func badge(text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .font(.system(size: 11, weight: .bold, design: .monospaced))
             .foregroundStyle(.white)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
@@ -449,84 +476,69 @@ private extension LegacyContentView {
 
     private func rootCard<M: View>(title: String, url: URL?, tint: Color, @ViewBuilder menu: () -> M) -> some View {
         HStack(spacing: DesignTokens.Spacing.xxs) {
-            // Precise Status Indicator
-            ZStack {
-                Circle()
-                    .fill(statusColor(for: url).opacity(0.12))
-                    .frame(width: 24, height: 24)
-                
-                Image(systemName: statusIcon(for: url))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(statusColor(for: url))
-            }
-            
-            VStack(alignment: .leading, spacing: 0) {
+            // Status indicator - simple circle
+            Circle()
+                .fill(url != nil ? DesignTokens.Colors.Status.success : DesignTokens.Colors.Icon.tertiary)
+                .frame(width: 8, height: 8)
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(DesignTokens.Colors.Text.primary)
-                
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(DesignTokens.Colors.Text.primary)
+
                 Group {
                     if let url = url {
                         Text(shortenPath(url.path))
                     } else {
                         Text("Not configured")
+                            .italic()
                     }
                 }
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(DesignTokens.Colors.Text.secondary)
                 .lineLimit(1)
             }
-            
+
             Spacer()
-            
+
             Menu {
                 menu()
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
-                    .padding(6)
-                    .background(DesignTokens.Colors.Background.tertiary.opacity(0.4))
-                    .clipShape(Circle())
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(DesignTokens.Colors.Text.secondary)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
         }
-        .padding(.horizontal, DesignTokens.Spacing.xxs)
-        .padding(.vertical, DesignTokens.Spacing.xxxs)
-        .background(DesignTokens.Colors.Background.primary)
-        .cornerRadius(DesignTokens.Radius.md)
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+        .padding(.horizontal, DesignTokens.Spacing.xs)
+        .padding(.vertical, DesignTokens.Spacing.xxs)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(DesignTokens.Colors.Background.primary)
                 .stroke(DesignTokens.Colors.Border.light, lineWidth: 1)
         )
     }
 
     private func addRootButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: DesignTokens.Spacing.xxs) {
-                ZStack {
-                    Circle()
-                        .stroke(DesignTokens.Colors.Accent.blue.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [2]))
-                        .frame(width: 24, height: 24)
-                    
-                    Image(systemName: "plus")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(DesignTokens.Colors.Accent.blue)
-                }
-                
-                Text("Add Codex Root")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(DesignTokens.Colors.Accent.blue)
-                
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 16, weight: .semibold))
+
+                Text("Add Root")
+                    .font(.system(size: 13, weight: .medium))
+
                 Spacer()
             }
-            .padding(.horizontal, DesignTokens.Spacing.xxs)
-            .padding(.vertical, DesignTokens.Spacing.xxxs)
-            .background(DesignTokens.Colors.Accent.blue.opacity(0.06))
-            .cornerRadius(DesignTokens.Radius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .stroke(DesignTokens.Colors.Accent.blue.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [4]))
+            .foregroundStyle(DesignTokens.Colors.Accent.blue)
+            .padding(.horizontal, DesignTokens.Spacing.xs)
+            .padding(.vertical, DesignTokens.Spacing.xxs)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .stroke(DesignTokens.Colors.Accent.blue, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)

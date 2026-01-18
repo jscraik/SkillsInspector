@@ -54,13 +54,13 @@
 
         parity results include CodexSkillManager data in the combined report.
 
-      - Given the path is missing/invalid, When I run scan, Then I get a clear
+      - Given a missing/invalid path, When I run scan, Then I get a clear
 
         error with remediation and no crash.
 
-      - Given path traversal attempts, When validated, Then the operation is
+      - Given path traversal attempts, When validated, Then the operation
 
-        rejected and logged without exposing file contents.
+        rejects and logs without exposing file contents.
 
     - Accessibility: keyboardable path entry; status updates via
 
@@ -72,7 +72,7 @@
 
     - Logging/PII: structured logs with service id; no secrets/paths;
 
-      aggregate counts only.
+      summary counts only.
 
     - Rollout/Rollback: gated by CLI flag `--csm-path <path>` and UI toggle;
 
@@ -98,15 +98,15 @@
 
         appears and exit code remains 0.
 
-      - Given long-running scans, When progress updates, Then progress text is
+      - Given long-running scans, When progress updates, Then progress text reads
 
-        screen-reader readable and keyboard focus is preserved.
+        in screen readers and keyboard focus stays intact.
 
     - Accessibility: semantic lists, visible focus, live-region updates, text
 
       labels on badges, keyboard navigation for drill-down.
 
-    - Logging/PII: only aggregate counts and hash comparisons; no file
+    - Logging/PII: only summary counts and hash comparisons; no file
 
       contents.
 

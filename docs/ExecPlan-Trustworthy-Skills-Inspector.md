@@ -1,10 +1,9 @@
 # Trustworthy Skills Inspector Improvements (verification, UX, cross-IDE installs)
 
-This ExecPlan is a living document. The sections Progress, Surprises &
-Discoveries, Decision Log, and Outcomes & Retrospective must be kept up to
-date as work proceeds. This plan follows
-/Users/jamiecraik/.codex/instructions/plans.md and is additive to
-docs/PLANS.md.
+This ExecPlan stays a living document. Keep the sections Progress,
+Surprises & Discoveries, Decision Log, and Outcomes & Retrospective up to date
+as work proceeds. This plan follows
+/Users/jamiecraik/.codex/instructions/plans.md and adds to docs/PLANS.md.
 
 ## Purpose / Big Picture
 
@@ -78,7 +77,7 @@ entry, and a successful cross-IDE install result.
 
 - [x] (2026-01-16) Add signed keyset fetch/verification and refresh trust
 
-  store when a pinned root key is available.
+store when a pinned root key becomes available.
 
 - [x] (2026-01-16) Record ledger verify events for bulk verification
 
@@ -96,7 +95,7 @@ entry, and a successful cross-IDE install result.
 
 - Observation: Remote ZIPs often contain only a single skill directory and
 
-  SKILL.md, but some archives include additional files; this makes file-count
+SKILL.md, but some archives include extra files; this makes file-count
   enforcement critical to avoid zip-bomb abuse. Evidence:
   RemoteSkillInstallerTests failures during limit enforcement.
 
@@ -121,8 +120,8 @@ entry, and a successful cross-IDE install result.
 
 - Decision: Use a hexagonal architecture with ports/adapters so verification
 
-  and policy logic are isolated from UI/CLI/network. Rationale: Keeps
-  integrity logic testable and swapable for future sources. Date/Author:
+and policy logic stay isolated from UI/CLI/network. Rationale: Keeps
+integrity logic testable and swapable for future sources. Date/Author:
   2026-01-12 / Codex
 
 - Decision: Standardize the ledger on SQLite (not JSONL) to support queryable
@@ -137,7 +136,7 @@ entry, and a successful cross-IDE install result.
   Rationale: Proven UX pattern observed in recon and aligns with consent-based
   preview. Date/Author: 2026-01-12 / Codex
 
-- Decision: Treat preview cache as potentially hostile and validate cached
+- Decision: Treat preview cache as potentially hostile and check cached
 
   preview against manifest hash/ETag. Rationale: Prevent cache poisoning and
   stale metadata from bypassing consent. Date/Author: 2026-01-12 / Codex
@@ -150,7 +149,7 @@ entry, and a successful cross-IDE install result.
 
 ## Outcomes & Retrospective
 
-- (2026-01-13) Ledger-backed changelog generation is now available in the UI,
+- (2026-01-13) Ledger-backed changelog generation now ships in the UI,
 
   with SQLite-backed event storage and a basic ledger history panel. Remote
   installs now emit ledger entries for successful and failed installs.
@@ -167,27 +166,28 @@ entry, and a successful cross-IDE install result.
 
 - (2026-01-16) Remote installs now enforce ACIP scanning, MIME checks, and
 
-  all-or-nothing rollback across targets. Changelog exports are signed with a
-  per-device key, telemetry is schema-sanitized, and trust stores can refresh
+all-or-nothing rollback across targets. Changelog exports include a
+per-device signature, telemetry uses schema sanitization, and trust stores can
+refresh
   from a signed remote keyset when configured.
 
 ## Context and Orientation
 
-Repository root is /Users/jamiecraik/dev/sTools. The core domain logic is in
-Sources/SkillsCore, the macOS UI is in Sources/SkillsInspector, and the CLI is
-in Sources/skillsctl. Remote installation logic currently lives in
+Repository root: /Users/jamiecraik/dev/sTools. Core domain logic lives in
+Sources/SkillsCore, the macOS UI lives in Sources/SkillsInspector, and the CLI
+lives in Sources/skillsctl. Remote installation logic currently lives in
 Sources/SkillsCore/Remote/RemoteSkillInstaller.swift. The remote catalog
-client is Sources/SkillsCore/Remote/RemoteSkillClient.swift. The UI remote
-list is Sources/SkillsInspector/Remote/RemoteView.swift and its view model is
-Sources/SkillsInspector/Remote/RemoteViewModel.swift. Skills are installed
-into ~/.codex/skills, ~/.claude/skills, and ~/.copilot/skills.
+client lives at Sources/SkillsCore/Remote/RemoteSkillClient.swift. The UI
+remote list lives at Sources/SkillsInspector/Remote/RemoteView.swift and its
+view model lives at Sources/SkillsInspector/Remote/RemoteViewModel.swift.
+Skills install into ~/.codex/skills, ~/.claude/skills, and ~/.copilot/skills.
 
 Split-view navigation means a two-column layout where the left column lists
 skills and the right column shows a detail preview. A detail preview panel
 means the right column shows SKILL.md, changelog, signer, and verification
 status without downloading or unzipping the full archive. A bulk toolbar
-action is a top-level control that operates on multiple skills (for example,
-Verify All or Update All Verified).
+action acts as a top-level control that operates on many skills (for
+example, Verify All or Update All Verified).
 
 ## Plan of Work
 
@@ -203,13 +203,13 @@ Update the UI in Sources/SkillsInspector/Remote/RemoteView.swift and
 ContentView.swift to move to a split-view layout: list on the left, detail
 preview on the right. Add a toolbar with bulk actions (Verify All, Update All
 Verified, Export Changelog). The detail preview should show signer status,
-manifest hash, changelog, and a button to Download and Verify. Ensure the
-button is disabled if the preview is unverified or the manifest is missing.
+manifest hash, changelog, and a button to Download and Verify. Disable the
+button when the preview lacks verification or the manifest missing.
 
 Introduce TrustStore persistence. Add a simple local JSON file at
 ~/Library/Application Support/SkillsInspector/trust.json, and create a small
 view model (new file Sources/SkillsInspector/TrustStoreViewModel.swift) to
-read/write allowlisted keys. Add a consent prompt when a new signer is seen,
+read/write allowlisted keys. Add a consent prompt when a new signer appears,
 and surface revocation status in the detail panel.
 
 Extend the installer path to support cross-IDE adapter installs. Add an
@@ -259,7 +259,7 @@ swift run skillsctl remote --help swift run skillsctl remote install --help
 
 ## Validation and Acceptance
 
-The work is acceptable when all of the following can be verified:
+Work qualifies as acceptable when each item below verifies:
 
 - The UI shows a split-view layout with a detail preview panel for remote
 
@@ -280,14 +280,16 @@ The work is acceptable when all of the following can be verified:
 
 ## Idempotence and Recovery
 
-All steps are additive. Re-running installs should be idempotent by archive
+All steps remain additive. Re-running installs should remain idempotent by
+archive
 hash and target set. If a preview or install fails, no changes should persist
-outside the staging directory. If the TrustStore file is corrupted, delete it
+outside the staging directory. If the TrustStore file becomes corrupted,
+delete it
 and recreate it; the UI must prompt for signer trust again.
 
 ## Artifacts and Notes
 
-Key files to be added or updated:
+Key files to add or update:
 
 Sources/SkillsCore/Remote/RemoteSkillClient.swift
 Sources/SkillsCore/Remote/RemoteSkillInstaller.swift
@@ -315,8 +317,8 @@ docs/schema/ (new JSON schemas for preview/verify outputs)
 
   hash.
 
-All new logic stays in SkillsCore and is surfaced via SkillsInspector UI and
-skillsctl CLI. No new third-party dependencies are required for the initial
+All new logic stays in SkillsCore and surfaces via SkillsInspector UI and
+skillsctl CLI. The initial scope requires no new third-party dependencies for
 milestones.
 
 Change log: 2026-01-12, created this ExecPlan to map recon-driven improvements
