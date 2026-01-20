@@ -8,7 +8,23 @@ struct SkillsCtl: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "skillsctl",
         abstract: "Scan/validate/sync Codex + Claude SKILL.md directories.",
-        subcommands: [Scan.self, Fix.self, SyncCheck.self, Index.self, Search.self, SearchIndexCmd.self, Remote.self, Publish.self, Spec.self, SecurityCommand.self, QuarantineCommand.self, WorkflowCommand.self, Completion.self]
+        subcommands: [
+            Scan.self,
+            Fix.self,
+            SyncCheck.self,
+            Index.self,
+            Search.self,
+            SearchIndexCmd.self,
+            Remote.self,
+            Publish.self,
+            Spec.self,
+            SecurityCommand.self,
+            QuarantineCommand.self,
+            WorkflowCommand.self,
+            AnalyticsCommand.self,
+            Telemetry.self,
+            Completion.self
+        ]
     )
 }
 
@@ -27,6 +43,56 @@ struct Remote: ParsableCommand {
             RemoteUpdate.self
         ]
     )
+}
+
+// MARK: - Telemetry commands
+
+struct Telemetry: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Manage telemetry and metrics data.",
+        subcommands: [TelemetryCleanup.self]
+    )
+}
+
+struct TelemetryCleanup: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Delete ledger entries older than retention period.",
+        discussion: """
+        Removes telemetry entries from the ledger that are older than the specified retention period.
+        By default, retains entries for 30 days.
+
+        This is useful for:
+        - Enforcing data retention policies
+        - Reducing database size
+        - Complying with privacy requirements
+
+        The retention period is measured from the timestamp of each entry.
+        """
+    )
+
+    @Option(name: .customLong("days"), help: "Retention period in days (default: 30)")
+    var days: Int = 30
+
+    @Option(name: .customLong("ledger-path"), help: "Path to ledger database (default: ~/Library/Application Support/sTools/ledger.sqlite3)")
+    var ledgerPath: String?
+
+    func run() async throws {
+        let ledgerURL: URL
+        if let path = ledgerPath, !path.isEmpty {
+            ledgerURL = URL(fileURLWithPath: PathUtil.expandTilde(path))
+        } else {
+            ledgerURL = SkillLedger.defaultStoreURL()
+        }
+
+        let ledger = try SkillLedger(url: ledgerURL)
+        let deletedCount = try await ledger.cleanup(olderThan: days)
+
+        if deletedCount > 0 {
+            print("✅ Deleted \(deletedCount) entr\(deletedCount == 1 ? "y" : "ies") older than \(days) days")
+        } else {
+            print("ℹ️  No entries to delete (all entries within \(days)-day retention)")
+        }
+    }
 }
 
 struct RemoteList: ParsableCommand {

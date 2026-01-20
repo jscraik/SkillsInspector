@@ -304,6 +304,27 @@ public actor SkillLedger {
         )
     }
 
+    /// Delete ledger entries older than the specified number of days.
+    /// - Parameter days: Number of days to retain (default: 30)
+    /// - Returns: Number of entries deleted
+    public func cleanup(olderThan days: Int = 30) throws -> Int {
+        guard let db else { throw LedgerStoreError("Ledger unavailable") }
+        let cutoffDate = Date().addingTimeInterval(-Double(days) * 24 * 60 * 60)
+        let cutoffTimestamp = SkillLedger.isoFormatter.string(from: cutoffDate)
+
+        let sql = "DELETE FROM ledger_events WHERE timestamp < ?;"
+        let stmt = try prepare(sql: sql)
+        defer { sqlite3_finalize(stmt) }
+        bindText(stmt, 1, cutoffTimestamp)
+
+        if sqlite3_step(stmt) != SQLITE_DONE {
+            throw LedgerStoreError(String(cString: sqlite3_errmsg(db)))
+        }
+
+        let changes = sqlite3_changes(db)
+        return Int(changes)
+    }
+
     private static func openDatabase(at url: URL) throws -> OpaquePointer {
         let folder = url.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
