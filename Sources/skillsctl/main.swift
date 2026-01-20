@@ -681,6 +681,7 @@ private func mapRemoteErrorCode(_ error: Error) -> String {
     if let remote = error as? RemoteSkillClientError {
         switch remote {
         case .notFound: return "remote_not_found"
+        case .httpRetryable: return "remote_http_retryable"
         }
     }
     if error is URLError {
