@@ -213,6 +213,8 @@ public struct SkillChangelogGenerator: Sendable {
         case .remove: return "Removed"
         case .verify: return "Verified"
         case .sync: return "Synced"
+        case .appLaunch: return "Launched"
+        case .crash: return "Crashed"
         }
     }
 }

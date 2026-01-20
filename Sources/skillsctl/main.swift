@@ -23,6 +23,7 @@ struct SkillsCtl: AsyncParsableCommand {
             WorkflowCommand.self,
             AnalyticsCommand.self,
             Telemetry.self,
+            SLOCommand.self,
             Completion.self
         ]
     )
@@ -253,6 +254,143 @@ struct TelemetryExport: ParsableCommand {
             return "\"\(field.replacingOccurrences(of: "\"", with: "\"\""))\""
         }
         return field
+    }
+}
+
+// MARK: - SLO commands
+
+struct SLOCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Service Level Objectives and reliability reporting.",
+        subcommands: [SLOReport.self]
+    )
+}
+
+struct SLOReport: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Generate SLO compliance report.",
+        discussion: """
+        Reports on Service Level Objective compliance based on ledger data.
+        Shows success rates, error budgets, and alerts for SLO violations.
+
+        SLOs measured:
+        - Crash-free sessions: 99.5% target (30-day rolling window)
+        - Verified install success: 95% target (30-day rolling window)
+        - Sync success: 98% target (7-day rolling window)
+        """
+    )
+
+    @Option(name: .customLong("format"), help: "Output format: text|json", completion: .list(["text", "json"]))
+    var format: String = "text"
+
+    @Option(name: .customLong("output"), help: "Output file path (default: stdout)")
+    var outputPath: String?
+
+    @Option(name: .customLong("ledger-path"), help: "Path to ledger database")
+    var ledgerPath: String?
+
+    func run() async throws {
+        let ledgerURL: URL
+        if let path = ledgerPath, !path.isEmpty {
+            ledgerURL = URL(fileURLWithPath: PathUtil.expandTilde(path))
+        } else {
+            ledgerURL = SkillLedger.defaultStoreURL()
+        }
+
+        let ledger = try SkillLedger(url: ledgerURL)
+        let measurer = SLOMeasurer(ledger: ledger)
+        let report = try await measurer.generateReport()
+
+        let output: String
+        switch format.lowercased() {
+        case "json":
+            output = exportAsJSON(report)
+        case "text":
+            output = exportAsText(report)
+        default:
+            throw ValidationError("Invalid format: \(format). Use 'text' or 'json'.")
+        }
+
+        if let path = outputPath {
+            let url = URL(fileURLWithPath: PathUtil.expandTilde(path))
+            try output.write(to: url, atomically: true, encoding: .utf8)
+            print("SLO report written to \(url.path)")
+        } else {
+            print(output)
+        }
+
+        // Exit with error code if any SLO is not compliant
+        if !report.isCompliant {
+            throw ExitCode(1)
+        }
+    }
+
+    private func exportAsJSON(_ report: SkillsCore.SLOReport) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+
+        if let data = try? encoder.encode(report),
+           let text = String(data: data, encoding: .utf8) {
+            return text
+        }
+        return "{}"
+    }
+
+    private func exportAsText(_ report: SkillsCore.SLOReport) -> String {
+        let formatter = ISO8601DateFormatter()
+        var lines: [String] = []
+
+        lines.append("sTools SLO Report")
+        lines.append("Generated: \(formatter.string(from: report.generatedAt))")
+        lines.append("")
+
+        // Crash-free sessions
+        let crash = report.crashFreeSessions
+        lines.append("📱 Crash-Free Sessions")
+        lines.append("  Target: \(String(format: "%.1f", crash.slo.target))%")
+        lines.append("  Actual: \(String(format: "%.1f", crash.successRate))%")
+        lines.append("  Window: \(crash.slo.window.rawValue)")
+        lines.append("  Events: \(crash.successCount)/\(crash.totalCount)")
+        lines.append("  Error Budget: \(String(format: "%.1f", crash.errorBudgetRemaining))% remaining")
+        lines.append(crash.isCompliant ? "  Status: ✅ Compliant" : "  Status: ❌ Non-compliant")
+        if crash.shouldAlert {
+            lines.append("  ⚠️  Alert: Error budget below 10%")
+        }
+        lines.append("")
+
+        // Verified install success
+        let install = report.verifiedInstallSuccess
+        lines.append("📦 Verified Install Success")
+        lines.append("  Target: \(String(format: "%.1f", install.slo.target))%")
+        lines.append("  Actual: \(String(format: "%.1f", install.successRate))%")
+        lines.append("  Window: \(install.slo.window.rawValue)")
+        lines.append("  Events: \(install.successCount)/\(install.totalCount)")
+        lines.append("  Error Budget: \(String(format: "%.1f", install.errorBudgetRemaining))% remaining")
+        lines.append(install.isCompliant ? "  Status: ✅ Compliant" : "  Status: ❌ Non-compliant")
+        if install.shouldAlert {
+            lines.append("  ⚠️  Alert: Error budget below 10%")
+        }
+        lines.append("")
+
+        // Sync success
+        let sync = report.syncSuccess
+        lines.append("🔄 Sync Success")
+        lines.append("  Target: \(String(format: "%.1f", sync.slo.target))%")
+        lines.append("  Actual: \(String(format: "%.1f", sync.successRate))%")
+        lines.append("  Window: \(sync.slo.window.rawValue)")
+        lines.append("  Events: \(sync.successCount)/\(sync.totalCount)")
+        lines.append("  Error Budget: \(String(format: "%.1f", sync.errorBudgetRemaining))% remaining")
+        lines.append(sync.isCompliant ? "  Status: ✅ Compliant" : "  Status: ❌ Non-compliant")
+        if sync.shouldAlert {
+            lines.append("  ⚠️  Alert: Error budget below 10%")
+        }
+        lines.append("")
+
+        // Overall status
+        lines.append(report.isCompliant ? "✅ Overall: All SLOs met" : "❌ Overall: SLO violations detected")
+
+        return lines.joined(separator: "\n")
     }
 }
 
