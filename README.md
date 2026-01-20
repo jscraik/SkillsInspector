@@ -1,4 +1,4 @@
-# sTools
+# SkillsInspector
 
 **Developer toolkit for Codex/Claude skill trees**
 
