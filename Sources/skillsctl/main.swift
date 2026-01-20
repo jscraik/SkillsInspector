@@ -24,6 +24,7 @@ struct SkillsCtl: AsyncParsableCommand {
             AnalyticsCommand.self,
             Telemetry.self,
             SLOCommand.self,
+            Logs.self,
             Completion.self
         ]
     )
@@ -391,6 +392,140 @@ struct SLOReport: ParsableCommand {
         lines.append(report.isCompliant ? "✅ Overall: All SLOs met" : "❌ Overall: SLO violations detected")
 
         return lines.joined(separator: "\n")
+    }
+}
+
+// MARK: - Logs commands
+
+struct Logs: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Stream and query unified logs.",
+        discussion: """
+        Streams logs from the macOS unified logging system (os_log).
+        Supports filtering by level, subsystem, and category.
+
+        Examples:
+          skillsctl logs --tail --filter error
+          skillsctl logs --predicate "subsystem == 'com.stools.skills'"
+          skillsctl logs --last 1h
+        """
+    )
+
+    @Flag(name: .customLong("tail"), help: "Stream logs in real-time (like tail -f)")
+    var tailMode: Bool = false
+
+    @Option(name: .customLong("filter"), help: "Filter by log level: debug|info|error|fault", completion: .list(["debug", "info", "error", "fault"]))
+    var levelFilter: String?
+
+    @Option(name: .customLong("predicate"), help: "Custom NSPredicate for log filtering")
+    var predicate: String?
+
+    @Option(name: .customLong("last"), help: "Show logs from last duration (e.g., 1h, 30m, 1d)")
+    var timeWindow: String?
+
+    @Option(name: .customLong("limit"), help: "Maximum number of log entries (default: 100)")
+    var limit: Int = 100
+
+    @Option(name: .customLong("style"), help: "Output style: compact|detailed", completion: .list(["compact", "detailed"]))
+    var style: String = "compact"
+
+    func run() throws {
+        // Build the log command
+        var cmdArgs = [
+            "log",
+            "show",
+            "--predicate",
+            buildPredicate(),
+            "--style", style == "detailed" ? "syslog" : "compact"
+        ]
+
+        if let window = timeWindow {
+            cmdArgs.append("--last")
+            cmdArgs.append(window)
+        } else if !tailMode {
+            cmdArgs.append("--last")
+            cmdArgs.append("1h")  // Default to last hour
+        }
+
+        if tailMode {
+            cmdArgs.append("--stream")
+        } else {
+            cmdArgs.append("--info")
+            cmdArgs.append(String(limit))
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = cmdArgs
+
+        // Set up pipe for output
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        try process.run()
+
+        if tailMode {
+            // Stream output
+            let handle = pipe.fileHandleForReading
+            NotificationCenter.default.addObserver(
+                forName: FileHandle.readCompletionNotification,
+                object: handle,
+                queue: .main
+            ) { _ in
+                    handle.readabilityHandler = nil
+            }
+
+            handle.readabilityHandler = { _ in
+                let data = handle.availableData
+                if data.count > 0 {
+                    if let str = String(data: data, encoding: .utf8) {
+                        print(str, terminator: "")
+                        fflush(stdout)
+                    }
+                }
+            }
+
+            // Run until interrupted
+            process.waitUntilExit()
+        } else {
+            // Wait for completion and print output
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let str = String(data: data, encoding: .utf8) {
+                print(str)
+            }
+            process.waitUntilExit()
+        }
+    }
+
+    private func buildPredicate() -> String {
+        var predicates: [String] = []
+
+        // Base predicate for sTools subsystem
+        predicates.append("subsystem == '\(AppLog.subsystem)'")
+
+        // Add level filter if specified
+        if let level = levelFilter {
+            switch level.lowercased() {
+            case "debug":
+                predicates.append("level == 'Debug'")
+            case "info":
+                predicates.append("level == 'Info'")
+            case "error":
+                predicates.append("level == 'Error'")
+            case "fault":
+                predicates.append("level == 'Fault'")
+            default:
+                break
+            }
+        }
+
+        // Use custom predicate if provided
+        if let custom = predicate {
+            return "(\(custom)) && subsystem == '\(AppLog.subsystem)'"
+        }
+
+        return predicates.joined(separator: " && ")
     }
 }
 
