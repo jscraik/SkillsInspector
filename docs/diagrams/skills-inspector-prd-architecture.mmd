@@ -1,0 +1,11 @@
+flowchart TD
+  UI["Select skill"] -->|"Preview"| FetchMeta["Preview API client (safe preview)"]
+  FetchMeta --> UI
+  UI -->|"Download & verify"| FetchZip["ArtifactFetcher (full)"]
+  FetchZip --> Verifier
+  Verifier -->|"fail"| UI
+  Verifier -->|"pass"| Sanitizer["Archive Sanitizer"]
+  Sanitizer --> Installer
+  Installer --> Ledger
+  Installer --> Adapters["Adapters: Codex/Claude/Copilot"]
+  Ledger --> Changelog["Changelog exporter"]

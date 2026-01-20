@@ -97,26 +97,28 @@ struct LedgerEventRowView: View {
 }
 
 
-#Preview {
-    LedgerEventRowView(
-        event: LedgerEvent(
-            id: 1,
-            timestamp: Date(),
-            eventType: .install,
-            skillName: "Prompt Booster",
-            skillSlug: "prompt-booster",
-            version: "1.2.0",
-            agent: .codex,
-            status: .success,
-            note: "Verified install",
-            source: nil,
-            verification: .strict,
-            manifestSHA256: "abc",
-            targetPath: "/tmp/skills/prompt-booster",
-            targets: nil,
-            perTargetResults: nil,
-            signerKeyId: nil
-        ),
-        isLast: false
-    )
+struct LedgerEventRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        LedgerEventRowView(
+            event: LedgerEvent(
+                id: 1,
+                timestamp: Date(),
+                eventType: .install,
+                skillName: "Prompt Booster",
+                skillSlug: "prompt-booster",
+                version: "1.2.0",
+                agent: .codex,
+                status: .success,
+                note: "Verified install",
+                source: nil,
+                verification: .strict,
+                manifestSHA256: "abc",
+                targetPath: "/tmp/skills/prompt-booster",
+                targets: nil,
+                perTargetResults: nil,
+                signerKeyId: nil
+            ),
+            isLast: false
+        )
+    }
 }

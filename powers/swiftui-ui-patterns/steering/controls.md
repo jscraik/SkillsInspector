@@ -2,15 +2,21 @@
 
 ## Intent
 
-Use native controls for settings and configuration screens, keeping labels accessible and state bindings clear.
+Use native controls for settings and configuration screens, keeping labels
+accessible and state bindings clear.
 
 ## Core patterns
 
 - Bind controls directly to `@State`, `@Binding`, or `@AppStorage`.
 - Prefer `Toggle` for boolean preferences.
 - Use `Slider` for numeric ranges and show the current value in a label.
-- Use `Picker` for discrete choices; use `.pickerStyle(.segmented)` only for 2–4 options.
-- Keep labels visible and descriptive; avoid embedding buttons inside controls.
+- Use `Picker` for discrete choices; use `.pickerStyle(.segmented)` only for
+
+  2–4 options.
+
+- Keep labels visible and descriptive; avoid embedding buttons inside
+
+  controls.
 
 ## Example: toggles with sections
 
@@ -52,6 +58,9 @@ Picker("Default Visibility", selection: $visibility) {
 
 ## Pitfalls
 
-- Avoid `.pickerStyle(.segmented)` for large sets; use menu or inline styles instead.
+- Avoid `.pickerStyle(.segmented)` for large sets; use menu or inline styles
+
+  instead.
+
 - Don’t hide labels for sliders; always show context.
 - Avoid hard-coding colors for controls; use theme tint sparingly.

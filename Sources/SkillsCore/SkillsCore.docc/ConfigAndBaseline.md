@@ -3,9 +3,11 @@
 How to configure scanning policy and manage baselines/ignores for `skillsctl`.
 
 ## Config (`.skillsctl/config.json`)
+
 See `docs/config-schema.json` for the full JSON Schema.
 
-### Example
+### Config example
+
 ```json
 {
   "schemaVersion": 1,
@@ -29,15 +31,22 @@ See `docs/config-schema.json` for the full JSON Schema.
 ```
 
 ### Fields
+
 - `schemaVersion`: integer, current version `1`.
 - `scan`: optional defaults for recursion, depth, excludes/globs.
-- `policy`: optional severity overrides and strict mode (promote warnings to errors).
-- `sync.aliases`: optional map to treat skill names as equivalent during sync.
+- `policy`: optional severity overrides and strict mode (promote warnings to
+
+  errors).
+
+- `sync.aliases`: optional map to treat skill names as matching during sync.
 
 ## Baseline (`.skillsctl/baseline.json`)
-Use to suppress known findings until they are fixed. Shape matches `FindingOutput` subset.
 
-### Example
+Use to suppress known findings until fixed. Shape matches
+`FindingOutput` subset.
+
+### Baseline example
+
 ```json
 {
   "schemaVersion": 1,
@@ -51,14 +60,18 @@ Use to suppress known findings until they are fixed. Shape matches `FindingOutpu
 ```
 
 ## Ignore file
-Same shape as baseline; intended for local ignores. Pass via `--ignore <path>`.
+
+Same shape as baseline; intended for local ignores. Pass via `--ignore
+<path>`.
 
 ## CLI usage
+
 - `--config <path>`: load config.
 - `--baseline <path>`: apply baseline suppression.
-- `--ignore <path>`: apply additional ignores.
+- `--ignore <path>`: apply extra ignores.
 
 ## See Also
+
 - ``SkillsConfig``
 - ``FindingOutput``
 - ``ScanOutput``

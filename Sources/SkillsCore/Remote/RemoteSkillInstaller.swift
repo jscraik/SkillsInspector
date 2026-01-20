@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import UniformTypeIdentifiers
 
 /// Errors during remote skill installation.
 public enum RemoteInstallError: LocalizedError {
@@ -65,7 +66,11 @@ public struct RemoteSkillInstaller: Sendable {
         manifest: RemoteArtifactManifest? = nil,
         policy: RemoteVerificationPolicy = .default,
         trustStore: RemoteTrustStore = .ephemeral,
-        skillSlug: String? = nil
+        skillSlug: String? = nil,
+        securityConfig: SecurityConfig = .default,
+        acipScanner: ACIPScanner = ACIPScanner(),
+        quarantineStore: QuarantineStore = QuarantineStore(),
+        preserveBackup: Bool = false
     ) async throws -> RemoteSkillInstallResult {
         guard FileManager.default.fileExists(atPath: archiveURL.path) else {
             throw RemoteInstallError.archiveUnreadable
@@ -107,6 +112,16 @@ public struct RemoteSkillInstaller: Sendable {
             }
         }
 
+        // 3b) Security scan (ACIP) before install
+        try await enforceSecurityScan(
+            at: skillRoot,
+            skillSlug: skillSlug ?? skillRoot.lastPathComponent,
+            archiveURL: archiveURL,
+            securityConfig: securityConfig,
+            acipScanner: acipScanner,
+            quarantineStore: quarantineStore
+        )
+
         // 4) Prepare destination (atomic move with rollback)
         let destination = target.root.appendingPathComponent(skillRoot.lastPathComponent, isDirectory: true)
         if FileManager.default.fileExists(atPath: destination.path) && !overwrite {
@@ -141,7 +156,10 @@ public struct RemoteSkillInstaller: Sendable {
         }
 
         // Cleanup staging/backup
-        try? backupURL.map { try FileManager.default.removeItem(at: $0) }
+        if !preserveBackup {
+            try? backupURL.map { try FileManager.default.removeItem(at: $0) }
+            backupURL = nil
+        }
         try? FileManager.default.removeItem(at: tempRoot)
 
         // 5) Compute bytes count and checksums
@@ -154,7 +172,8 @@ public struct RemoteSkillInstaller: Sendable {
             filesCopied: Self.fileCount(at: destination),
             totalBytes: totalBytes,
             archiveSHA256: checksum,
-            contentSHA256: contentChecksum
+            contentSHA256: contentChecksum,
+            backupURL: backupURL
         )
     }
 
@@ -243,6 +262,7 @@ public struct RemoteSkillInstaller: Sendable {
         trustStore: RemoteTrustStore,
         skillSlug: String?
     ) throws {
+        try enforceMIMEType(archiveURL: archiveURL, limits: policy.limits)
         let outcome = try evaluateVerification(archiveURL: archiveURL, manifest: manifest, policy: policy, trustStore: trustStore, skillSlug: skillSlug)
         if policy.mode == .strict, !outcome.issues.isEmpty {
             throw RemoteInstallError.verificationFailed(outcome.issues.joined(separator: "; "))
@@ -351,5 +371,45 @@ public struct RemoteSkillInstaller: Sendable {
             }
         }
         return (count, bytes, symlinks)
+    }
+
+    private func enforceMIMEType(archiveURL: URL, limits: RemoteVerificationLimits) throws {
+        let ext = archiveURL.pathExtension.lowercased()
+        guard !limits.allowedMIMETypes.isEmpty else { return }
+        if let type = UTType(filenameExtension: ext),
+           let mime = type.preferredMIMEType,
+           limits.allowedMIMETypes.contains(mime) {
+            return
+        }
+        throw RemoteInstallError.verificationFailed("Archive MIME type is not allowed")
+    }
+
+    private func enforceSecurityScan(
+        at skillRoot: URL,
+        skillSlug: String,
+        archiveURL: URL,
+        securityConfig: SecurityConfig,
+        acipScanner: ACIPScanner,
+        quarantineStore: QuarantineStore
+    ) async throws {
+        await acipScanner.updateConfig(securityConfig)
+        let results = await acipScanner.scanSkill(at: skillRoot, source: .remote)
+        for (filePath, result) in results {
+            switch result.action {
+            case .block(let reason, let match):
+                throw RemoteInstallError.validationFailed("ACIP blocked: \(reason) (\(match)) in \(filePath)")
+            case .quarantine(let reason, let match, let safeExcerpt):
+                _ = await quarantineStore.quarantine(
+                    skillName: skillRoot.lastPathComponent,
+                    skillSlug: skillSlug,
+                    reasons: ["\(reason): \(match)"],
+                    safeExcerpt: safeExcerpt,
+                    sourceURL: archiveURL
+                )
+                throw RemoteInstallError.validationFailed("ACIP quarantined: \(reason) (\(match)) in \(filePath)")
+            case .allow:
+                continue
+            }
+        }
     }
 }

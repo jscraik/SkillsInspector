@@ -8,7 +8,7 @@ struct StatsView: View {
     @Binding var severityFilter: Severity?
     @Binding var agentFilter: AgentKind?
     @AccessibilityFocusState private var chartFocused: Bool
-    
+
     private var stats: ValidationStats {
         ValidationStats(findings: viewModel.findings)
     }
@@ -38,7 +38,7 @@ struct StatsView: View {
                                     .captionText()
                                     .foregroundStyle(DesignTokens.Colors.Accent.blue)
                             }
-                            .buttonStyle(.customGlass)
+                            .buttonStyle(.clean)
                             .controlSize(.small)
                             .accessibilityLabel("Clear all filters")
                         }
@@ -84,7 +84,7 @@ struct StatsView: View {
                     }
                 }
                 .padding(DesignTokens.Spacing.xs)
-                .background(glassBarStyle(cornerRadius: DesignTokens.Radius.lg))
+                .background(cleanToolbarStyle(cornerRadius: DesignTokens.Radius.lg))
                 
                 // Summary cards with improved layout
                 LazyVGrid(columns: [
@@ -147,7 +147,7 @@ private extension StatsView {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DesignTokens.Spacing.xs)
         .background(
-            glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: color.opacity(0.06))
+            cleanPanelStyle(cornerRadius: DesignTokens.Radius.lg)
         )
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
@@ -178,7 +178,7 @@ private extension StatsView {
         }
         .padding(DesignTokens.Spacing.xs)
         .background(
-            glassPanelStyle(cornerRadius: DesignTokens.Radius.lg, tint: tint.opacity(0.04))
+            cleanPanelStyle(cornerRadius: DesignTokens.Radius.lg)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
@@ -414,7 +414,7 @@ private extension StatsView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(DesignTokens.Spacing.xl)
         .background(
-            glassPanelStyle(cornerRadius: DesignTokens.Radius.xl, tint: DesignTokens.Colors.Accent.blue.opacity(0.03))
+            cleanPanelStyle(cornerRadius: DesignTokens.Radius.xl)
         )
     }
 }

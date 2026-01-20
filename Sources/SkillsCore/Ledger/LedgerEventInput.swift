@@ -1,6 +1,7 @@
 import Foundation
 
 public struct LedgerEventInput: Sendable {
+    public let timestamp: Date?
     public let eventType: LedgerEventType
     public let skillName: String
     public let skillSlug: String?
@@ -17,6 +18,7 @@ public struct LedgerEventInput: Sendable {
     public let signerKeyId: String?
 
     public init(
+        timestamp: Date? = nil,
         eventType: LedgerEventType,
         skillName: String,
         skillSlug: String? = nil,
@@ -32,6 +34,7 @@ public struct LedgerEventInput: Sendable {
         perTargetResults: [AgentKind: String]? = nil,
         signerKeyId: String? = nil
     ) {
+        self.timestamp = timestamp
         self.eventType = eventType
         self.skillName = skillName
         self.skillSlug = skillSlug

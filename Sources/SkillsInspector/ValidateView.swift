@@ -6,7 +6,7 @@ struct ValidateView: View {
     @Binding var severityFilter: Severity?
     @Binding var agentFilter: AgentKind?
     @Binding var searchText: String
-    @State private var selectedFinding: Finding?
+    @State private var selectedFindingID: Finding.ID?
     @State private var showingBaselineSuccess = false
     @State private var baselineMessage = ""
     @State private var showingExportDialog = false
@@ -50,7 +50,7 @@ struct ValidateView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in
-            Task { await viewModel.scan() }
+            Task { await viewModel.scan(userInitiated: true) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .cancelScan)) { _ in
             viewModel.cancelScan()
@@ -84,7 +84,7 @@ private extension ValidateView {
                 // Primary Action Group
                 HStack(spacing: DesignTokens.Spacing.xxxs) {
                     Button {
-                        Task { await viewModel.scan() }
+                        Task { await viewModel.scan(userInitiated: true) }
                     } label: {
                         HStack(spacing: DesignTokens.Spacing.xxxs) {
                             if viewModel.isScanning {
@@ -227,7 +227,7 @@ private extension ValidateView {
             }
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
-            .background(glassBarStyle(cornerRadius: 0))
+            .background(cleanToolbarStyle(cornerRadius: 0))
             
             Divider()
 
@@ -259,22 +259,15 @@ private extension ValidateView {
                     }
                 }
                 .padding(.horizontal, DesignTokens.Spacing.sm)
-                .padding(.vertical, 6)
-                .background(DesignTokens.Colors.Background.tertiary.opacity(0.3))
-                
-                Divider()
+                .padding(.vertical, DesignTokens.Spacing.xxs)
+                .background(cleanToolbarStyle(cornerRadius: 0))
             }
         }
-        // Auto-scan on critical setting changes (Debounced)
-        // DISABLED: Causing continuous flickering - scan updates properties which trigger more scans
-        // .task(id: viewModel.recursive) {
-        //     try? await Task.sleep(nanoseconds: 800_000_000)
-        //     await autoScanIfReady()
-        // }
-        // .task(id: viewModel.effectiveExcludes) {
-        //     try? await Task.sleep(nanoseconds: 1_200_000_000)
-        //     await autoScanIfReady()
-        // }
+        // Previous implementation had these auto-scan triggers:
+        // .task(id: viewModel.recursive) { try? await Task.sleep(nanoseconds: 800_000_000); await autoScanIfReady() }
+        // .task(id: viewModel.effectiveExcludes) { try? await Task.sleep(nanoseconds: 1_200_000_000); await autoScanIfReady() }
+        // These caused immediate scans on view appearance, triggering "Scanning..." state before UI was responsive.
+        // Scan control is now explicit: users click "Scan Rules" button (⌘R) or enable watch mode for automatic re-scanning on file changes.
     }
 
     private func severityBadge(count: Int, severity: Severity, isActive: Bool) -> some View {
@@ -322,6 +315,7 @@ private extension ValidateView {
     @ViewBuilder
     private var content: some View {
         let filtered = filteredFindings(viewModel.findings)
+        let currentFinding = resolvedFinding(in: filtered)
         HStack(spacing: 0) {
             // Left Pane: Findings List
             VStack(spacing: 0) {
@@ -358,7 +352,7 @@ private extension ValidateView {
                         }
                         
                         Button("Start Scan") {
-                            Task { await viewModel.scan() }
+                            Task { await viewModel.scan(userInitiated: true) }
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.regular)
@@ -391,7 +385,7 @@ private extension ValidateView {
                                     .font(.system(size: 11, weight: .bold))
                                     .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.customGlassProminent)
+                            .buttonStyle(.cleanProminent)
                             .tint(DesignTokens.Colors.Accent.green)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
@@ -410,7 +404,7 @@ private extension ValidateView {
             
             // Right Pane: Detail View
             ZStack {
-                if let finding = selectedFinding {
+                if let finding = currentFinding {
                     FindingDetailView(finding: finding)
                         .id(finding.id) // Force refresh on selection change
                         .transition(.opacity.combined(with: .move(edge: .trailing)))
@@ -427,7 +421,7 @@ private extension ValidateView {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(DesignTokens.Colors.Background.primary)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedFinding?.id)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentFinding?.id)
         }
     }
     
@@ -447,24 +441,28 @@ private extension ValidateView {
     }
     
     private func findingsList(_ findings: [Finding]) -> some View {
-        List(findings, selection: $selectedFinding) { finding in
+        List(findings, selection: $selectedFindingID) { finding in
             FindingRowView(finding: finding)
-                .tag(finding)
+                .tag(finding.id)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                 .contextMenu {
                     contextMenuItems(for: finding)
                 }
-                .cardStyle(selected: finding.id == selectedFinding?.id, tint: finding.severity == .error ? DesignTokens.Colors.Status.error : DesignTokens.Colors.Status.warning)
+                .cardStyle(selected: finding.id == selectedFindingID, tint: finding.severity == .error ? DesignTokens.Colors.Status.error : DesignTokens.Colors.Status.warning)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .listRowSeparator(.hidden)
         .accessibilityLabel("Findings list")
         .onAppear {
-            if selectedFinding == nil && !findings.isEmpty {
-                selectedFinding = findings.first
-            }
+            reconcileSelection(with: findings)
+        }
+        .onChange(of: findings.map(\.id)) {
+            reconcileSelection(with: findings)
+        }
+        .onChange(of: selectedFindingID) {
+            reconcileSelection(with: findings)
         }
         .onKeyPress(.upArrow) {
             navigateFindings(findings, direction: -1)
@@ -477,14 +475,14 @@ private extension ValidateView {
     }
     
     private func navigateFindings(_ findings: [Finding], direction: Int) {
-        guard let current = selectedFinding,
-              let index = findings.firstIndex(where: { $0.id == current.id }) else {
-            selectedFinding = findings.first
+        guard let currentID = selectedFindingID,
+              let index = findings.firstIndex(where: { $0.id == currentID }) else {
+            selectedFindingID = findings.first?.id
             return
         }
         let newIndex = index + direction
         if newIndex >= 0 && newIndex < findings.count {
-            selectedFinding = findings[newIndex]
+            selectedFindingID = findings[newIndex].id
         }
     }
     
@@ -528,10 +526,11 @@ private extension ValidateView {
 
 // MARK: - Actions
 private extension ValidateView {
-    private func autoScanIfReady() async {
-        guard !viewModel.isScanning else { return }
-        await viewModel.scan()
-    }
+    // Auto-scan on settings changes has been disabled to prevent launch flicker/unresponsiveness.
+    // Users can now trigger scans explicitly via:
+    // - "Scan Rules" button (⌘R)
+    // - "Run Scan" menu command (⌘R)
+    // - Enabling watch mode (⌘⇧W) for automatic re-scanning on file changes
 
     private func addToBaseline(_ finding: Finding) {
         let baselineURL: URL
@@ -547,7 +546,7 @@ private extension ValidateView {
             toastMessage = ToastMessage(style: .success, message: "Added to baseline")
             Task {
                 try? await Task.sleep(nanoseconds: 500_000_000)
-                await viewModel.scan()
+                await viewModel.scan(userInitiated: true)
             }
         } catch {
             toastMessage = ToastMessage(style: .error, message: "Failed to add to baseline")
@@ -568,7 +567,7 @@ private extension ValidateView {
         toastMessage = ToastMessage(style: .success, message: "Applied \(successCount) fixes successfully! Re-scanning...")
         Task {
             try? await Task.sleep(nanoseconds: 500_000_000)
-            await viewModel.scan()
+            await viewModel.scan(userInitiated: true)
         }
     }
 }
@@ -585,6 +584,23 @@ private extension ValidateView {
             current = current.deletingLastPathComponent()
         }
         return nil
+    }
+
+    private func resolvedFinding(in findings: [Finding]) -> Finding? {
+        guard let selectedFindingID else { return findings.first }
+        return findings.first(where: { $0.id == selectedFindingID }) ?? findings.first
+    }
+
+    private func reconcileSelection(with findings: [Finding]) {
+        guard !findings.isEmpty else {
+            selectedFindingID = nil
+            return
+        }
+        if let selectedFindingID,
+           findings.contains(where: { $0.id == selectedFindingID }) {
+            return
+        }
+        selectedFindingID = findings.first?.id
     }
 
     private func filteredFindings(_ findings: [Finding]) -> [Finding] {

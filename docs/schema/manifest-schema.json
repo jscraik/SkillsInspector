@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://stools.dev/schema/manifest-schema.json",
+  "title": "Remote Artifact Manifest",
+  "description": "Schema for validating remote skill artifact manifests. This schema ensures cryptographic provenance and integrity for distributed skill installation.",
+  "type": "object",
+  "required": ["name", "version", "sha256"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The unique name/slug of the skill package",
+      "minLength": 1,
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the skill (e.g., 1.2.0)",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9.]+)?$"
+    },
+    "sha256": {
+      "type": "string",
+      "description": "SHA-256 hash of the artifact archive for integrity verification",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "size": {
+      "type": "integer",
+      "description": "Size of the artifact in bytes",
+      "minimum": 0
+    },
+    "signature": {
+      "type": "string",
+      "description": "Ed25519 signature of the manifest for authenticity verification",
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+    },
+    "signerKeyId": {
+      "type": "string",
+      "description": "Key identifier of the signer (e.g., ed25519:abc123...)",
+      "pattern": "^ed25519:[a-zA-Z0-9]+$"
+    },
+    "trustedSigners": {
+      "type": "array",
+      "description": "List of trusted signer key IDs for verification",
+      "items": {
+        "type": "string",
+        "pattern": "^ed25519:[a-zA-Z0-9]+$"
+      },
+      "uniqueItems": true
+    },
+    "revokedKeys": {
+      "type": "array",
+      "description": "List of revoked key IDs to reject during verification",
+      "items": {
+        "type": "string",
+        "pattern": "^ed25519:[a-zA-Z0-9]+$"
+      },
+      "uniqueItems": true
+    },
+    "builtWith": {
+      "$ref": "#/definitions/BuiltWith"
+    },
+    "targets": {
+      "type": "array",
+      "description": "Supported agent targets for multi-platform installation",
+      "items": {
+        "$ref": "#/definitions/AgentKind"
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "minAppVersion": {
+      "type": "string",
+      "description": "Minimum app version required for this skill",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+.*$"
+    }
+  },
+  "definitions": {
+    "BuiltWith": {
+      "type": "object",
+      "description": "Metadata about the tool and environment used to build the artifact",
+      "required": ["tool", "version"],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "description": "Name of the build tool (e.g., clawdhub)",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the build tool",
+          "minLength": 1
+        },
+        "hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the build tool binary for reproducibility",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "AgentKind": {
+      "type": "string",
+      "description": "Supported agent platforms for skill installation",
+      "enum": ["codex", "claude", "codexSkillManager", "copilot"]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "example-skill",
+      "version": "1.0.0",
+      "sha256": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890",
+      "size": 4096,
+      "signature": "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=",
+      "signerKeyId": "ed25519:abc123def456",
+      "trustedSigners": ["ed25519:abc123def456", "ed25519:xyz789ghi012"],
+      "builtWith": {
+        "tool": "clawdhub",
+        "version": "0.1.0",
+        "hash": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+      },
+      "targets": ["codex", "claude"],
+      "minAppVersion": "1.5.0"
+    }
+  ]
+}

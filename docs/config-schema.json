@@ -14,6 +14,8 @@
       },
       "additionalProperties": false
     },
+    "excludes": { "type": "array", "items": { "type": "string" } },
+    "excludeGlobs": { "type": "array", "items": { "type": "string" } },
     "policy": {
       "type": "object",
       "properties": {
@@ -33,11 +35,14 @@
       },
       "additionalProperties": false
     },
-    "remote": {
+    "features": {
       "type": "object",
       "properties": {
-        "baseURL": { "type": "string", "format": "uri" },
-        "cacheTTLSeconds": { "type": "integer", "minimum": 0 }
+        "skillVerification": { "type": "boolean", "description": "Enable Ed25519 signature and SHA-256 hash verification for skill artifacts" },
+        "pinnedPublishing": { "type": "boolean", "description": "Require pinned tool versions with checksums for publishing" },
+        "crossIDEAdapters": { "type": "boolean", "description": "Enable multi-target installation for Codex, Claude Code, and GitHub Copilot" },
+        "telemetryOptIn": { "type": "boolean", "description": "Opt-in to privacy-first telemetry collection" },
+        "bulkActions": { "type": "boolean", "description": "Enable bulk operations (verify all, update all, export changelog)" }
       },
       "additionalProperties": false
     }

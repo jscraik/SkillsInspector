@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RalphIterationResult",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string", "enum": ["CONTINUE", "DONE", "GUTTER"] },
+    "summary": { "type": "string" }
+  },
+  "required": ["status", "summary"],
+  "additionalProperties": true
+}

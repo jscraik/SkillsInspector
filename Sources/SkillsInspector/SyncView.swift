@@ -83,11 +83,12 @@ struct SyncView: View {
     @Binding var maxDepth: Int?
     @Binding var excludeInput: String
     @Binding var excludeGlobInput: String
+    @AppStorage("useSharedSkillsRoot") private var useSharedSkillsRoot = false
     @State private var expandedMissing: Set<AgentKind> = []
     @State private var toastMessage: ToastMessage? = nil
 
     var body: some View {
-        let rootsValid = PathUtil.existsDir(activeCodexRoot) && PathUtil.existsDir(claudeRoot)
+        let rootsValid = useSharedSkillsRoot ? PathUtil.existsDir(activeCodexRoot) : (PathUtil.existsDir(activeCodexRoot) && PathUtil.existsDir(claudeRoot))
         VStack(spacing: 0) {
             // Main Sync Toolbar
             HStack(spacing: DesignTokens.Spacing.sm) {
@@ -194,32 +195,18 @@ struct SyncView: View {
             }
             .padding(.horizontal, DesignTokens.Spacing.sm)
             .padding(.vertical, DesignTokens.Spacing.xs)
-            .background(glassBarStyle(cornerRadius: 0))
+            .background(cleanToolbarStyle(cornerRadius: 0))
             
             Divider()
 
-            // Auto-Sync logic (Debounced)
-            // DISABLED: Causing continuous flickering - sync updates properties which trigger more syncs
+            // Previous implementation had these auto-sync triggers:
             // .task(id: recursive) { try? await Task.sleep(nanoseconds: 500_000_000); await autoSyncIfReady() }
             // .task(id: maxDepth) { try? await Task.sleep(nanoseconds: 800_000_000); await autoSyncIfReady() }
             // .task(id: excludeInput) { try? await Task.sleep(nanoseconds: 1_200_000_000); await autoSyncIfReady() }
             // .task(id: excludeGlobInput) { try? await Task.sleep(nanoseconds: 1_200_000_000); await autoSyncIfReady() }
-            .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in
-                Task { await autoSyncIfReady() }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .cancelScan)) { _ in
-                viewModel.cancel()
-            }
-            .onChange(of: viewModel.syncError) { _, error in
-                if let error = error {
-                    toastMessage = ToastMessage(style: .error, message: error)
-                }
-            }
-            .onChange(of: viewModel.syncSuccessMessage) { _, message in
-                if let message = message {
-                    toastMessage = ToastMessage(style: .success, message: message)
-                }
-            }
+            // .onReceive(NotificationCenter.default.publisher(for: .runScan)) { _ in Task { await autoSyncIfReady() } }
+            // These caused immediate sync runs on view appearance or settings changes, blocking UI responsiveness.
+            // Sync control is now explicit: users must click "Sync Now" button to trigger comparison.
 
             HStack(spacing: 0) {
                 // Sync results list (fixed width, non-resizable)
@@ -272,7 +259,9 @@ struct SyncView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .toast($toastMessage)
+        .onReceive(NotificationCenter.default.publisher(for: .cancelScan)) { _ in
+            viewModel.cancel()
+        }
     }
 }
 
@@ -300,7 +289,7 @@ private extension SyncView {
                             Label("Expand All", systemImage: "plus.square")
                                 .captionText()
                         }
-                        .buttonStyle(.customGlass)
+                        .buttonStyle(.clean)
                         .controlSize(.small)
 
                         Button {
@@ -311,7 +300,7 @@ private extension SyncView {
                             Label("Collapse", systemImage: "minus.square")
                                 .captionText()
                         }
-                        .buttonStyle(.customGlass)
+                        .buttonStyle(.clean)
                         .controlSize(.small)
                     }
                 }
@@ -397,21 +386,19 @@ private extension SyncView {
         .onAppear {
             if viewModel.selection == nil {
                 // Find first missing skill from any agent
-                for agent in AgentKind.allCases {
-                    if let names = viewModel.report.missingByAgent[agent], let first = names.first {
-                        viewModel.selection = .missing(agent: agent, name: first)
-                        return
-                    }
-                }
-                // Fall back to different content
-                if let first = viewModel.report.differentContent.first {
-                    viewModel.selection = .different(name: first.name)
-                }
+                viewModel.selection = firstSelection(in: viewModel.report)
             }
         }
         .onChange(of: viewModel.report) { _, _ in
             // Collapse sections by default on a new report to reduce scrolling.
             expandedMissing.removeAll()
+            guard let selection = viewModel.selection else {
+                viewModel.selection = firstSelection(in: viewModel.report)
+                return
+            }
+            if !selectionExists(selection, in: viewModel.report) {
+                viewModel.selection = firstSelection(in: viewModel.report)
+            }
         }
     }
 
@@ -435,7 +422,7 @@ private extension SyncView {
 private extension SyncView {
     private func autoSyncIfReady() async {
         guard !viewModel.isRunning else { return }
-        let rootsValid = PathUtil.existsDir(activeCodexRoot) && PathUtil.existsDir(claudeRoot)
+        let rootsValid = useSharedSkillsRoot ? PathUtil.existsDir(activeCodexRoot) : (PathUtil.existsDir(activeCodexRoot) && PathUtil.existsDir(claudeRoot))
         guard rootsValid else { return }
         
         await viewModel.run(
@@ -505,6 +492,17 @@ private extension SyncView {
     }
 
     private var activeRoots: [AgentKind: URL] {
+        if useSharedSkillsRoot {
+            // Single source of truth mode: all agents point to the same root (no-op comparisons)
+            return [
+                .codex: activeCodexRoot,
+                .claude: activeCodexRoot,
+                .copilot: activeCodexRoot,
+                .codexSkillManager: activeCodexRoot
+            ].filter { PathUtil.existsDir($0.value) }
+        }
+        
+        // Multi-root mode: compare all configured roots
         var roots: [AgentKind: URL] = [
             .codex: activeCodexRoot,
             .claude: claudeRoot
@@ -522,6 +520,27 @@ private extension SyncView {
         let missingEmpty = viewModel.report.missingByAgent.values.allSatisfy { $0.isEmpty }
         let diffEmpty = viewModel.report.differentContent.isEmpty
         return missingEmpty && diffEmpty
+    }
+
+    private func selectionExists(_ selection: SyncViewModel.SyncSelection, in report: MultiSyncReport) -> Bool {
+        switch selection {
+        case .missing(let agent, let name):
+            return report.missingByAgent[agent]?.contains(name) ?? false
+        case .different(let name):
+            return report.differentContent.contains(where: { $0.name == name })
+        }
+    }
+
+    private func firstSelection(in report: MultiSyncReport) -> SyncViewModel.SyncSelection? {
+        for agent in AgentKind.allCases {
+            if let names = report.missingByAgent[agent], let first = names.first {
+                return .missing(agent: agent, name: first)
+            }
+        }
+        if let first = report.differentContent.first {
+            return .different(name: first.name)
+        }
+        return nil
     }
 }
 

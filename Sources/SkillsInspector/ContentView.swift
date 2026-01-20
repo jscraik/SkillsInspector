@@ -1,5 +1,9 @@
 import SwiftUI
 import SkillsCore
+// NEW: Import aStudio modules
+import AStudioFoundation
+import AStudioThemes
+import AStudioComponents
 
 struct LegacyContentView: View {
     // AppDependencies with lazy initialization
@@ -20,16 +24,58 @@ struct LegacyContentView: View {
     @State private var searchText: String = ""
     @State private var showingRootError = false
     @State private var rootErrorMessage = ""
+    @State private var sidebarWidth: CGFloat = 280
+    @State private var sidebarDragStart: CGFloat?
+    @State private var isSidebarResizerHover = false
+
+    init() {
+        let trustStoreVM = TrustStoreViewModel()
+        let ledger = try? SkillLedger()
+        let features = FeatureFlags.fromEnvironment()
+        let telemetryURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("SkillsInspector", isDirectory: true)
+            .appendingPathComponent("telemetry.jsonl")
+        let telemetry = features.telemetryOptIn
+            ? TelemetryClient.file(url: telemetryURL ?? FileManager.default.temporaryDirectory.appendingPathComponent("telemetry.jsonl"))
+            : .noop
+        _trustStoreVM = StateObject(wrappedValue: trustStoreVM)
+        _changelogVM = StateObject(wrappedValue: ChangelogViewModel(ledger: ledger))
+        _remoteVM = StateObject(
+            wrappedValue: RemoteViewModel(
+                client: RemoteSkillClient.live(),
+                ledger: ledger,
+                telemetry: telemetry,
+                features: features,
+                trustStoreProvider: { trustStoreVM.trustStore },
+                keysetUpdater: { keyset in
+                    trustStoreVM.applyKeyset(keyset)
+                }
+            )
+        )
+    }
 
     var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             sidebar
-        } detail: {
-            // Use @ViewBuilder with explicit IDs to prevent view recreation on tab switch
-            detailContent
+                .frame(width: sidebarWidth)
+                .background(DesignTokens.Colors.Background.secondary)
+                .layoutPriority(1)
+
+            sidebarResizer
+
+            activeDetailView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .layoutPriority(0)
         }
-        .frame(minWidth: 1000, minHeight: 700)
-        .background(appGlassBackground)
+        .frame(minWidth: 1200, minHeight: 800)
+        .background(DesignTokens.Colors.Background.primary)
+        #if os(macOS)
+        .background {
+            WindowAccessor { window in
+                configureWindow(window)
+            }
+        }
+        #endif
         .toolbarBackground(.hidden, for: .windowToolbar)
         .toolbar {
             ToolbarItemGroup(placement: .navigation) {
@@ -39,13 +85,12 @@ struct LegacyContentView: View {
                 HStack(spacing: DesignTokens.Spacing.xxs) {
                     Image(systemName: "sparkles")
                         .foregroundStyle(DesignTokens.Colors.Accent.blue)
-                    Text("sTools")
+                    Text("SkillsInspector")
                         .heading3()
                 }
-                .padding(.horizontal, DesignTokens.Spacing.xxxs)
-                .padding(.vertical, DesignTokens.Spacing.hair + DesignTokens.Spacing.micro)
-                .background(glassBarStyle(tint: DesignTokens.Colors.Accent.blue.opacity(0.05)))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.horizontal, DesignTokens.Spacing.xs)
+                .padding(.vertical, DesignTokens.Spacing.xxxs)
+                .background(cleanToolbarStyle())
             }
             ToolbarItemGroup(placement: .automatic) {
                 HStack(spacing: DesignTokens.Spacing.xxxs) {
@@ -56,10 +101,9 @@ struct LegacyContentView: View {
                     Image(systemName: "magnifyingglass")
                         .accessibilityLabel("Search")
                 }
-                .padding(.horizontal, DesignTokens.Spacing.xxxs)
-                .padding(.vertical, DesignTokens.Spacing.hair + DesignTokens.Spacing.micro)
-                .background(glassBarStyle(tint: DesignTokens.Colors.Accent.blue.opacity(0.05)))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .padding(.horizontal, DesignTokens.Spacing.xs)
+                .padding(.vertical, DesignTokens.Spacing.xxxs)
+                .background(cleanToolbarStyle())
             }
         }
         .alert("Invalid Root Directory", isPresented: $showingRootError) {
@@ -130,6 +174,70 @@ struct LegacyContentView: View {
 
 // MARK: - Subviews
 private extension LegacyContentView {
+    private var sidebarMinWidth: CGFloat { 240 }
+    private var sidebarMaxWidth: CGFloat { 360 }
+
+    @ViewBuilder
+    private var activeDetailView: some View {
+        switch mode {
+        case .validate:
+            ValidateView(
+                viewModel: viewModel,
+                severityFilter: $severityFilter,
+                agentFilter: $agentFilter,
+                searchText: $searchText
+            )
+            .onAppear {
+                // Cancel any stray scan that might have started during init
+                viewModel.cancelScan()
+
+                // Wait for UI to fully render before marking app ready
+                Task {
+                    // Yield to let UI finish rendering
+                    await Task.yield()
+                    // Short delay to ensure UI is interactive
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                    await MainActor.run {
+                        viewModel.markAppReady()
+                    }
+                }
+            }
+        case .stats:
+            StatsView(
+                viewModel: viewModel,
+                mode: $mode,
+                severityFilter: $severityFilter,
+                agentFilter: $agentFilter
+            )
+        case .sync:
+            SyncView(
+                viewModel: syncVM,
+                codexRoots: $viewModel.codexRoots,
+                claudeRoot: $viewModel.claudeRoot,
+                copilotRoot: $viewModel.copilotRoot,
+                codexSkillManagerRoot: $viewModel.codexSkillManagerRoot,
+                recursive: $viewModel.recursive,
+                maxDepth: $viewModel.maxDepth,
+                excludeInput: $viewModel.excludeInput,
+                excludeGlobInput: $viewModel.excludeGlobInput
+            )
+        case .index:
+            IndexView(
+                viewModel: indexVM,
+                codexRoots: viewModel.codexRoots,
+                claudeRoot: viewModel.claudeRoot,
+                codexSkillManagerRoot: viewModel.codexSkillManagerRoot,
+                copilotRoot: viewModel.copilotRoot,
+                recursive: $viewModel.recursive,
+                excludes: viewModel.effectiveExcludes,
+                excludeGlobs: viewModel.effectiveGlobExcludes
+            )
+        case .remote:
+            RemoteView(viewModel: remoteVM, trustStoreVM: trustStoreVM)
+        case .changelog:
+            ChangelogView(viewModel: changelogVM)
+        }
+    }
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -139,7 +247,7 @@ private extension LegacyContentView {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(LinearGradient(colors: [DesignTokens.Colors.Accent.blue, DesignTokens.Colors.Accent.purple], startPoint: .topLeading, endPoint: .bottomTrailing))
                 
-                Text("sTools")
+                Text("SkillsInspector")
                     .font(.system(size: 18, weight: .black))
                     .tracking(-0.5)
             }
@@ -277,8 +385,12 @@ private extension LegacyContentView {
                         }
                         .padding(.horizontal, DesignTokens.Spacing.xs)
                         .padding(.vertical, DesignTokens.Spacing.hair)
-                        .background(DesignTokens.Colors.Background.tertiary.opacity(0.3))
+                        .background(DesignTokens.Colors.Background.primary)
                         .cornerRadius(DesignTokens.Radius.sm)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                                .stroke(DesignTokens.Colors.Border.light, lineWidth: 1)
+                        )
                     }
                     
                     // Filters Section
@@ -308,8 +420,38 @@ private extension LegacyContentView {
                 .padding(.bottom, DesignTokens.Spacing.lg)
             }
         }
-        .background(DesignTokens.Colors.Background.secondary.opacity(0.8).ignoresSafeArea())
-        .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
+        .background(DesignTokens.Colors.Background.secondary.ignoresSafeArea())
+    }
+
+    private var sidebarResizer: some View {
+        let baseColor = DesignTokens.Colors.Border.light
+        let strokeColor = isSidebarResizerHover ? baseColor.opacity(0.9) : baseColor.opacity(0.6)
+        return Rectangle()
+            .fill(strokeColor)
+            .frame(width: 1)
+            .overlay(
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 6)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 2)
+                            .onChanged { value in
+                                if sidebarDragStart == nil {
+                                    sidebarDragStart = sidebarWidth
+                                }
+                                let start = sidebarDragStart ?? sidebarWidth
+                                let proposed = start + value.translation.width
+                                sidebarWidth = min(max(proposed, sidebarMinWidth), sidebarMaxWidth)
+                            }
+                            .onEnded { _ in
+                                sidebarDragStart = nil
+                            }
+                    )
+            )
+            .onHover { hovering in
+                isSidebarResizerHover = hovering
+            }
     }
 
     // MARK: - Private Sidebar Components
@@ -317,15 +459,24 @@ private extension LegacyContentView {
     private func sidebarSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
             Text(title)
-                .font(.system(size: 10, weight: .black))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(DesignTokens.Colors.Text.tertiary)
                 .textCase(.uppercase)
+                .tracking(0.5)
                 .padding(.horizontal, DesignTokens.Spacing.hair)
-                .padding(.bottom, 2)
-            
+                .padding(.bottom, 4)
+
             content()
         }
         .padding(.top, DesignTokens.Spacing.xs)
+        .padding(.bottom, DesignTokens.Spacing.xs)
+        .overlay(
+            // Bottom border for section separation
+            Rectangle()
+                .fill(DesignTokens.Colors.Border.light)
+                .frame(height: 1),
+            alignment: .bottom
+        )
     }
 
     private func sidebarRow<V: View>(title: String, icon: String, value: AppMode, tint: Color, @ViewBuilder trailing: () -> V = { EmptyView() }) -> some View {
@@ -334,37 +485,51 @@ private extension LegacyContentView {
         } label: {
             HStack(spacing: DesignTokens.Spacing.xxs) {
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(mode == value ? .white : tint)
                     .frame(width: 24)
-                
+
                 Text(title)
-                    .font(.system(size: 14, weight: mode == value ? .bold : .medium))
-                
+                    .font(.system(size: 14, weight: mode == value ? .semibold : .medium))
+                    .foregroundColor(mode == value ? .white : DesignTokens.Colors.Text.primary)
+
                 Spacer()
-                
+
                 trailing()
             }
             .padding(.horizontal, DesignTokens.Spacing.xs)
             .padding(.vertical, DesignTokens.Spacing.xxs)
-            .foregroundStyle(mode == value ? .white : DesignTokens.Colors.Text.primary)
             .background {
                 if mode == value {
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                        .fill(tint.gradient)
-                        .shadow(color: tint.opacity(0.4), radius: 8, x: 0, y: 4)
-                } else {
-                    RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                        .fill(Color.clear)
+                    HStack(spacing: 0) {
+                        // 3px accent border on left
+                        Rectangle()
+                            .fill(.white.opacity(0.9))
+                            .frame(width: 3)
+
+                        // Subtle gradient background
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        tint.opacity(0.15),
+                                        tint.opacity(0.08)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    }
                 }
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private func badge(text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .font(.system(size: 11, weight: .bold, design: .monospaced))
             .foregroundStyle(.white)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
@@ -374,84 +539,69 @@ private extension LegacyContentView {
 
     private func rootCard<M: View>(title: String, url: URL?, tint: Color, @ViewBuilder menu: () -> M) -> some View {
         HStack(spacing: DesignTokens.Spacing.xxs) {
-            // Precise Status Indicator
-            ZStack {
-                Circle()
-                    .fill(statusColor(for: url).opacity(0.12))
-                    .frame(width: 24, height: 24)
-                
-                Image(systemName: statusIcon(for: url))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(statusColor(for: url))
-            }
-            
-            VStack(alignment: .leading, spacing: 0) {
+            // Status indicator - simple circle
+            Circle()
+                .fill(url != nil ? DesignTokens.Colors.Status.success : DesignTokens.Colors.Icon.tertiary)
+                .frame(width: 8, height: 8)
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(DesignTokens.Colors.Text.primary)
-                
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(DesignTokens.Colors.Text.primary)
+
                 Group {
                     if let url = url {
                         Text(shortenPath(url.path))
                     } else {
                         Text("Not configured")
+                            .italic()
                     }
                 }
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(DesignTokens.Colors.Text.secondary)
                 .lineLimit(1)
             }
-            
+
             Spacer()
-            
+
             Menu {
                 menu()
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
-                    .padding(6)
-                    .background(DesignTokens.Colors.Background.tertiary.opacity(0.4))
-                    .clipShape(Circle())
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(DesignTokens.Colors.Text.secondary)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
         }
-        .padding(.horizontal, DesignTokens.Spacing.xxs)
-        .padding(.vertical, DesignTokens.Spacing.xxxs)
-        .background(DesignTokens.Colors.Background.primary.opacity(0.4))
-        .cornerRadius(DesignTokens.Radius.md)
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
+        .padding(.horizontal, DesignTokens.Spacing.xs)
+        .padding(.vertical, DesignTokens.Spacing.xxs)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                .fill(DesignTokens.Colors.Background.primary)
                 .stroke(DesignTokens.Colors.Border.light, lineWidth: 1)
         )
     }
 
     private func addRootButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: DesignTokens.Spacing.xxs) {
-                ZStack {
-                    Circle()
-                        .stroke(DesignTokens.Colors.Accent.blue.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [2]))
-                        .frame(width: 24, height: 24)
-                    
-                    Image(systemName: "plus")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(DesignTokens.Colors.Accent.blue)
-                }
-                
-                Text("Add Codex Root")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(DesignTokens.Colors.Accent.blue)
-                
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 16, weight: .semibold))
+
+                Text("Add Root")
+                    .font(.system(size: 13, weight: .medium))
+
                 Spacer()
             }
-            .padding(.horizontal, DesignTokens.Spacing.xxs)
-            .padding(.vertical, DesignTokens.Spacing.xxxs)
-            .background(DesignTokens.Colors.Accent.blue.opacity(0.06))
-            .cornerRadius(DesignTokens.Radius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md)
-                    .stroke(DesignTokens.Colors.Accent.blue.opacity(0.25), style: StrokeStyle(lineWidth: 1, dash: [4]))
+            .foregroundStyle(DesignTokens.Colors.Accent.blue)
+            .padding(.horizontal, DesignTokens.Spacing.xs)
+            .padding(.vertical, DesignTokens.Spacing.xxs)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .stroke(DesignTokens.Colors.Accent.blue, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)
@@ -476,14 +626,18 @@ private extension LegacyContentView {
                     .font(.caption)
                     .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 Spacer()
-                Image(systemName: "chevron.up.down")
+                Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(DesignTokens.Colors.Text.tertiary)
             }
             .padding(.horizontal, DesignTokens.Spacing.xs)
             .padding(.vertical, DesignTokens.Spacing.hair)
-            .background(DesignTokens.Colors.Background.tertiary.opacity(0.3))
-            .cornerRadius(DesignTokens.Radius.sm)
+            .background(DesignTokens.Colors.Background.primary)
+            .cornerRadius(DesignTokens.Spacing.sm)
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .stroke(DesignTokens.Colors.Border.light, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -497,14 +651,18 @@ private extension LegacyContentView {
                     .font(.caption)
                     .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 Spacer()
-                Image(systemName: "chevron.up.down")
+                Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(DesignTokens.Colors.Text.tertiary)
             }
             .padding(.horizontal, DesignTokens.Spacing.xs)
             .padding(.vertical, DesignTokens.Spacing.hair)
-            .background(DesignTokens.Colors.Background.tertiary.opacity(0.3))
+            .background(DesignTokens.Colors.Background.primary)
             .cornerRadius(DesignTokens.Radius.sm)
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .stroke(DesignTokens.Colors.Border.light, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -581,53 +739,34 @@ private extension LegacyContentView {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    private var appGlassBackground: some View {
+    private var cleanBackground: some View {
         DesignTokens.Colors.Background.primary
     }
 
-    private var sidebarGlassBackground: some View {
+    private var cleanSidebarBackground: some View {
         DesignTokens.Colors.Background.secondary
     }
-}
-
-// MARK: - ViewModel Factories
-
-/// Factory that creates and caches RemoteViewModel
-@MainActor
-class RemoteViewModelFactory: ObservableObject {
-    private var _viewModel: RemoteViewModel?
-
-    func makeViewModel(dependencies: AppDependencies) -> RemoteViewModel {
-        if let vm = _viewModel {
-            return vm
+    
+    #if os(macOS)
+    /// Configures the NSWindow to enforce minimum size constraints and bump undersized windows.
+    /// This ensures the window never opens below 1200×800, even if macOS restores a smaller saved frame.
+    private func configureWindow(_ window: NSWindow) {
+        // Set minimum size to prevent users from resizing window too small
+        window.minSize = NSSize(width: 1200, height: 800)
+        
+        // If current content size is below minimum, bump it up
+        let currentSize = window.contentRect(forFrameRect: window.frame).size
+        if currentSize.width < 1200 || currentSize.height < 800 {
+            let targetSize = NSSize(
+                width: max(currentSize.width, 1200),
+                height: max(currentSize.height, 800)
+            )
+            // setContentSize adjusts the window frame to accommodate the new content size
+            window.setContentSize(targetSize)
         }
-        let vm = RemoteViewModel(
-            client: RemoteSkillClient.live(),
-            ledger: dependencies.ledger,
-            telemetry: dependencies.telemetry,
-            features: dependencies.features,
-            trustStoreProvider: { dependencies.trustStoreVM.trustStore }
-        )
-        _viewModel = vm
-        return vm
     }
+    #endif
 }
-
-/// Factory that creates and caches ChangelogViewModel
-@MainActor
-class ChangelogViewModelFactory: ObservableObject {
-    private var _viewModel: ChangelogViewModel?
-
-    func makeViewModel(dependencies: AppDependencies) -> ChangelogViewModel {
-        if let vm = _viewModel {
-            return vm
-        }
-        let vm = ChangelogViewModel(ledger: dependencies.ledger)
-        _viewModel = vm
-        return vm
-    }
-}
-
 
 // Alias for backward compatibility
 typealias ContentView = LegacyContentView

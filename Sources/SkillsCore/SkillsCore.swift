@@ -178,12 +178,21 @@ public struct SkillsConfig: Codable, Sendable {
         public var aliases: [String: String]?
     }
 
+    public struct FeatureFlagsConfig: Codable, Sendable {
+        public var skillVerification: Bool?
+        public var pinnedPublishing: Bool?
+        public var crossIDEAdapters: Bool?
+        public var telemetryOptIn: Bool?
+        public var bulkActions: Bool?
+    }
+
     public var schemaVersion: Int?
     public var scan: ScanConfig?
     public var excludes: [String]?
     public var excludeGlobs: [String]?
     public var policy: Policy?
     public var sync: SyncConfig?
+    public var features: FeatureFlagsConfig?
 
     /// Loads configuration from a JSON file if provided; returns an empty config on failure.
     public static func load(from path: String?) -> SkillsConfig {

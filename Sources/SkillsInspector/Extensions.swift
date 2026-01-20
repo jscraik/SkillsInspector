@@ -3,6 +3,9 @@ import SkillsCore
 #if canImport(UIKit)
 import UIKit
 #endif
+#if os(macOS)
+import AppKit
+#endif
 
 // MARK: - Severity Color Extension
 
@@ -63,14 +66,15 @@ struct EmptyStateView: View {
     let message: String
     var action: (() -> Void)? = nil
     var actionLabel: String = "Try Again"
-    
+    var compactMode: Bool = false
+
     @State private var iconScale: CGFloat = 0.8
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    
+
     var body: some View {
-        VStack(spacing: DesignTokens.Spacing.xs) {
+        VStack(spacing: compactMode ? DesignTokens.Spacing.sm : DesignTokens.Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 48))
+                .font(.system(size: compactMode ? 40 : 48))
                 .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
                 .scaleEffect(iconScale)
                 .onAppear {
@@ -82,26 +86,28 @@ struct EmptyStateView: View {
                         iconScale = 1.0
                     }
                 }
-            
+
             Text(title)
-                .heading3()
-            
+                .font(.system(size: compactMode ? 16 : 18, weight: .semibold))
+                .foregroundColor(DesignTokens.Colors.Text.primary)
+
             Text(message)
-                .bodyText()
+                .bodySmallText()
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
-            
+                .frame(maxWidth: compactMode ? 280 : 340)
+
             if let action {
                 Button(actionLabel) {
                     action()
                 }
-                .buttonStyle(.customGlassProminent)
-                .controlSize(.large)
+                .buttonStyle(.cleanProminent)
+                .controlSize(.regular)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(glassPanelStyle(cornerRadius: 18))
+        .padding(compactMode ? DesignTokens.Spacing.lg : DesignTokens.Spacing.xl)
+        .background(cleanPanelStyle(cornerRadius: 18))
     }
 }
 
@@ -172,38 +178,56 @@ struct StatusBarView: View {
         .captionText()
         .padding(.horizontal, DesignTokens.Spacing.xxxs)
         .padding(.vertical, DesignTokens.Spacing.hair)
-        .background(count > 0 ? severity.color.opacity(0.1) : Color.clear)
+        .background(count > 0 ? severity.color.opacity(0.15) : Color.clear)
         .cornerRadius(DesignTokens.Radius.sm)
     }
 }
 
 // MARK: - Shimmer Loading Effect
 
+private struct ActivePaneKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var isActivePane: Bool {
+        get { self[ActivePaneKey.self] }
+        set { self[ActivePaneKey.self] = newValue }
+    }
+}
+
 struct ShimmerModifier: ViewModifier {
-    @State private var phase: CGFloat = 0
+    let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isActivePane) private var isActivePane
+    @State private var phase: CGFloat = -200
     
     func body(content: Content) -> some View {
-        content
-            .overlay(
-                LinearGradient(
-                    colors: [.clear, .white.opacity(0.4), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
+        if !isActive || !isActivePane || reduceMotion {
+            content
+        } else {
+            content
+                .overlay(
+                    LinearGradient(
+                        colors: [.clear, .white.opacity(0.4), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .offset(x: phase)
                 )
-                .offset(x: phase)
-            )
-            .mask(content)
-            .onAppear {
-                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                    phase = 200
+                .mask(content)
+                .onAppear {
+                    withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                        phase = 200
+                    }
                 }
-            }
+        }
     }
 }
 
 extension View {
-    func shimmer() -> some View {
-        modifier(ShimmerModifier())
+    func shimmer(active: Bool = true) -> some View {
+        modifier(ShimmerModifier(isActive: active))
     }
 }
 
@@ -265,21 +289,37 @@ struct SkeletonSyncRow: View {
 struct SkeletonIndexRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: DesignTokens.Spacing.xxs) {
+            // Agent icon placeholder
             Circle()
                 .fill(DesignTokens.Colors.Background.secondary)
                 .frame(width: 40, height: 40)
             
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                // Skill name placeholder
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 200, height: 16)
                 
+                // Path placeholder
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                     .fill(DesignTokens.Colors.Background.secondary)
                     .frame(width: 150, height: 12)
+                
+                // Version badge placeholder
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .fill(DesignTokens.Colors.Background.secondary)
+                    .frame(width: 60, height: 10)
             }
+            
+            Spacer()
+            
+            // Expand button placeholder
+            Circle()
+                .fill(DesignTokens.Colors.Background.secondary)
+                .frame(width: 20, height: 20)
         }
         .padding(DesignTokens.Spacing.xxs)
+        .redacted(reason: .placeholder)
         .shimmer()
     }
 }
@@ -310,42 +350,42 @@ extension AnyTransition {
 // MARK: - Card Styling
 
 extension View {
-    /// Standard card styling used across list rows for visual parity.
+    /// Clean card styling for professional appearance
     func cardStyle(selected: Bool = false, tint: Color = .accentColor) -> some View {
         self
-            .padding(DesignTokens.Spacing.xxs)
+            .padding(DesignTokens.Spacing.xs)
             .background(
-                Group {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(DesignTokens.Colors.Background.primary.opacity(selected ? 0.95 : 0.9))
-                }
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
+                    .fill(DesignTokens.Colors.Background.primary)
+                    .allowsHitTesting(false)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(selected ? tint.opacity(0.9) : .clear, lineWidth: selected ? 3 : 0)
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.lg, style: .continuous)
+                    .stroke(selected ? tint : DesignTokens.Colors.Border.light, lineWidth: selected ? 2 : 1)
+                    .allowsHitTesting(false)
             )
-            .shadow(color: tint.opacity(selected ? 0.18 : 0.08), radius: selected ? 10 : 6, y: selected ? 4 : 2)
-            .shadow(color: tint.opacity(selected ? 0.28 : 0), radius: selected ? 18 : 0, y: 0)
+            .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+            .shadow(color: selected ? tint.opacity(0.1) : .clear, radius: selected ? 8 : 0, y: 0)
     }
 
-    /// Glass panel background with fallback for pre-glass platforms.
-    func glassPanelStyle(cornerRadius: CGFloat = 14, tint: Color = Color.primary.opacity(0.08)) -> some View {
-        Group {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(DesignTokens.Colors.Background.secondary.opacity(0.92))
-                .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
-        }
+    /// Clean panel background without excessive glass effects
+    func cleanPanelStyle(cornerRadius: CGFloat = DesignTokens.Radius.lg) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(DesignTokens.Colors.Background.secondary)
+            .shadow(color: .black.opacity(0.03), radius: 1, y: 0.5)
+            .allowsHitTesting(false)
     }
 
-    /// Glass bar/background for toolbars and headers.
-    func glassBarStyle(cornerRadius: CGFloat = 10, tint: Color = Color.primary.opacity(0.06)) -> some View {
-        DesignTokens.Colors.Background.secondary
-            .opacity(0.8)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    /// Subtle toolbar background
+    func cleanToolbarStyle(cornerRadius: CGFloat = DesignTokens.Radius.md) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(DesignTokens.Colors.Background.tertiary)
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(DesignTokens.Colors.Border.light, lineWidth: 0.5)
+                    .allowsHitTesting(false)
             )
+            .allowsHitTesting(false)
     }
 }
 
@@ -453,38 +493,37 @@ extension View {
 
 // MARK: - Button Styles
 
-struct GlassButtonStyle: ButtonStyle {
+struct CleanButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, DesignTokens.Spacing.xxs)
-            .padding(.vertical, DesignTokens.Spacing.xxxs)
+            .padding(.horizontal, DesignTokens.Spacing.xs)
+            .padding(.vertical, DesignTokens.Spacing.xxs)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                    .fill(DesignTokens.Colors.Background.secondary.opacity(configuration.isPressed ? 0.8 : 0.6))
+                    .fill(DesignTokens.Colors.Background.tertiary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                    .stroke(DesignTokens.Colors.Border.light, lineWidth: 0.5)
+                    .stroke(DesignTokens.Colors.Border.light, lineWidth: 1)
             )
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
-struct GlassProminentButtonStyle: ButtonStyle {
+struct CleanProminentButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, DesignTokens.Spacing.xxs)
-            .padding(.vertical, DesignTokens.Spacing.xxxs)
+            .padding(.horizontal, DesignTokens.Spacing.xs)
+            .padding(.vertical, DesignTokens.Spacing.xxs)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                    .fill(Color.accentColor.opacity(configuration.isPressed ? 0.8 : 0.6))
+                    .fill(Color.accentColor)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignTokens.Radius.md, style: .continuous)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 0.5)
-            )
+            .foregroundStyle(.white)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
@@ -521,13 +560,25 @@ extension View {
             .tracking(DesignTokens.Typography.BodySmall.tracking)
             .lineSpacing(DesignTokens.Typography.BodySmall.line - DesignTokens.Typography.BodySmall.size)
     }
-    
+
+    func bodySmallText(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.BodySmall.size, weight: emphasis ? DesignTokens.Typography.BodySmall.emphasis : DesignTokens.Typography.BodySmall.weight))
+            .tracking(DesignTokens.Typography.BodySmall.tracking)
+            .lineSpacing(DesignTokens.Typography.BodySmall.line - DesignTokens.Typography.BodySmall.size)
+    }
+
     func captionText(emphasis: Bool = false) -> some View {
         self.font(.system(size: DesignTokens.Typography.Caption.size, weight: emphasis ? DesignTokens.Typography.Caption.emphasis : DesignTokens.Typography.Caption.weight))
             .tracking(DesignTokens.Typography.Caption.tracking)
             .lineSpacing(DesignTokens.Typography.Caption.line - DesignTokens.Typography.Caption.size)
     }
-    
+
+    func subcaptionText(emphasis: Bool = false) -> some View {
+        self.font(.system(size: DesignTokens.Typography.Subcaption.size, weight: emphasis ? DesignTokens.Typography.Subcaption.emphasis : DesignTokens.Typography.Subcaption.weight))
+            .tracking(DesignTokens.Typography.Subcaption.tracking)
+            .lineSpacing(DesignTokens.Typography.Subcaption.line - DesignTokens.Typography.Subcaption.size)
+    }
+
     func cornerRadius(_ radius: CGFloat, corners: RectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
     }
@@ -612,32 +663,79 @@ struct RoundedCorner: Shape {
     }
 }
 
-extension ButtonStyle where Self == GlassButtonStyle {
-    static var customGlass: GlassButtonStyle { GlassButtonStyle() }
+extension ButtonStyle where Self == CleanButtonStyle {
+    static var clean: CleanButtonStyle { CleanButtonStyle() }
 }
 
-extension ButtonStyle where Self == GlassProminentButtonStyle {
-    static var customGlassProminent: GlassProminentButtonStyle { GlassProminentButtonStyle() }
+extension ButtonStyle where Self == CleanProminentButtonStyle {
+    static var cleanProminent: CleanProminentButtonStyle { CleanProminentButtonStyle() }
 }
 
-#Preview("Empty State") {
-    EmptyStateView(
-        icon: "checkmark.circle",
-        title: "No Issues Found",
-        message: "All skill files pass validation.",
-        action: { print("Scan") },
-        actionLabel: "Scan Again"
-    )
+// MARK: - Window Access (macOS Only)
+
+#if os(macOS)
+/// NSViewRepresentable that provides access to the hosting NSWindow for runtime configuration.
+/// Calls the provided closure once with the host window, guarding against repeat invocations.
+struct WindowAccessor: NSViewRepresentable {
+    let onWindow: (NSWindow) -> Void
+    
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            // Access the window after the view hierarchy is established
+            if let window = view.window {
+                context.coordinator.configure(window)
+            }
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onWindow: onWindow)
+    }
+    
+    class Coordinator {
+        private var onWindow: (NSWindow) -> Void
+        private var hasConfigured = false
+        
+        init(onWindow: @escaping (NSWindow) -> Void) {
+            self.onWindow = onWindow
+        }
+        
+        func configure(_ window: NSWindow) {
+            // Guard: only configure once to prevent repeat invocations
+            guard !hasConfigured else { return }
+            hasConfigured = true
+            onWindow(window)
+        }
+    }
+}
+#endif
+
+struct EmptyStateView_Previews: PreviewProvider {
+    static var previews: some View {
+        EmptyStateView(
+            icon: "checkmark.circle",
+            title: "No Issues Found",
+            message: "All skill files pass validation.",
+            action: { print("Scan") },
+            actionLabel: "Scan Again"
+        )
+    }
 }
 
-#Preview("Status Bar") {
-    StatusBarView(
-        errorCount: 3,
-        warningCount: 7,
-        infoCount: 2,
-        lastScan: Date(),
-        duration: 1.234,
-        cacheHits: 15,
-        scannedFiles: 20
-    )
+struct StatusBarView_Previews: PreviewProvider {
+    static var previews: some View {
+        StatusBarView(
+            errorCount: 3,
+            warningCount: 7,
+            infoCount: 2,
+            lastScan: Date(),
+            duration: 1.234,
+            cacheHits: 15,
+            scannedFiles: 20
+        )
+    }
 }

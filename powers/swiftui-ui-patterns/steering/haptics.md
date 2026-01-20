@@ -2,13 +2,16 @@
 
 ## Intent
 
-Use haptics sparingly to reinforce user actions (tab selection, refresh, success/error) and respect user preferences.
+Use haptics sparingly to reinforce user actions (tab selection, refresh,
+success/error) and respect user preferences.
 
 ## Core patterns
 
 - Centralize haptic triggers in a `HapticManager` or similar utility.
 - Gate haptics behind user preferences and hardware support.
-- Use distinct types for different UX moments (selection vs. notification vs. refresh).
+- Use distinct types for different UX moments (selection vs. notification vs.
+
+  refresh).
 
 ## Example: simple haptic manager
 

@@ -24,6 +24,29 @@ public struct SkillIndexEntry: Sendable, Hashable {
     public let referencesCount: Int
     public let assetsCount: Int
     public let scriptsCount: Int
+    public let version: String?
+    
+    public init(
+        agent: AgentKind,
+        name: String,
+        path: String,
+        description: String,
+        modified: Date?,
+        referencesCount: Int,
+        assetsCount: Int,
+        scriptsCount: Int,
+        version: String?
+    ) {
+        self.agent = agent
+        self.name = name
+        self.path = path
+        self.description = description
+        self.modified = modified
+        self.referencesCount = referencesCount
+        self.assetsCount = assetsCount
+        self.scriptsCount = scriptsCount
+        self.version = version
+    }
 }
 
 public enum SkillIndexer {
@@ -47,6 +70,10 @@ public enum SkillIndexer {
                 let desc = (doc.description ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 let attrs = try? FileManager.default.attributesOfItem(atPath: f.path)
                 let modified = attrs?[.modificationDate] as? Date
+                
+                // Extract version from SKILL.md frontmatter
+                let version = extractSkillVersion(from: f)
+                
                 entries.append(
                     SkillIndexEntry(
                         agent: agent,
@@ -56,7 +83,8 @@ public enum SkillIndexer {
                         modified: modified,
                         referencesCount: doc.referencesCount,
                         assetsCount: doc.assetsCount,
-                        scriptsCount: doc.scriptsCount
+                        scriptsCount: doc.scriptsCount,
+                        version: version
                     )
                 )
             }
@@ -152,13 +180,14 @@ public enum SkillIndexer {
         md.append("generated: \(ISO8601DateFormatter().string(from: Date()))")
         md.append("---\n")
         md.append("# Skills Index\n")
-        md.append("| Agent | Skill | Description | Path | Modified | #Refs | #Assets | #Scripts |")
-        md.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
+        md.append("| Agent | Skill | Version | Description | Path | Modified | #Refs | #Assets | #Scripts |")
+        md.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
         for e in entries {
             let desc = e.description.isEmpty ? "" : e.description.replacingOccurrences(of: "|", with: "\\|")
             let path = e.path.replacingOccurrences(of: "|", with: "\\|")
             let modified = e.modified.map { DateFormatter.shortDateTime.string(from: $0) } ?? ""
-            md.append("| \(e.agent.rawValue) | \(e.name) | \(desc) | `\(path)` | \(modified) | \(e.referencesCount) | \(e.assetsCount) | \(e.scriptsCount) |")
+            let version = e.version ?? "—"
+            md.append("| \(e.agent.rawValue) | \(e.name) | \(version) | \(desc) | `\(path)` | \(modified) | \(e.referencesCount) | \(e.assetsCount) | \(e.scriptsCount) |")
         }
         md.append("\n## Changelog")
         if let note = changelogNote, !note.isEmpty {
@@ -184,6 +213,13 @@ public enum SkillIndexer {
             break
         }
         return "\(major).\(minor).\(patch)"
+    }
+    
+    /// Extract version from SKILL.md frontmatter
+    private static func extractSkillVersion(from skillFileURL: URL) -> String? {
+        guard let text = try? String(contentsOf: skillFileURL, encoding: .utf8) else { return nil }
+        let frontmatter = FrontmatterParser.parseTopBlock(text)
+        return frontmatter["version"]
     }
 }
 

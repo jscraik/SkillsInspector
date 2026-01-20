@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Post-build hook to attach the app icon to the built sTools.app.
-# Usage: bin/postbuild-icon.sh [.build/release/sTools.app]
+# Post-build hook to attach the app icon to the built SkillsInspector.app.
+# Usage: bin/postbuild-icon.sh [.build/release/SkillsInspector.app]
 
-APP_PATH="${1:-.build/release/sTools.app}"
+APP_PATH="${1:-.build/release/SkillsInspector.app}"
 ICON_SRC_ROOT="Icon.icns"
 ICON_SRC_RES="Sources/SkillsInspector/Resources/Icon.icns"
 ICON_SRC=""

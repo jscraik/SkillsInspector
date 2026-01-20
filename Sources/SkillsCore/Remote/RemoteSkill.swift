@@ -83,4 +83,5 @@ public struct RemoteSkillInstallResult: Sendable {
     public let totalBytes: Int64
     public let archiveSHA256: String?
     public let contentSHA256: String?
+    public let backupURL: URL?
 }

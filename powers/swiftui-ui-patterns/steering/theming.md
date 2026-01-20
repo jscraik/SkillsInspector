@@ -2,13 +2,20 @@
 
 ## Intent
 
-Provide a clean, scalable theming approach that keeps view code semantic and consistent.
+Provide a clean, scalable theming approach that keeps view code semantic and
+consistent.
 
 ## Core patterns
 
 - Use a single `Theme` object as the source of truth (colors, fonts, spacing).
-- Inject theme at the app root and read it via `@Environment(Theme.self)` in views.
-- Prefer semantic colors (`primaryBackground`, `secondaryBackground`, `label`, `tint`) instead of raw colors.
+- Inject theme at the app root and read it via `@Environment(Theme.self)` in
+
+  views.
+
+- Prefer semantic colors (`primaryBackground`, `secondaryBackground`, `label`,
+
+  `tint`) instead of raw colors.
+
 - Keep user-facing theme controls in a dedicated settings screen.
 - Apply Dynamic Type scaling through custom fonts or `.font(.scaled...)`.
 
@@ -68,4 +75,6 @@ struct ProfileView: View {
 
 - Avoid sprinkling raw `Color` values in views; it breaks consistency.
 - Do not tie theme to a single view’s local state.
-- Avoid using `@Environment(\\.colorScheme)` as the only theme control; it should complement your theme.
+- Avoid using `@Environment(\\.colorScheme)` as the only theme control; it
+
+  should complement your theme.

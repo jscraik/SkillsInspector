@@ -10,31 +10,55 @@ author: "brAInwav"
 
 ## Overview
 
-This power provides a comprehensive system for creating high-quality documentation through structured workflows and quality standards. It combines proven co-authoring techniques with automated compliance checks to ensure your documentation actually works for readers.
+This power provides a comprehensive system for creating high-quality
+documentation through structured workflows and quality standards. It combines
+proven co-authoring techniques with automated compliance checks to ensure your
+documentation actually works for readers.
 
 **Key capabilities:**
 
-- **Structured 3-stage workflow**: Context Gathering → Refinement & Structure → Reader Testing
+- **Structured 3-stage workflow**: Context Gathering → Refinement & Structure
+
+  → Reader Testing
+
 - **Reader-focused approach**: Tests docs with fresh eyes to catch blind spots
-- **Quality standards**: Built-in compliance with industry documentation standards
+- **Quality standards**: Built-in compliance with industry documentation
+
+  standards
+
 - **Brand compliance**: Includes brAInwav brand styling when needed
-- **Multiple doc types**: Supports technical specs, decision docs, READMEs, runbooks, API docs, etc.
-- **Automated validation**: Lint checks, readability scoring, and brand compliance verification
+- **Multiple doc types**: Supports technical specs, decision docs, READMEs,
+
+  runbooks, API docs, etc.
+
+- **Automated validation**: Lint checks, readability scoring, and brand
+
+  compliance verification
 
 ## Available Steering Files
 
-This power includes specialized workflow guides for different documentation scenarios:
+This power includes specialized workflow guides for different documentation
+scenarios:
 
-- **co-authoring-workflow** - Complete 3-stage collaborative document creation process
+- **co-authoring-workflow** - Complete 3-stage collaborative document creation
+
+  process
+
 - **baseline-practices** - Core documentation standards and best practices
-- **code-documentation** - In-code documentation for TypeScript/JavaScript, Swift, and config files
+- **code-documentation** - In-code documentation for TypeScript/JavaScript,
+
+  Swift, and config files
+
 - **brand-compliance** - brAInwav brand guidelines and styling requirements
 
 Call action "readSteering" to access specific workflows as needed.
 
 ## Philosophy
 
-- **Clarity over completeness**: Prefer smaller, readable docs with explicit gaps
+- **Clarity over completeness**: Prefer smaller, readable docs with explicit
+
+  gaps
+
 - **Reader-first structure**: Optimize for how someone will consume the doc
 - **Evidence over assertion**: Back claims with sources or rationale
 - **Skimmable by default**: Structure for scanning and quick comprehension
@@ -43,7 +67,10 @@ Call action "readSteering" to access specific workflows as needed.
 
 **Trigger conditions:**
 
-- User mentions writing documentation: "write a doc", "draft a proposal", "create a spec"
+- User mentions writing documentation: "write a doc", "draft a proposal",
+
+  "create a spec"
+
 - User mentions specific doc types: "PRD", "design doc", "decision doc", "RFC"
 - User asks for doc review, QA, or improvement
 - User needs templates or checklists for documentation
@@ -63,8 +90,14 @@ Best for important documents that need to work well for multiple readers.
 
 **Process:**
 
-1. **Context Gathering**: Collect all relevant information and clarify requirements
-2. **Refinement & Structure**: Build document section by section with iterative feedback
+1. **Context Gathering**: Collect all relevant information and clarify
+
+   requirements
+
+2. **Refinement & Structure**: Build document section by section with
+
+   iterative feedback
+
 3. **Reader Testing**: Validate with fresh perspective to catch blind spots
 
 **When to use:** Technical specs, decision docs, proposals, major READMEs
@@ -137,27 +170,33 @@ Best for applying consistent quality standards across documentation.
 
 ### Technical Specification
 
-**Sections:** Summary, Goals/Non-goals, Proposed design, API/Data model, Rollout/Backwards compatibility, Risks/Alternatives
+**Sections:** Summary, Goals/Non-goals, Proposed design, API/Data model,
+Rollout/Backwards compatibility, Risks/Alternatives
 
 ### Decision Document
 
-**Sections:** Context, Decision, Alternatives, Consequences, Rollback/Exit strategy
+**Sections:** Context, Decision, Alternatives, Consequences, Rollback/Exit
+strategy
 
 ### README
 
-**Sections:** Overview, Prerequisites, Installation, Usage, Configuration, Troubleshooting
+**Sections:** Overview, Prerequisites, Installation, Usage, Configuration,
+Troubleshooting
 
 ### Runbook
 
-**Sections:** Purpose/Scope, Preconditions, Steps, Verification, Rollback, Escalation
+**Sections:** Purpose/Scope, Preconditions, Steps, Verification, Rollback,
+Escalation
 
 ### API Documentation
 
-**Sections:** Overview, Authentication, Endpoints, Examples, Errors, Rate limits
+**Sections:** Overview, Authentication, Endpoints, Examples, Errors, Rate
+limits
 
 ### Proposal/PRD
 
-**Sections:** Problem, Goals, Success metrics, Requirements, UX/Flows, Timeline
+**Sections:** Problem, Goals, Success metrics, Requirements, UX/Flows,
+Timeline
 
 ## Quality Assurance Checklist
 
@@ -270,24 +309,21 @@ markdownlint-cli2 document.md
 
 ### Common Issues
 
-**Problem:** Document feels too long or overwhelming
-**Solution:**
+**Problem:** Document feels too long or overwhelming **Solution:**
 
 1. Break into smaller sections with clear headings
 2. Use progressive disclosure (overview → details)
 3. Consider splitting into multiple documents
 4. Add table of contents for navigation
 
-**Problem:** Readers can't follow instructions
-**Solution:**
+**Problem:** Readers can't follow instructions **Solution:**
 
 1. Test instructions with someone unfamiliar
 2. Add verification steps after each major action
 3. Include expected outputs and error messages
 4. Provide troubleshooting for common failures
 
-**Problem:** Documentation gets outdated quickly
-**Solution:**
+**Problem:** Documentation gets outdated quickly **Solution:**
 
 1. Assign clear ownership and review schedule
 2. Link docs to code/config files when possible
@@ -349,7 +385,8 @@ markdownlint-cli2 document.md
 
 ## Configuration
 
-**No additional configuration required** - this power works as pure documentation guidance.
+**No additional configuration required** - this power works as pure
+documentation guidance.
 
 **Optional tooling setup:**
 
@@ -370,4 +407,6 @@ When completing documentation work, provide:
 
 ---
 
-**Documentation Philosophy:** The best documentation gets useful information into readers' heads quickly, with minimal cognitive load, and provides practical paths to success.
+**Documentation Philosophy:** The best documentation gets useful information
+into readers' heads quickly, with minimal cognitive load, and provides
+practical paths to success.

@@ -92,34 +92,42 @@ struct FindingRowView: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(finding.severity.rawValue): \(finding.message)")
-        .onHover { withAnimation(.easeInOut(duration: 0.15)) { isHovered = $0 } }
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
     }
 }
 
-#Preview("Finding Row - Error") {
-    List {
-        FindingRowView(finding: Finding(
-            ruleID: "frontmatter.missing",
-            severity: .error,
-            agent: .codex,
-            fileURL: URL(fileURLWithPath: "/Users/test/.codex/skills/my-skill/SKILL.md"),
-            message: "Missing or invalid YAML frontmatter (must start with --- on line 1)",
-            line: 1,
-            column: 1
-        ))
+struct FindingRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            List {
+                FindingRowView(finding: Finding(
+                    ruleID: "frontmatter.missing",
+                    severity: .error,
+                    agent: .codex,
+                    fileURL: URL(fileURLWithPath: "/Users/test/.codex/skills/my-skill/SKILL.md"),
+                    message: "Missing or invalid YAML frontmatter (must start with --- on line 1)",
+                    line: 1,
+                    column: 1
+                ))
+            }
+            .frame(width: 400, height: 100)
+            .previewDisplayName("Finding Row - Error")
+            
+            List {
+                FindingRowView(finding: Finding(
+                    ruleID: "claude.length.warning",
+                    severity: .warning,
+                    agent: .claude,
+                    fileURL: URL(fileURLWithPath: "/Users/test/.claude/skills/long-skill/SKILL.md"),
+                    message: "Claude: SKILL.md is 623 lines; guidance suggests staying under ~500"
+                ))
+            }
+            .frame(width: 400, height: 100)
+            .previewDisplayName("Finding Row - Warning")
+        }
     }
-    .frame(width: 400, height: 100)
-}
-
-#Preview("Finding Row - Warning") {
-    List {
-        FindingRowView(finding: Finding(
-            ruleID: "claude.length.warning",
-            severity: .warning,
-            agent: .claude,
-            fileURL: URL(fileURLWithPath: "/Users/test/.claude/skills/long-skill/SKILL.md"),
-            message: "Claude: SKILL.md is 623 lines; guidance suggests staying under ~500"
-        ))
-    }
-    .frame(width: 400, height: 100)
 }

@@ -12,6 +12,7 @@ final class ChangelogViewModel: ObservableObject {
 
     private let ledger: SkillLedger?
     private let generator = SkillChangelogGenerator()
+    private let signer = ChangelogSigner()
 
     init(ledger: SkillLedger?) {
         self.ledger = ledger
@@ -47,7 +48,8 @@ final class ChangelogViewModel: ObservableObject {
             return
         }
         do {
-            try generatedMarkdown.write(to: target, atomically: true, encoding: .utf8)
+            let signed = try signer.sign(markdown: generatedMarkdown)
+            try signed.renderSignedMarkdown().write(to: target, atomically: true, encoding: .utf8)
             statusMessage = "Saved to \(target.lastPathComponent)"
         } catch {
             statusMessage = "Save failed: \(error.localizedDescription)"

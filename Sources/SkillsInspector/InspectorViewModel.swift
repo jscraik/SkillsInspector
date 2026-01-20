@@ -3,39 +3,48 @@ import SkillsCore
 
 @MainActor
 final class InspectorViewModel: ObservableObject {
+    private var isInitializing = true
+    @Published private(set) var isAppReady = false
     @Published var codexRoots: [URL] {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var claudeRoot: URL {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var copilotRoot: URL? {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var codexSkillManagerRoot: URL? {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var recursive = false {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var excludeInput: String = "" {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var excludeGlobInput: String = "" {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var maxDepth: Int? = nil {
-        didSet { persistSettings() }
+        didSet { if !isInitializing { persistSettings() } }
     }
     @Published var watchMode = false {
         didSet {
-            if watchMode {
-                startWatching()
-            } else {
-                stopWatching()
+            if !isInitializing {
+                if watchMode {
+                    // Enable automatic scans when watch mode is active (user has opted in)
+                    allowAutomaticScans = true
+                    startWatching()
+                } else {
+                    // Disable automatic scans when watch mode is disabled
+                    allowAutomaticScans = false
+                    stopWatching()
+                }
             }
         }
     }
+    @Published var allowAutomaticScans = false
     @Published var findings: [Finding] = []
     @Published var isScanning = false
     @Published var scanTask: Task<Void, Never>?
@@ -75,6 +84,12 @@ final class InspectorViewModel: ObservableObject {
             codexSkillManagerRoot = Self.defaultCodexSkillManagerRoot(home: home)
             copilotRoot = Self.defaultCopilotRoot(home: home)
         }
+        isInitializing = false
+    }
+
+    /// Marks the app as ready to accept scans. Called after UI appears to prevent launch blocking.
+    func markAppReady() {
+        isAppReady = true
     }
 
     /// Backwards-compatible single-root accessor for tests and legacy call sites.
@@ -94,7 +109,15 @@ final class InspectorViewModel: ObservableObject {
         excludeGlobInput.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
     }
 
-    func scan() async {
+    func scan(userInitiated: Bool = false) async {
+        // Scan gate: prevent automatic scans during launch
+        // Only proceed if:
+        // 1. User explicitly triggered the scan (button click, keyboard shortcut, etc.)
+        // 2. OR app is fully ready (UI has appeared) AND automatic scans are allowed (watch mode is enabled)
+        guard userInitiated || (isAppReady && allowAutomaticScans) else {
+            return
+        }
+
         // Cancel any ongoing scan
         scanTask?.cancel()
         scanTask = nil
@@ -131,25 +154,36 @@ final class InspectorViewModel: ObservableObject {
         let csm = codexSkillManagerRoot
         let copilot = copilotRoot
         let recursiveFlag = recursive
+        let validCSM = csm.map(validateRoot) ?? false
+        let validCopilot = copilot.map(validateRoot) ?? false
+        let cacheURL = Self.findRepoRoot(from: codexRootsCopy.first ?? claude) ?? Self.findRepoRoot(from: claude)
+        let useSharedRoot = UserDefaults.standard.bool(forKey: "useSharedSkillsRoot")
 
-        scanTask = Task { [weak self] in
+        scanTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             guard Task.isCancelled == false else { return }
 
             // Build roots from all Codex directories plus Claude
-            var roots: [ScanRoot] = codexRootsCopy.map { url in
-                ScanRoot(agent: .codex, rootURL: url, recursive: recursiveFlag)
-            }
-            roots.append(ScanRoot(agent: .claude, rootURL: claude, recursive: recursiveFlag))
-            if let csm, self.validateRoot(csm) {
-                roots.append(ScanRoot(agent: .codexSkillManager, rootURL: csm, recursive: recursiveFlag))
-            }
-            if let copilot, self.validateRoot(copilot) {
-                roots.append(ScanRoot(agent: .copilot, rootURL: copilot, recursive: recursiveFlag))
+            var roots: [ScanRoot]
+            if useSharedRoot {
+                // Single source of truth mode: use only first Codex root
+                let masterRoot = codexRootsCopy.first ?? claude
+                roots = [ScanRoot(agent: .codex, rootURL: masterRoot, recursive: recursiveFlag)]
+            } else {
+                // Multi-root mode: scan all configured roots
+                roots = codexRootsCopy.map { url in
+                    ScanRoot(agent: .codex, rootURL: url, recursive: recursiveFlag)
+                }
+                roots.append(ScanRoot(agent: .claude, rootURL: claude, recursive: recursiveFlag))
+                if let csm, validCSM {
+                    roots.append(ScanRoot(agent: .codexSkillManager, rootURL: csm, recursive: recursiveFlag))
+                }
+                if let copilot, validCopilot {
+                    roots.append(ScanRoot(agent: .copilot, rootURL: copilot, recursive: recursiveFlag))
+                }
             }
             
             // Set up cache
-            let cacheURL = Self.findRepoRoot(from: codexRootsCopy.first ?? claude) ?? Self.findRepoRoot(from: claude)
             let cacheManager: CacheManager?
             if let cacheRoot = cacheURL {
                 let cachePath = cacheRoot.appendingPathComponent(".skillsctl/cache.json")
@@ -193,10 +227,10 @@ final class InspectorViewModel: ObservableObject {
                 await cacheManager.save()
             }
 
-            guard currentScanID == scanID else { return }
             guard Task.isCancelled == false else { return }
 
             await MainActor.run {
+                guard self.currentScanID == scanID else { return }
                 self.findings = findingsWithFixes.sorted(by: { lhs, rhs in
                     if lhs.severity != rhs.severity { return lhs.severity.rawValue < rhs.severity.rawValue }
                     if lhs.agent != rhs.agent { return lhs.agent.rawValue < rhs.agent.rawValue }
@@ -254,6 +288,8 @@ final class InspectorViewModel: ObservableObject {
             self.lastWatchTrigger = now
             
             Task { @MainActor in
+                // File watcher scans are automatic, so they require both app ready AND watch mode enabled
+                guard self.isAppReady && self.allowAutomaticScans else { return }
                 await self.scan()
             }
         }

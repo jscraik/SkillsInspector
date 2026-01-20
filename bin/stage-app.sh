@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Stage a SwiftPM-built binary into an app bundle using the repo's template sTools.app.
-# Usage: bin/stage-app.sh [.build/release/sTools] [.build/release/sTools.app]
+# Stage a SwiftPM-built binary into an app bundle using the repo's template SkillsInspector.app.
+# Usage: bin/stage-app.sh [.build/release/SkillsInspector] [.build/release/SkillsInspector.app]
 
-BIN_SRC="${1:-.build/release/sTools}"
-TARGET_APP="${2:-.build/release/sTools.app}"
+BIN_SRC="${1:-.build/release/SkillsInspector}"
+TARGET_APP="${2:-.build/release/SkillsInspector.app}"
 TEMPLATE_APP="Template.app"
 ICON_SRC_ROOT="Icon.icns"
 ICON_SRC_RES="Sources/SkillsInspector/Resources/Icon.icns"
@@ -30,7 +30,7 @@ fi
 rm -rf "$TARGET_APP"
 cp -R "$TEMPLATE_APP" "$TARGET_APP"
 
-cp "$BIN_SRC" "$TARGET_APP/Contents/MacOS/sTools"
+cp "$BIN_SRC" "$TARGET_APP/Contents/MacOS/SkillsInspector"
 
 # Framework staging
 BUILD_DIR="$(dirname "$BIN_SRC")"
@@ -45,7 +45,7 @@ if [[ -d "$BUILD_DIR/Sparkle.framework" ]]; then
     
     # Ensure standard macOS structure rpath is present
     # SwiftPM binaries often only have @loader_path. We need @executable_path/../Frameworks
-    install_name_tool -add_rpath "@executable_path/../Frameworks" "$TARGET_APP/Contents/MacOS/sTools" || true
+    install_name_tool -add_rpath "@executable_path/../Frameworks" "$TARGET_APP/Contents/MacOS/SkillsInspector" || true
 fi
 
 if [[ -n "$ICON_SRC" ]]; then

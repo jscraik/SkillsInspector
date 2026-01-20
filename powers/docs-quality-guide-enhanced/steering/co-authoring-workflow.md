@@ -1,44 +1,64 @@
 # Doc Co-Authoring Workflow
 
-This guide provides a structured workflow for collaborative document creation. Use this when creating important documents that need to work well for multiple readers.
+This guide provides a structured workflow for collaborative document creation.
+Use this when creating important documents that need to work well for multiple
+readers.
 
 ## When to Use This Workflow
 
 **Trigger conditions:**
 
-- User mentions writing documentation: "write a doc", "draft a proposal", "create a spec"
+- User mentions writing documentation: "write a doc", "draft a proposal",
+
+  "create a spec"
+
 - User mentions specific doc types: "PRD", "design doc", "decision doc", "RFC"
 - User seems to be starting a substantial writing task
 
-**Initial offer:**
-Offer the user a structured workflow for co-authoring the document. Explain the three stages:
+**Initial offer:** Offer the user a structured workflow for co-authoring the
+document. Explain the three stages:
 
-1. **Context Gathering**: User provides all relevant context while you ask clarifying questions
-2. **Refinement & Structure**: Iteratively build each section through brainstorming and editing
-3. **Reader Testing**: Test the doc with a fresh model (no context) to catch blind spots
+1. **Context Gathering**: User provides all relevant context while you ask
 
-Explain that this approach helps ensure the doc works well when others read it. Ask if they want to try this workflow or prefer to work freeform.
+   clarifying questions
+
+2. **Refinement & Structure**: Iteratively build each section through
+
+   brainstorming and editing
+
+3. **Reader Testing**: Test the doc with a fresh model (no context) to catch
+
+   blind spots
+
+Explain that this approach helps ensure the doc works well when others read
+it. Ask if they want to try this workflow or prefer to work freeform.
 
 ## Stage 1: Context Gathering
 
-**Goal:** Close the gap between what the user knows and what you know, enabling smart guidance later.
+**Goal:** Close the gap between what the user knows and what you know,
+enabling smart guidance later.
 
 ### Initial Questions
 
 Start by asking the user for meta-context about the document:
 
-1. What type of document is this? (e.g., technical spec, decision doc, proposal)
+1. What type of document is this? (e.g., technical spec, decision doc,
+
+   proposal)
+
 2. Who's the primary audience?
 3. What's the desired impact when someone reads this?
 4. Is there a template or specific format to follow?
 5. Any other constraints or context to know?
 6. Does this doc require brAInwav brand styling or documentation signature?
 
-Tell them they can answer in shorthand or dump information in any format that works for them.
+Tell them they can answer in shorthand or dump information in any format that
+works for them.
 
 ### Info Dumping
 
-Once initial questions are answered, encourage the user to dump all the context they have:
+Once initial questions are answered, encourage the user to dump all the
+context they have:
 
 - Background on the project/problem
 - Related team discussions or shared documents
@@ -52,17 +72,21 @@ Tell them not to worry about organizing it - just get it all out.
 
 ### Asking Clarifying Questions
 
-When user signals they've done their initial dump, ask clarifying questions to ensure understanding:
+When user signals they've done their initial dump, ask clarifying questions to
+ensure understanding:
 
 Generate 5-10 numbered questions based on gaps in the context.
 
-Inform them they can use shorthand to answer (e.g., "1: yes, 2: see #channel, 3: no because backwards compat").
+Inform them they can use shorthand to answer (e.g., "1: yes, 2: see #channel,
+3: no because backwards compat").
 
-**Exit condition:** Enough context has been gathered when you can ask about edge cases and trade-offs without needing basics explained.
+**Exit condition:** Enough context has been gathered when you can ask about
+edge cases and trade-offs without needing basics explained.
 
 ## Stage 2: Refinement & Structure
 
-**Goal:** Build the document section by section through brainstorming, curation, and iterative refinement.
+**Goal:** Build the document section by section through brainstorming,
+curation, and iterative refinement.
 
 ### Instructions to User
 
@@ -74,24 +98,25 @@ Explain that the document will be built section by section:
 4. The section will be drafted
 5. It will be refined through surgical edits
 
-Start with the section that has the most unknowns (the core decision/proposal), then work through the rest.
+Start with the section that has the most unknowns (the core
+decision/proposal), then work through the rest.
 
 ### Section Ordering
 
-**If the document structure is clear:**
-Ask which section they'd like to start with.
+**If the document structure is clear:** Ask which section they'd like to start
+with.
 
-**If user doesn't know what sections they need:**
-Based on the document type, suggest 3-5 sections appropriate for the doc type:
+**If user doesn't know what sections they need:** Based on the document type,
+suggest 3-5 sections appropriate for the doc type:
 
-| Doc type | Suggested sections |
-| --- | --- |
-| Technical spec | Summary, Goals/Non-goals, Proposed design, API/Data model, Rollout/Backwards compatibility, Risks/Alternatives |
-| Decision doc | Context, Decision, Alternatives, Consequences, Rollback/Exit strategy |
-| README | Overview, Prerequisites, Installation, Usage, Configuration, Troubleshooting |
-| Runbook | Purpose/Scope, Preconditions, Steps, Verification, Rollback, Escalation |
-| API doc | Overview, Authentication, Endpoints, Examples, Errors, Rate limits |
-| Proposal/PRD | Problem, Goals, Success metrics, Requirements, UX/Flows, Timeline |
+| Doc type |
+| --- |
+| Technical spec |
+| Decision doc |
+| README |
+| Runbook |
+| API doc |
+| Proposal/PRD |
 
 ### For Each Section
 
@@ -108,7 +133,8 @@ Brainstorm 5-20 things that might be included, looking for:
 
 #### Step 3: Curation
 
-Ask which points should be kept, removed, or combined. Request brief justifications.
+Ask which points should be kept, removed, or combined. Request brief
+justifications.
 
 Examples:
 
@@ -134,11 +160,13 @@ As user provides feedback:
 
 ### Quality Checking
 
-After 3 consecutive iterations with no major changes, ask if anything can be removed without losing important information.
+After 3 consecutive iterations with no major changes, ask if anything can be
+removed without losing important information.
 
 ### Near Completion
 
-As approaching completion (80%+ of sections done), re-read the entire document and check for:
+As approaching completion (80%+ of sections done), re-read the entire document
+and check for:
 
 - Flow and consistency across sections
 - Redundancy or contradictions
@@ -147,7 +175,8 @@ As approaching completion (80%+ of sections done), re-read the entire document a
 
 ## Stage 3: Reader Testing
 
-**Goal:** Test the document with a fresh model (no context bleed) to verify it works for readers.
+**Goal:** Test the document with a fresh model (no context bleed) to verify it
+works for readers.
 
 ### Testing Rubric
 
@@ -176,8 +205,8 @@ Generate 5-10 questions that readers would realistically ask.
 
 #### Step 2: Test with Sub-Agent (if available)
 
-For each question, invoke a sub-agent with just the document content and the question.
-Summarize what the reader got right/wrong for each question.
+For each question, invoke a sub-agent with just the document content and the
+question. Summarize what the reader got right/wrong for each question.
 
 #### Step 3: Run Extra Checks
 
@@ -218,7 +247,10 @@ When Reader Testing passes:
 
 **Handling Deviations:**
 
-- If user wants to skip a stage: Ask if they want to skip this and write freeform
+- If user wants to skip a stage: Ask if they want to skip this and write
+
+  freeform
+
 - If user seems frustrated: Acknowledge this is taking longer than expected
 - Always give user agency to adjust the process
 

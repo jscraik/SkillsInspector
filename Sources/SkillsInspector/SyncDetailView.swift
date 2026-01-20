@@ -10,7 +10,8 @@ struct SyncDetailView: View {
     @State private var errors: [AgentKind: String] = [:]
     @State private var modified: [AgentKind: Date] = [:]
     @State private var docs: [AgentKind: SkillDoc] = [:]
-    @State private var isLoading = false
+    @State private var loadState: LoadState = .idle
+    @State private var activeLoadID = UUID()
     @State private var diffMode: DiffMode = .unified
     @State private var showLineNumbers = true
     
@@ -22,14 +23,20 @@ struct SyncDetailView: View {
         case sideBySide = "Side by Side"
     }
 
+    enum LoadState {
+        case idle
+        case loading
+        case loaded
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
                 header
 
-                if isLoading {
+                if loadState == .loading {
                     loadingState
-                } else if contents.isEmpty && errors.isEmpty {
+                } else if loadState == .loaded && contents.isEmpty && errors.isEmpty {
                     EmptyStateView(
                         icon: "sidebar.right",
                         title: "No Content",
@@ -120,7 +127,7 @@ private extension SyncDetailView {
                 .foregroundStyle(DesignTokens.Colors.Text.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 200)
-        .background(glassPanelStyle())
+        .background(cleanPanelStyle())
     }
 
     private func diffSection(_ inputs: DiffInputs) -> some View {
@@ -202,7 +209,7 @@ private extension SyncDetailView {
                                 .font(.system(size: 10, weight: .bold))
                         }
                     }
-                    .buttonStyle(.customGlass)
+                    .buttonStyle(.clean)
                     .help("Copy content from \(inputs.leftAgent.displayName) to \(inputs.rightAgent.displayName)")
                     
                     Button {
@@ -214,7 +221,7 @@ private extension SyncDetailView {
                                 .font(.system(size: 10, weight: .bold))
                         }
                     }
-                    .buttonStyle(.customGlass)
+                    .buttonStyle(.clean)
                     .help("Copy content from \(inputs.rightAgent.displayName) to \(inputs.leftAgent.displayName)")
                     
                     Button {
@@ -223,7 +230,7 @@ private extension SyncDetailView {
                         Label("Bump & Align", systemImage: "bolt.fill")
                             .font(.caption.weight(.bold))
                     }
-                    .buttonStyle(.customGlassProminent)
+                    .buttonStyle(.cleanProminent)
                     .tint(DesignTokens.Colors.Accent.green)
                 }
                 .controlSize(.small)
@@ -537,21 +544,25 @@ private extension SyncDetailView {
 private extension SyncDetailView {
 
     private func loadContents() async {
+        let loadID = UUID()
         let name = skillName
+        let rootsSnapshot = rootsByAgent
         await MainActor.run {
-            isLoading = true
+            activeLoadID = loadID
+            loadState = .loading
             contents = [:]
             errors = [:]
             modified = [:]
             docs = [:]
         }
 
-        let (loadedContents, loadedErrors, loadedModified, loadedDocs) = await Task.detached(priority: .userInitiated) { () -> ([AgentKind: String], [AgentKind: String], [AgentKind: Date], [AgentKind: SkillDoc]) in
+        let (loadedContents, loadedErrors, loadedModified, loadedDocs) = await Task(priority: .userInitiated) { () -> ([AgentKind: String], [AgentKind: String], [AgentKind: Date], [AgentKind: SkillDoc]) in
             var contents: [AgentKind: String] = [:]
             var errors: [AgentKind: String] = [:]
             var modified: [AgentKind: Date] = [:]
             var docs: [AgentKind: SkillDoc] = [:]
-            for (agent, root) in rootsByAgent {
+            for (agent, root) in rootsSnapshot {
+                if Task.isCancelled { break }
                 let url = root.appendingPathComponent(name).appendingPathComponent("SKILL.md")
                 guard FileManager.default.fileExists(atPath: url.path) else {
                     errors[agent] = "Missing SKILL.md"
@@ -573,11 +584,12 @@ private extension SyncDetailView {
         }.value
 
         await MainActor.run {
+            guard activeLoadID == loadID, !Task.isCancelled else { return }
             contents = loadedContents
             errors = loadedErrors
             modified = loadedModified
             docs = loadedDocs
-            isLoading = false
+            loadState = .loaded
             
             // Auto-initialize diff agents if unset
             let available = sortedAgents(from: loadedContents.keys)
@@ -776,15 +788,17 @@ private struct DiffInputs {
     let diffText: String
 }
 
-#Preview {
-    let roots: [AgentKind: URL] = [
-        .codex: URL(fileURLWithPath: "/tmp/codex"),
-        .claude: URL(fileURLWithPath: "/tmp/claude"),
-        .copilot: URL(fileURLWithPath: "/tmp/copilot")
-    ]
-    SyncDetailView(
-        selection: .different(name: "demo"),
-        rootsByAgent: roots,
-        diffDetail: nil
-    )
+struct SyncDetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        let roots: [AgentKind: URL] = [
+            .codex: URL(fileURLWithPath: "/tmp/codex"),
+            .claude: URL(fileURLWithPath: "/tmp/claude"),
+            .copilot: URL(fileURLWithPath: "/tmp/copilot")
+        ]
+        SyncDetailView(
+            selection: .different(name: "demo"),
+            rootsByAgent: roots,
+            diffDetail: nil
+        )
+    }
 }

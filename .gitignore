@@ -28,6 +28,7 @@ Icon?
 *.tmp
 *.swp
 *~
+*.bak
 
 # Local development
 .vscode/
@@ -41,10 +42,16 @@ Icon?
 # Local configuration and cache files
 .skillsctl/cache.json
 
+# Ralph Loop (keep config, exclude append-only log)
+.ralph/progress.md
+
 # Keep Package.resolved for dependency locking
 # Keep Icon.icns and Icon.png as they appear to be project assets
 
-# AI artifacts - transient only
-/ai/tmp/
-/ai/cache/
-/ai/raw/
+# Ralph runtime state (keep config files, ignore logs/state)
+.ralph/logs/
+.ralph/state.json
+.ralph/prompt-*.txt
+
+# Local spec outputs
+.spec/

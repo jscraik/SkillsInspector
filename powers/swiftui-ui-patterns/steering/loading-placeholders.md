@@ -1,17 +1,32 @@
 # Loading & Placeholders
 
-Use this when a view needs a consistent loading state (skeletons, redaction, empty state) without blocking interaction.
+Use this when a view needs a consistent loading state (skeletons, redaction,
+empty state) without blocking interaction.
 
 ## Patterns to prefer
 
-- **Redacted placeholders** for list/detail content to preserve layout while loading.
-- **ContentUnavailableView** for empty or error states after loading completes.
-- **ProgressView** only for short, global operations (use sparingly in content-heavy screens).
+- **Redacted placeholders** for list/detail content to preserve layout while
+
+  loading.
+
+- **ContentUnavailableView** for empty or error states after loading
+
+  completes.
+
+- **ProgressView** only for short, global operations (use sparingly in
+
+  content-heavy screens).
 
 ## Recommended approach
 
-1. Keep the real layout, render placeholder data, then apply `.redacted(reason: .placeholder)`.
-2. For lists, show a fixed number of placeholder rows (avoid infinite spinners).
+1. Keep the real layout, render placeholder data, then apply
+
+   `.redacted(reason: .placeholder)`.
+
+2. For lists, show a fixed number of placeholder rows (avoid infinite
+
+   spinners).
+
 3. Switch to `ContentUnavailableView` when load finishes but data is empty.
 
 ## Pitfalls

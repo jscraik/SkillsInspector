@@ -171,11 +171,15 @@ public struct SkillPublisher: Sendable {
 
     private func enumerateFiles(root: URL) throws -> [String] {
         let fm = FileManager.default
-        let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [], errorHandler: nil)
+        let resolvedRoot = root.resolvingSymlinksInPath()
+        let enumerator = fm.enumerator(at: resolvedRoot, includingPropertiesForKeys: [.isDirectoryKey], options: [], errorHandler: nil)
         var files: [String] = []
         while let url = enumerator?.nextObject() as? URL {
-            if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { continue }
-            let relative = url.path.replacingOccurrences(of: root.path + "/", with: "")
+            let resolvedURL = url.resolvingSymlinksInPath()
+            if (try? resolvedURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { continue }
+            let rootPrefix = resolvedRoot.path + "/"
+            guard resolvedURL.path.hasPrefix(rootPrefix) else { continue }
+            let relative = resolvedURL.path.replacingOccurrences(of: rootPrefix, with: "")
             files.append(relative)
         }
         return files.sorted()
@@ -249,7 +253,7 @@ public struct SkillPublisher: Sendable {
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
-    private func sha512Hex(of fileURL: URL) throws -> String {
+    internal func sha512Hex(of fileURL: URL) throws -> String {
         let data = try Data(contentsOf: fileURL)
         let digest = SHA512.hash(data: data)
         return digest.map { String(format: "%02x", $0) }.joined()
@@ -260,5 +264,32 @@ public struct SkillPublisher: Sendable {
         guard let text = try? String(contentsOf: skillFile, encoding: .utf8) else { return nil }
         let frontmatter = FrontmatterParser.parseTopBlock(text)
         return frontmatter["version"]
+    }
+}
+
+/// Default pinned tool configuration for clawdhub@0.1.0
+/// This is the officially supported version for reproducible publishing.
+public struct PinnedTool: Sendable {
+    /// The pinned version of clawdhub
+    public static let version = "0.1.0"
+
+    /// The SHA-512 integrity hash for clawdhub@0.1.0
+    /// This is an SRI-style hash that ensures the exact tool binary is used.
+    public static let integritySHA512 = "LZ0mRf61F5SjgprrMwgyLRqMOKxC5sQZYF1tZGgZCawiaVfb79A8cp0Fl32/JNRqiRI7TB0/EuPJPMJ4evmK0g=="
+
+    /// The expected tool name
+    public static let toolName = "clawdhub"
+
+    /// Creates a ToolConfig with the pinned tool configuration
+    /// - Parameter toolPath: Path to the clawdhub binary
+    /// - Returns: A ToolConfig with the pinned version and integrity hash
+    public static func toolConfig(toolPath: URL) -> SkillPublisher.ToolConfig {
+        SkillPublisher.ToolConfig(
+            toolPath: toolPath,
+            toolName: toolName,
+            expectedSHA256: nil,
+            expectedSHA512: integritySHA512,
+            arguments: ["publish", "--artifact", "{artifact}", "--attestation", "{attestation}"]
+        )
     }
 }

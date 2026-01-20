@@ -1,10 +1,19 @@
 import SwiftUI
 import AppKit
 import SkillsCore
+// NEW: Import aStudio modules
+import AStudioFoundation
+import AStudioThemes
+import AStudioComponents
 
 @main
-struct sToolsApp: App {
+struct SkillsInspectorApp: App {
     @StateObject private var updater = Updater()
+    // Scan control is now explicit to ensure UI responsiveness:
+    // - No automatic scans on app launch, view appearance, or settings changes
+    // - Users must click "Scan Rules" button or press ⌘R to start scanning
+    // - Watch mode (⌘⇧W) provides automatic re-scanning when files change
+    // - This prevents the "Scanning..." state from appearing before UI is fully interactive
 
     init() {
         NSApplication.shared.setActivationPolicy(.regular)
@@ -12,11 +21,11 @@ struct sToolsApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("sTools") {
+        WindowGroup("SkillsInspector") {
             ContentView()
-                .frame(minWidth: 1024, minHeight: 700)
+                .frame(minWidth: 1200, minHeight: 800)
         }
-        .defaultSize(width: 1280, height: 800)
+        .defaultSize(width: 1400, height: 900)
         .commands {
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") {

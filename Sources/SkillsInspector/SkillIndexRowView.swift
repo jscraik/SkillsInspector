@@ -121,34 +121,41 @@ struct SkillIndexRowView: View {
             }
             
             // Metadata badges with improved organization
-            if entry.referencesCount > 0 || entry.assetsCount > 0 || entry.scriptsCount > 0 {
-                HStack(spacing: DesignTokens.Spacing.xxxs) {
-                    if entry.referencesCount > 0 {
-                        metadataBadge(
-                            count: entry.referencesCount,
-                            label: "ref",
-                            icon: "book.closed",
-                            color: DesignTokens.Colors.Accent.purple
-                        )
-                    }
-                    if entry.assetsCount > 0 {
-                        metadataBadge(
-                            count: entry.assetsCount,
-                            label: "asset",
-                            icon: "tray.full",
-                            color: DesignTokens.Colors.Accent.blue
-                        )
-                    }
-                    if entry.scriptsCount > 0 {
-                        metadataBadge(
-                            count: entry.scriptsCount,
-                            label: "script",
-                            icon: "terminal",
-                            color: DesignTokens.Colors.Accent.orange
-                        )
-                    }
-                    Spacer()
+            HStack(spacing: DesignTokens.Spacing.xxxs) {
+                // Version badge (if available)
+                if let version = entry.version {
+                    metadataBadge(
+                        text: "v\(version)",
+                        icon: "number.circle",
+                        color: DesignTokens.Colors.Accent.blue
+                    )
                 }
+                
+                if entry.referencesCount > 0 {
+                    metadataBadge(
+                        count: entry.referencesCount,
+                        label: "ref",
+                        icon: "book.closed",
+                        color: DesignTokens.Colors.Accent.purple
+                    )
+                }
+                if entry.assetsCount > 0 {
+                    metadataBadge(
+                        count: entry.assetsCount,
+                        label: "asset",
+                        icon: "tray.full",
+                        color: DesignTokens.Colors.Accent.blue
+                    )
+                }
+                if entry.scriptsCount > 0 {
+                    metadataBadge(
+                        count: entry.scriptsCount,
+                        label: "script",
+                        icon: "terminal",
+                        color: DesignTokens.Colors.Accent.orange
+                    )
+                }
+                Spacer()
             }
             
             // Expanded details section
@@ -176,6 +183,36 @@ struct SkillIndexRowView: View {
                                 RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
                                     .stroke(DesignTokens.Colors.Border.light, lineWidth: 0.5)
                             )
+                    }
+                    
+                    // Version information
+                    HStack(spacing: DesignTokens.Spacing.sm) {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                            Text("Skill Version")
+                                .font(.system(.caption2, weight: .semibold))
+                                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                                .textCase(.uppercase)
+                            
+                            Text(entry.version ?? "Not specified")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(entry.version != nil ? DesignTokens.Colors.Accent.blue : DesignTokens.Colors.Text.tertiary)
+                                .fontWeight(entry.version != nil ? .semibold : .regular)
+                        }
+                        
+                        if let modified = entry.modified {
+                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                                Text("Last Modified")
+                                    .font(.system(.caption2, weight: .semibold))
+                                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                                    .textCase(.uppercase)
+                                
+                                Text(DateFormatter.shortDateTime.string(from: modified))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                            }
+                        }
+                        
+                        Spacer()
                     }
                     
                     // Action buttons with improved styling
@@ -238,6 +275,21 @@ struct SkillIndexRowView: View {
                 .fontWeight(.medium)
             Text(count == 1 ? label : "\(label)s")
                 .font(.caption2)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, DesignTokens.Spacing.xxxs)
+        .padding(.vertical, DesignTokens.Spacing.hair)
+        .background(color.opacity(0.12))
+        .cornerRadius(DesignTokens.Radius.sm)
+    }
+    
+    private func metadataBadge(text: String, icon: String, color: Color) -> some View {
+        HStack(spacing: DesignTokens.Spacing.hair) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.system(.caption2, design: .monospaced))
+                .fontWeight(.medium)
         }
         .foregroundStyle(color)
         .padding(.horizontal, DesignTokens.Spacing.xxxs)

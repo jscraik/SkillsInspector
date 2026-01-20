@@ -31,7 +31,9 @@ struct FindingDetailView: View {
             }
             .padding(DesignTokens.Spacing.sm)
         }
-        .onAppear { loadMarkdownContent() }
+        .task(id: finding.fileURL) {
+            await loadMarkdownContent()
+        }
         .toast($toastMessage)
     }
 
@@ -201,7 +203,7 @@ struct FindingDetailView: View {
                         Label("Apply Correction", systemImage: "magicmouse")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.customGlassProminent)
+                    .buttonStyle(.cleanProminent)
                     .tint(DesignTokens.Colors.Accent.green)
                     .controlSize(.large)
                 } else {
@@ -239,7 +241,7 @@ struct FindingDetailView: View {
                     Label("Open Editor", systemImage: "pencil.and.outline")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.customGlass)
+                .buttonStyle(.clean)
                 
                 Button {
                     addToBaseline()
@@ -247,7 +249,7 @@ struct FindingDetailView: View {
                     Label("Add to Baseline", systemImage: "archivebox")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.customGlass)
+                .buttonStyle(.clean)
                 
                 Button {
                     FindingActions.showInFinder(finding.fileURL)
@@ -255,7 +257,7 @@ struct FindingDetailView: View {
                     Label("Finder", systemImage: "folder")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.customGlass)
+                .buttonStyle(.clean)
             }
         }
         .padding(DesignTokens.Spacing.sm)
@@ -329,17 +331,21 @@ struct FindingDetailView: View {
         }
     }
     
-    private func loadMarkdownContent() {
-        Task {
-            do {
-                let content = try String(contentsOf: finding.fileURL, encoding: .utf8)
-                await MainActor.run {
-                    markdownContent = content
-                }
-            } catch {
-                await MainActor.run {
-                    markdownContent = "*Error loading source file.*"
-                }
+    private func loadMarkdownContent() async {
+        guard finding.fileURL.pathExtension.lowercased() == "md" else {
+            await MainActor.run {
+                markdownContent = nil
+            }
+            return
+        }
+        do {
+            let content = try String(contentsOf: finding.fileURL, encoding: .utf8)
+            await MainActor.run {
+                markdownContent = content
+            }
+        } catch {
+            await MainActor.run {
+                markdownContent = "*Error loading source file.*"
             }
         }
     }

@@ -55,6 +55,42 @@ final class TrustStoreViewModel: ObservableObject {
         errorMessage = nil
     }
 
+    func applyKeyset(_ keyset: RemoteKeyset) {
+        var updatedKeys = keys
+        for incoming in keyset.keys {
+            if let index = updatedKeys.firstIndex(where: { $0.keyId == incoming.keyId }) {
+                let allowed = updatedKeys[index].allowedSlugs ?? incoming.allowedSlugs
+                updatedKeys[index] = RemoteTrustStore.TrustedKey(
+                    keyId: incoming.keyId,
+                    publicKeyBase64: incoming.publicKeyBase64,
+                    allowedSlugs: allowed
+                )
+            } else {
+                updatedKeys.append(incoming)
+            }
+        }
+        keys = updatedKeys
+        revokedKeyIds.formUnion(keyset.revokedKeyIds)
+        save()
+    }
+
+    func refreshKeyset(client: RemoteSkillClient, rootKeyBase64: String) async {
+        do {
+            guard let keyset = try await client.fetchKeyset() else { return }
+            if keyset.isExpired() {
+                errorMessage = "Remote keyset expired; keeping existing trust store."
+                return
+            }
+            guard keyset.verifySignature(rootPublicKeyBase64: rootKeyBase64) else {
+                errorMessage = "Remote keyset signature verification failed."
+                return
+            }
+            applyKeyset(keyset)
+        } catch {
+            errorMessage = "Failed to refresh keyset: \(error.localizedDescription)"
+        }
+    }
+
     private func load() {
         do {
             let data = try Data(contentsOf: storeURL)

@@ -99,6 +99,8 @@ struct KeyboardShortcutsView: View {
     }
 }
 
-#Preview {
-    KeyboardShortcutsView()
+struct KeyboardShortcutsView_Previews: PreviewProvider {
+    static var previews: some View {
+        KeyboardShortcutsView()
+    }
 }

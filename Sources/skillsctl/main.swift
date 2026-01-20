@@ -1,12 +1,14 @@
+import Dispatch
 import Foundation
 import ArgumentParser
 import SkillsCore
 
-struct SkillsCtl: ParsableCommand {
+@available(macOS 10.15, macCatalyst 13, iOS 13, tvOS 13, watchOS 6, *)
+struct SkillsCtl: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "skillsctl",
         abstract: "Scan/validate/sync Codex + Claude SKILL.md directories.",
-        subcommands: [Scan.self, Fix.self, SyncCheck.self, Index.self, Remote.self, Publish.self, Completion.self]
+        subcommands: [Scan.self, Fix.self, SyncCheck.self, Index.self, Search.self, SearchIndexCmd.self, Remote.self, Publish.self, Spec.self, SecurityCommand.self, QuarantineCommand.self, WorkflowCommand.self, Completion.self]
     )
 }
 
@@ -401,22 +403,31 @@ struct Publish: ParsableCommand {
     func run() throws {
         let normalized = format.lowercased()
         do {
-            guard toolSHA256 != nil || toolSHA512 != nil else {
-                throw CLIError(code: "tool_hash_required", message: "Provide --tool-sha256 or --tool-sha512 for pinned publishing.")
-            }
             let skillURL = URL(fileURLWithPath: PathUtil.expandTilde(skillDir))
             let outputURL = URL(fileURLWithPath: PathUtil.expandTilde(outputPath))
             let attestationURL = URL(fileURLWithPath: PathUtil.expandTilde(attestationPath))
             let toolURL = URL(fileURLWithPath: PathUtil.expandTilde(toolPath))
             let signingKey = try resolveSigningKey()
             let publisher = SkillPublisher()
-            let toolConfig = SkillPublisher.ToolConfig(
-                toolPath: toolURL,
-                toolName: toolName,
-                expectedSHA256: toolSHA256,
-                expectedSHA512: toolSHA512,
-                arguments: toolArgs
-            )
+
+            // Use pinned tool configuration for clawdhub if no explicit hash provided
+            let toolConfig: SkillPublisher.ToolConfig
+            if toolName == PinnedTool.toolName && toolSHA256 == nil && toolSHA512 == nil {
+                // Use pinned configuration for clawdhub@0.1.0
+                toolConfig = PinnedTool.toolConfig(toolPath: toolURL)
+            } else {
+                // Use explicit configuration
+                guard toolSHA256 != nil || toolSHA512 != nil else {
+                    throw CLIError(code: "tool_hash_required", message: "Provide --tool-sha256 or --tool-sha512 for pinned publishing.")
+                }
+                toolConfig = SkillPublisher.ToolConfig(
+                    toolPath: toolURL,
+                    toolName: toolName,
+                    expectedSHA256: toolSHA256,
+                    expectedSHA512: toolSHA512,
+                    arguments: toolArgs
+                )
+            }
             let output: SkillPublisher.PublishOutput
             if dryRun {
                 output = try publisher.buildOnly(
@@ -1149,7 +1160,11 @@ struct Index: ParsableCommand {
 }
 
 // Entry point
-SkillsCtl.main()
+Task {
+    await SkillsCtl.main()
+    exit(EXIT_SUCCESS)
+}
+dispatchMain()
 
 // Helper to run async code from synchronous context
 func runBlocking<T: Sendable>(_ operation: @Sendable @escaping () async -> T) -> T {

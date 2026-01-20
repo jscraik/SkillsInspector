@@ -12,7 +12,7 @@
         "properties": {
           "ruleID": { "type": "string" },
           "file": { "type": "string" },
-          "agent": { "type": "string", "enum": ["codex", "claude"] }
+          "agent": { "type": "string" }
         },
         "additionalProperties": false
       }

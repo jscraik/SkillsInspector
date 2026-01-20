@@ -4,10 +4,19 @@ import SwiftUI
 /// SwiftUI-native Markdown renderer with a guarded fallback for very large documents.
 struct MarkdownPreviewView: View {
     let content: String
+    let minContentWidth: CGFloat
 
     @State private var parsed: MarkdownContent?
     @State private var isLarge = false
+    @State private var isPreparing = false
+    @State private var lastProcessedFingerprint: Int?
+    @State private var lastProcessedLength = 0
     private let largeThreshold = 50_000 // characters; beyond this use plain text to avoid known perf issues.
+
+    init(content: String, minContentWidth: CGFloat = 0) {
+        self.content = content
+        self.minContentWidth = minContentWidth
+    }
 
     var body: some View { contentView.task(id: content) { await prepare() } }
 
@@ -19,7 +28,7 @@ struct MarkdownPreviewView: View {
             ScrollView([.vertical, .horizontal]) {
                 Markdown(parsed)
                     .markdownTheme(Self.theme)
-                    .frame(minWidth: 1200, maxWidth: .infinity, alignment: .leading)
+                    .frame(minWidth: minContentWidth, maxWidth: .infinity, alignment: .leading)
                     .padding()
             }
             .background(DesignTokens.Colors.Background.primary)
@@ -58,19 +67,39 @@ struct MarkdownPreviewView: View {
 
     private func prepare() async {
         let stripped = stripFrontmatter(content)
-        await MainActor.run {
-            // Reset cached state whenever the bound content changes (task is keyed by `content`)
-            // so the preview always reflects the newly selected skill.
-            self.parsed = nil
-            self.isLarge = false
+        let fingerprint = stripped.hashValue
+        let length = stripped.count
+        let shouldSkip = await MainActor.run {
+            if let lastProcessedFingerprint, lastProcessedFingerprint == fingerprint, lastProcessedLength == length {
+                return true
+            }
+            isPreparing = true
+            return false
         }
-        if stripped.count > largeThreshold {
-            isLarge = true
+        if shouldSkip { return }
+
+        if length > largeThreshold {
+            await MainActor.run {
+                isLarge = true
+                parsed = nil
+                lastProcessedFingerprint = fingerprint
+                lastProcessedLength = length
+                isPreparing = false
+            }
             return
         }
+
         let parsedContent = MarkdownContent(stripped)
+        if Task.isCancelled {
+            await MainActor.run { isPreparing = false }
+            return
+        }
         await MainActor.run {
-            self.parsed = parsedContent
+            isLarge = false
+            parsed = parsedContent
+            lastProcessedFingerprint = fingerprint
+            lastProcessedLength = length
+            isPreparing = false
         }
     }
 

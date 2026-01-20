@@ -1,0 +1,25 @@
+Perfect! The implementation is complete. Let me provide a final summary and output the required signal:
+
+`★ Insight ─────────────────────────────────────`
+**Story S13: Bulk Actions Toolbar - Implementation Complete**
+- The bulk operations functionality has been fully implemented following the existing patterns in the codebase
+- `BulkOperationProgress` struct follows the same Sendable pattern as `RemotePreviewState`
+- Progress indication uses SwiftUI's `ProgressView` with custom styling matching the app's design tokens
+- Export changelog uses `SkillChangelogGenerator.generateAuditorMarkdown()` for cryptographically verifiable output
+- Error handling follows the continue-on-failure pattern used elsewhere in the codebase (e.g., `MultiTargetInstallOutcome`)
+- All bulk actions are gated by the `bulkActions` feature flag (default: true)
+`─────────────────────────────────────────────────`
+
+**Files Modified:**
+- `Sources/SkillsInspector/Remote/RemoteViewModel.swift` - Added bulk operation progress tracking and export changelog functionality
+- `Sources/SkillsInspector/Remote/RemoteView.swift` - Enhanced bulk actions UI with progress indication and export button
+- `prd.json` - Updated S13 `passes: true`
+
+**Acceptance Criteria Verification:**
+1. ✅ "Verify All" triggers verification for all installed skills - `verifyAll()` method (lines 294-316)
+2. ✅ "Update All Verified" updates only skills with valid signatures - `updateAllVerified()` method (lines 318-359) filters for updates available and checks manifests
+3. ✅ "Export Changelog" generates markdown file of all ledger entries - `exportChangelog()` method (lines 361-387) uses ledger and saves via NSSavePanel
+4. ✅ Progress indication for bulk operations - `BulkOperationProgress` struct (lines 563-587) and `bulkOperationProgressView()` (lines 727-754)
+5. ✅ Error handling continues on individual failures - `updateAllVerified()` uses do-catch to track failures and continue processing (lines 335-347)
+
+<ralph>DONE</ralph>

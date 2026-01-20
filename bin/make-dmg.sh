@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Build a simple DMG for sTools with a link to /Applications.
-# Usage: bin/make-dmg.sh [.build/release/sTools.app] [sTools-macos.dmg]
+# Usage: bin/make-dmg.sh [.build/release/SkillsInspector.app] [SkillsInspector-macos.dmg]
 
-APP_SRC="${1:-.build/release/sTools.app}"
-DMG_NAME="${2:-sTools-macos.dmg}"
+APP_SRC="${1:-.build/release/SkillsInspector.app}"
+DMG_NAME="${2:-SkillsInspector-macos.dmg}"
 VOL_NAME="sTools"
 
 if [[ ! -d "$APP_SRC" ]]; then

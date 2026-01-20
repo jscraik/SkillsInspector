@@ -10,12 +10,14 @@ struct SettingsView: View {
         case general = "General"
         case editor = "Editor"
         case appearance = "Appearance"
-        
+        case privacy = "Privacy"
+
         var icon: String {
             switch self {
             case .general: return "gearshape"
             case .editor: return "pencil"
             case .appearance: return "paintbrush"
+            case .privacy: return "hand.raised.fill"
             }
         }
     }
@@ -30,18 +32,24 @@ struct SettingsView: View {
                         Label(SettingsTab.general.rawValue, systemImage: SettingsTab.general.icon)
                     }
                     .tag(SettingsTab.general)
-                
+
                 EditorTabView(selectedEditor: $selectedEditor)
                     .tabItem {
                         Label(SettingsTab.editor.rawValue, systemImage: SettingsTab.editor.icon)
                     }
                     .tag(SettingsTab.editor)
-                
+
                 AppearanceTabView()
                     .tabItem {
                         Label(SettingsTab.appearance.rawValue, systemImage: SettingsTab.appearance.icon)
                     }
                     .tag(SettingsTab.appearance)
+
+                PrivacyTabView()
+                    .tabItem {
+                        Label(SettingsTab.privacy.rawValue, systemImage: SettingsTab.privacy.icon)
+                    }
+                    .tag(SettingsTab.privacy)
             }
             .padding(0)
         }
@@ -69,6 +77,7 @@ struct SettingsView: View {
 
 struct GeneralTabView: View {
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = false
+    @AppStorage("useSharedSkillsRoot") private var useSharedSkillsRoot = false
     @AppStorage("showFileCounts") private var showFileCounts = true
     @AppStorage("confirmDeletion") private var confirmDeletion = true
     
@@ -94,6 +103,19 @@ struct GeneralTabView: View {
                     Text("Auto-scan on launch")
                         .font(.callout)
                     Text("Automatically start scanning when the app launches")
+                        .captionText()
+                        .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            
+            Divider()
+            
+            Toggle(isOn: $useSharedSkillsRoot) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Single source of truth")
+                        .font(.callout)
+                    Text("Use the first Codex root as the master for all agents. Sync/Index won't compare agents in this mode.")
                         .captionText()
                         .foregroundStyle(DesignTokens.Colors.Text.secondary)
                 }
@@ -334,5 +356,279 @@ struct AppearanceTabView: View {
         case "red": return .red
         default: return DesignTokens.Colors.Accent.blue
         }
+    }
+}
+
+// MARK: - Privacy Tab
+
+struct PrivacyTabView: View {
+    @AppStorage("telemetryOptIn") private var telemetryOptIn = false
+    @State private var showingPrivacyDetails = false
+    @State private var showingEnableAlert = false
+
+    private var telemetryURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("SkillsInspector", isDirectory: true)
+            .appendingPathComponent("telemetry.jsonl") ?? FileManager.default.temporaryDirectory
+            .appendingPathComponent("telemetry.jsonl")
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: DesignTokens.Spacing.sm) {
+                telemetryCard
+                privacyPolicyCard
+            }
+            .padding(DesignTokens.Spacing.sm)
+        }
+        .background(DesignTokens.Colors.Background.secondary)
+        .alert("Enable Telemetry", isPresented: $showingEnableAlert) {
+            Button("Cancel", role: .cancel) {
+                telemetryOptIn = false
+            }
+            Button("Enable") {
+                telemetryOptIn = true
+            }
+        } message: {
+            Text(PRIVACY_NOTICE)
+        }
+    }
+
+    private var telemetryCard: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+            Label("Telemetry", systemImage: "chart.bar")
+                .heading3()
+
+            Toggle(isOn: Binding(
+                get: { telemetryOptIn },
+                set: { newValue in
+                    if newValue {
+                        showingEnableAlert = true
+                    } else {
+                        telemetryOptIn = false
+                    }
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Share anonymous usage data")
+                        .font(.callout)
+                    Text("Help improve SkillsInspector by sharing anonymous metrics")
+                        .captionText()
+                        .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+
+            Divider()
+                .padding(.vertical, DesignTokens.Spacing.xxxs)
+
+            telemetryMetrics
+        }
+        .padding(.horizontal, DesignTokens.Spacing.xs)
+        .padding(.vertical, DesignTokens.Spacing.xxxs)
+        .cardStyle(tint: DesignTokens.Colors.Accent.blue)
+    }
+
+    private var telemetryMetrics: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
+            Text("What we collect:")
+                .font(.caption)
+                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.Colors.Status.success)
+                    Text("Verified install count")
+                        .captionText()
+                }
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.Colors.Status.success)
+                    Text("Blocked download count")
+                        .captionText()
+                }
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.Colors.Status.success)
+                    Text("Publish run count")
+                        .captionText()
+                }
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.Colors.Status.success)
+                    Text("App version")
+                        .captionText()
+                }
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.Colors.Status.error)
+                    Text("No personally identifiable information")
+                        .captionText()
+                }
+            }
+        }
+    }
+
+    private var privacyPolicyCard: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+            Label("Data Retention", systemImage: "clock")
+                .heading3()
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxxs) {
+                Text("Telemetry data is:")
+                    .font(.caption)
+                    .foregroundStyle(DesignTokens.Colors.Text.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.Colors.Accent.blue)
+                        Text("Stored locally on your Mac")
+                            .captionText()
+                    }
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar")
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.Colors.Accent.blue)
+                        Text("Automatically deleted after 30 days")
+                            .captionText()
+                    }
+                    HStack(spacing: 6) {
+                        Image(systemName: "eye.slash.fill")
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.Colors.Accent.blue)
+                        Text("Paths and user IDs are redacted")
+                            .captionText()
+                    }
+                }
+            }
+
+            Divider()
+                .padding(.vertical, DesignTokens.Spacing.xxxs)
+
+            Button("View Full Privacy Notice") {
+                showingPrivacyDetails = true
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .sheet(isPresented: $showingPrivacyDetails) {
+                PrivacyNoticeSheet()
+            }
+        }
+        .padding(.horizontal, DesignTokens.Spacing.xs)
+        .padding(.vertical, DesignTokens.Spacing.xxxs)
+        .cardStyle(tint: DesignTokens.Colors.Accent.purple)
+    }
+}
+
+// MARK: - Privacy Notice Sheet
+
+struct PrivacyNoticeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                    privacyNoticeContent
+                }
+                .padding(DesignTokens.Spacing.md)
+            }
+            .background(DesignTokens.Colors.Background.secondary)
+            .navigationTitle("Privacy Notice")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .frame(width: 500, height: 400)
+    }
+
+    private var privacyNoticeContent: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
+            Text(PRIVACY_NOTICE)
+                .font(.body)
+                .foregroundStyle(DesignTokens.Colors.Text.primary)
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                Text("Data Collected")
+                    .font(.headline)
+                    .foregroundStyle(DesignTokens.Colors.Accent.blue)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    bulletPoint("Number of verified skill installs")
+                    bulletPoint("Number of blocked downloads (with reason category)")
+                    bulletPoint("Number of publish runs (success/failure)")
+                    bulletPoint("SkillsInspector app version")
+                    bulletPoint("Anonymized installer ID (random 8-character identifier)")
+                }
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                Text("What We Don't Collect")
+                    .font(.headline)
+                    .foregroundStyle(DesignTokens.Colors.Status.success)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    bulletPoint("No usernames or real names")
+                    bulletPoint("No file paths or directory names")
+                    bulletPoint("No skill names or content")
+                    bulletPoint("No IP addresses or location data")
+                    bulletPoint("No device identifiers or serial numbers")
+                }
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.xxs) {
+                Text("Data Retention")
+                    .font(.headline)
+                    .foregroundStyle(DesignTokens.Colors.Accent.purple)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    bulletPoint("All telemetry data is stored locally")
+                    bulletPoint("Data is automatically deleted after 30 days")
+                    bulletPoint("You can clear telemetry at any time from Settings")
+                    bulletPoint("Disabling telemetry stops all data collection")
+                }
+            }
+
+            Text("By enabling telemetry, you help improve SkillsInspector while maintaining your privacy.")
+                .font(.callout)
+                .foregroundStyle(DesignTokens.Colors.Text.secondary)
+                .padding(.top, DesignTokens.Spacing.xs)
+        }
+    }
+
+    private func bulletPoint(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("•")
+                .foregroundStyle(DesignTokens.Colors.Accent.blue)
+            Text(text)
+                .font(.body)
+                .foregroundStyle(DesignTokens.Colors.Text.primary)
+        }
+    }
+}
+
+// MARK: - Privacy Notice Text
+
+private let PRIVACY_NOTICE = """
+SkillsInspector collects anonymous usage data to help improve the app. This data is stored locally on your Mac and automatically deleted after 30 days.
+
+We do not collect any personally identifiable information (PII). File paths, usernames, and skill names are redacted before storage.
+"""
+
+// MARK: - Preview
+
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        SettingsView()
     }
 }

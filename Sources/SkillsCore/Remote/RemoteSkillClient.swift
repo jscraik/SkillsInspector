@@ -10,6 +10,7 @@ public struct RemoteSkillClient: Sendable {
     public var fetchDetail: @Sendable (_ slug: String) async throws -> RemoteSkillOwner?
     public var fetchLatestVersion: @Sendable (_ slug: String) async throws -> String?
     public var fetchLatestVersionInfo: @Sendable (_ slug: String) async throws -> (version: String?, changelog: String?)
+    public var fetchKeyset: @Sendable () async throws -> RemoteKeyset?
 
     public init(
         fetchLatest: @Sendable @escaping (_ limit: Int) async throws -> [RemoteSkill],
@@ -19,7 +20,8 @@ public struct RemoteSkillClient: Sendable {
         fetchPreview: @Sendable @escaping (_ slug: String, _ version: String?) async throws -> RemoteSkillPreview?,
         fetchDetail: @Sendable @escaping (_ slug: String) async throws -> RemoteSkillOwner?,
         fetchLatestVersion: @Sendable @escaping (_ slug: String) async throws -> String?,
-        fetchLatestVersionInfo: @Sendable @escaping (_ slug: String) async throws -> (version: String?, changelog: String?)
+        fetchLatestVersionInfo: @Sendable @escaping (_ slug: String) async throws -> (version: String?, changelog: String?),
+        fetchKeyset: @Sendable @escaping () async throws -> RemoteKeyset?
     ) {
         self.fetchLatest = fetchLatest
         self.search = search
@@ -29,6 +31,7 @@ public struct RemoteSkillClient: Sendable {
         self.fetchDetail = fetchDetail
         self.fetchLatestVersion = fetchLatestVersion
         self.fetchLatestVersionInfo = fetchLatestVersionInfo
+        self.fetchKeyset = fetchKeyset
     }
 }
 
@@ -144,6 +147,17 @@ public extension RemoteSkillClient {
                 try validate(response: response)
                 let decoded = try decoder.decode(SkillResponse.self, from: data)
                 return (decoded.latestVersion?.version, decoded.latestVersion?.changelog)
+            },
+            fetchKeyset: {
+                let url = baseURL.appendingPathComponent("/api/v1/keys")
+                let (data, response) = try await session.data(from: url)
+                if let http = response as? HTTPURLResponse, http.statusCode == 404 {
+                    return nil
+                }
+                try validate(response: response)
+                let keysetDecoder = JSONDecoder()
+                keysetDecoder.dateDecodingStrategy = .iso8601
+                return try keysetDecoder.decode(RemoteKeyset.self, from: data)
             }
         )
     }
@@ -162,8 +176,8 @@ public extension RemoteSkillClient {
             download: { _, _ in
                 FileManager.default.temporaryDirectory
             },
-            fetchManifest: { _, _ in
-                RemoteArtifactManifest(sha256: String(repeating: "a", count: 64), size: 1024, signature: "mock", signerKeyId: "dev-key", trustedSigners: ["dev-key"], revokedKeys: nil, targets: [.codex, .claude, .copilot], builtWith: nil)
+            fetchManifest: { slug, version in
+                RemoteArtifactManifest(name: slug, version: version ?? "1.0.0", sha256: String(repeating: "a", count: 64), size: 1024, signature: "mock", signerKeyId: "dev-key", trustedSigners: ["dev-key"], revokedKeys: nil, builtWith: nil, targets: [.codex, .claude, .copilot])
             },
             fetchPreview: { slug, version in
                 RemoteSkillPreview(
@@ -172,7 +186,7 @@ public extension RemoteSkillClient {
                     skillMarkdown: "# \(slug)\n\nPreview content for \(slug).",
                     changelog: "Changes in \(version ?? "1.0.0"):\n- Example change",
                     signerKeyId: "dev-key",
-                    manifest: RemoteArtifactManifest(sha256: String(repeating: "a", count: 64), size: 1024, signature: "mock", signerKeyId: "dev-key", trustedSigners: ["dev-key"], revokedKeys: nil, targets: [.codex, .claude, .copilot], builtWith: nil),
+                    manifest: RemoteArtifactManifest(name: slug, version: version ?? "1.0.0", sha256: String(repeating: "a", count: 64), size: 1024, signature: "mock", signerKeyId: "dev-key", trustedSigners: ["dev-key"], revokedKeys: nil, builtWith: nil, targets: [.codex, .claude, .copilot]),
                     etag: "mock-etag",
                     fetchedAt: Date()
                 )
@@ -189,6 +203,19 @@ public extension RemoteSkillClient {
                 let version = pool.first(where: { $0.slug == slug })?.latestVersion
                 let changelog = version.map { "Changes in v\($0):\n- Improved telemetry\n- Fixed sync bugs\n- Added Remote tab polish" }
                 return (version, changelog)
+            },
+            fetchKeyset: {
+                RemoteKeyset(
+                    keys: [
+                        RemoteTrustStore.TrustedKey(keyId: "dev-key", publicKeyBase64: "ZmFrZS1rZXk=", allowedSlugs: nil)
+                    ],
+                    revokedKeyIds: [],
+                    expiresAt: Date().addingTimeInterval(86400),
+                    signature: nil,
+                    signatureAlgorithm: "ed25519",
+                    signedAt: Date(),
+                    keysetVersion: 1
+                )
             }
         )
     }

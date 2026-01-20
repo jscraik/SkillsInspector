@@ -3,6 +3,7 @@
 ## Intent
 
 Use this pattern for a scalable, multi-platform tab architecture with:
+
 - a single source of truth for tab identity and content,
 - platform-specific tab sets and sidebar sections,
 - dynamic tabs sourced from data,
@@ -12,11 +13,14 @@ Use this pattern for a scalable, multi-platform tab architecture with:
 
 - `AppTab` enum defines identity, labels, icons, and content builder.
 - `SidebarSections` enum groups tabs for sidebar sections.
-- `AppView` owns the `TabView` and selection binding, and routes tab changes through `updateTab`.
+- `AppView` owns the `TabView` and selection binding, and routes tab changes
+
+  through `updateTab`.
 
 ## Example: custom binding with side effects
 
-Use this when tab selection needs side effects, like intercepting a special tab to perform an action instead of changing selection.
+Use this when tab selection needs side effects, like intercepting a special
+tab to perform an action instead of changing selection.
 
 ```swift
 @MainActor
@@ -96,19 +100,34 @@ struct AppView: View {
 
 - Centralize tab identity and content in `AppTab` with `makeContentView(...)`.
 - Use `Tab(value:)` with `selection` binding for state-driven tab selection.
-- Route selection changes through `updateTab` to handle special tabs and scroll-to-top behavior.
+- Route selection changes through `updateTab` to handle special tabs and
+
+  scroll-to-top behavior.
+
 - Use `TabSection` + `.tabPlacement(.sidebarOnly)` for sidebar structure.
-- Use `.tabPlacement(.pinned)` in `AppTab.tabPlacement` for a single pinned tab; this is commonly used for iOS 26 `.searchable` tab content, but can be used for any tab.
+- Use `.tabPlacement(.pinned)` in `AppTab.tabPlacement` for a single pinned
+
+  tab; this is commonly used for iOS 26 `.searchable` tab content, but can be
+  used for any tab.
 
 ## Dynamic tabs pattern
 
 - `SidebarSections` handles dynamic data tabs.
-- `AppTab.anyTimelineFilter(filter:)` wraps dynamic tabs in a single enum case.
+- `AppTab.anyTimelineFilter(filter:)` wraps dynamic tabs in a single enum
+
+  case.
+
 - The enum provides label/icon/title for dynamic tabs via the filter type.
 
 ## Pitfalls
 
-- Avoid adding ViewModels for tabs; keep state local or in `@Observable` services.
+- Avoid adding ViewModels for tabs; keep state local or in `@Observable`
+
+  services.
+
 - Do not nest `@Observable` objects inside other `@Observable` objects.
-- Ensure `AppTab.id` values are stable; dynamic cases should hash on stable IDs.
+- Ensure `AppTab.id` values are stable; dynamic cases should hash on stable
+
+  IDs.
+
 - Special tabs (compose) should not change selection.

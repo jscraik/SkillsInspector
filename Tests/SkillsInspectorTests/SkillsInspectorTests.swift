@@ -71,7 +71,7 @@ final class InspectorViewModelTests: XCTestCase {
 
         // Start scan
         let scanTask = Task {
-            await sut.scan()
+            await sut.scan(userInitiated: true)
         }
 
         // Wait a bit then cancel
@@ -106,7 +106,7 @@ final class InspectorViewModelTests: XCTestCase {
         sut.claudeRoot = claudeRoot
 
         // First scan
-        await sut.scan()
+        await sut.scan(userInitiated: true)
         // Wait for MainActor state updates to complete
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let firstFindings = sut.findings
@@ -116,7 +116,7 @@ final class InspectorViewModelTests: XCTestCase {
         try await Task.sleep(nanoseconds: 10_000_000)
 
         // Second scan
-        await sut.scan()
+        await sut.scan(userInitiated: true)
         // Wait for MainActor state updates to complete
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let secondFindings = sut.findings
@@ -156,7 +156,7 @@ final class InspectorViewModelTests: XCTestCase {
         var filesScannedValues: [Int] = []
 
         let progressTask = Task {
-            await sut.scan()
+            await sut.scan(userInitiated: true)
         }
 
         // Sample progress during scan
@@ -197,7 +197,7 @@ final class InspectorViewModelTests: XCTestCase {
         sut.codexRoot = codexRoot
         sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
 
-        await sut.scan()
+        await sut.scan(userInitiated: true)
         // Wait for MainActor state updates to complete
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
 
@@ -233,7 +233,7 @@ final class InspectorViewModelTests: XCTestCase {
         sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
         sut.recursive = true
 
-        await sut.scan()
+        await sut.scan(userInitiated: true)
 
         // Verify findings are sorted
         var previousSeverity: String?
@@ -268,7 +268,7 @@ final class InspectorViewModelTests: XCTestCase {
         sut.codexRoot = nonExistent
         sut.claudeRoot = nonExistent
 
-        await sut.scan()
+        await sut.scan(userInitiated: true)
         // Wait for MainActor state updates to complete
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
 
@@ -291,7 +291,7 @@ final class InspectorViewModelTests: XCTestCase {
         sut.codexRoot = codexRoot
         sut.claudeRoot = tempDirectory.appendingPathComponent("claude", isDirectory: true)
 
-        await sut.scan()
+        await sut.scan(userInitiated: true)
         // Wait for MainActor state updates to complete
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
 

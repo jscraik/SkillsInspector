@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> IDLE: app opened
+    IDLE --> PREVIEWING: select skill
+    PREVIEWING --> READY_TO_DOWNLOAD: preview loaded
+    READY_TO_DOWNLOAD --> DOWNLOADING: user confirms
+    DOWNLOADING --> VERIFYING: download complete
+    VERIFYING --> INSTALLING: signature + hash valid
+    VERIFYING --> VERIFICATION_FAILED: signature/hash invalid
+    INSTALLING --> ADAPTING: staged install complete
+    ADAPTING --> COMPLETE: per-target validations pass
+    ADAPTING --> ROLLBACK: any target failed
+    VERIFICATION_FAILED --> READY_TO_DOWNLOAD: user retries
+    ROLLBACK --> READY_TO_DOWNLOAD: user retries
+    COMPLETE --> IDLE: user closes

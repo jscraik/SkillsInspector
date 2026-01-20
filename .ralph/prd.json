@@ -1,0 +1,54 @@
+{
+  "project": "stools-ui-stability",
+  "branchName": "ralph",
+  "stories": [
+    {
+      "id": 1,
+      "priority": 1,
+      "title": "Clear stale Validate detail state to prevent flicker",
+      "description": "Reset Validate detail selection and view model state on dataset or route changes to avoid rendering stale detail content and brief blank states.",
+      "acceptance": [
+        "Changing the selected skill or data source clears any previous detail view state before new content renders",
+        "Switching between Validate list items never shows a blank detail pane",
+        "No stale detail content appears when the underlying Validate dataset reloads"
+      ],
+      "passes": true
+    },
+    {
+      "id": 2,
+      "priority": 2,
+      "title": "Stabilize Sync list/detail loading lifecycle",
+      "description": "Make Sync list and detail panes resilient to async loading by ensuring a single source of truth for selection and loading state, with deterministic transitions.",
+      "acceptance": [
+        "Sync list selection persists through background refresh without collapsing the detail view",
+        "Detail view renders a consistent loading/empty/error state without flicker",
+        "Async reloads do not trigger a full list/detail teardown"
+      ],
+      "passes": true
+    },
+    {
+      "id": 3,
+      "priority": 3,
+      "title": "Surface Search index errors and empty states",
+      "description": "Expose clear UI states for Search indexing failures and empty results so users understand what to do next.",
+      "acceptance": [
+        "Search shows a dedicated error state when indexing fails, with actionable guidance",
+        "Search shows an explicit empty state when no results exist",
+        "Error and empty states are visually distinct from loading state"
+      ],
+      "passes": true
+    },
+    {
+      "id": 4,
+      "priority": 4,
+      "title": "Resolve disabled Security/Search actions",
+      "description": "Either implement the currently disabled Security/Search actions or remove them from the UI to avoid dead controls.",
+      "acceptance": [
+        "All visible Security/Search actions are functional",
+        "Disabled controls are removed unless a concrete implementation is shipped",
+        "Any remaining unavailable actions provide a clear reason and next step"
+      ],
+      "passes": true
+    }
+  ]
+}

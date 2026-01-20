@@ -2,7 +2,8 @@
 
 ## Intent
 
-Use `searchable` to add native search UI with optional scopes and async results.
+Use `searchable` to add native search UI with optional scopes and async
+results.
 
 ## Core patterns
 

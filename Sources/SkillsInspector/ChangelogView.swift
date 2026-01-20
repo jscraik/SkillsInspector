@@ -49,7 +49,7 @@ struct ChangelogView: View {
                     } label: {
                         Label("Import", systemImage: "square.and.arrow.down")
                     }
-                    .buttonStyle(.customGlass)
+                    .buttonStyle(.clean)
                     
                     Button {
                         Task { await viewModel.generateChangelog() }
@@ -64,7 +64,7 @@ struct ChangelogView: View {
                         }
                         .fontWeight(.bold)
                     }
-                    .buttonStyle(.customGlassProminent)
+                    .buttonStyle(.cleanProminent)
                     .tint(DesignTokens.Colors.Accent.blue)
                     .disabled(viewModel.isLoading)
                 }
@@ -101,7 +101,7 @@ struct ChangelogView: View {
             Image(systemName: "doc.text.badge.plus")
                 .font(.system(size: 48))
                 .foregroundStyle(DesignTokens.Colors.Icon.tertiary)
-                .symbolEffect(.bounce, options: .nonRepeating, value: viewModel.isGenerating)
+                .symbolEffect(.bounce, options: .nonRepeating, value: viewModel.isLoading)
             
             VStack(spacing: 4) {
                 Text("No Release Notes Generated")
@@ -119,7 +119,7 @@ struct ChangelogView: View {
                 Text("Analyze Ledger History")
                     .fontWeight(.bold)
             }
-            .buttonStyle(.customGlassProminent)
+            .buttonStyle(.cleanProminent)
             .tint(DesignTokens.Colors.Accent.blue)
         }
         .frame(maxWidth: .infinity)
@@ -143,7 +143,7 @@ struct ChangelogView: View {
                     } label: {
                         Label("Save File", systemImage: "checkmark.circle.fill")
                     }
-                    .buttonStyle(.customGlass)
+                    .buttonStyle(.clean)
                     .foregroundStyle(DesignTokens.Colors.Status.success)
                     
                     Button {
@@ -151,7 +151,7 @@ struct ChangelogView: View {
                     } label: {
                         Image(systemName: "doc.on.doc.fill")
                     }
-                    .buttonStyle(.customGlass)
+                    .buttonStyle(.clean)
                     .help("Copy to clipboard")
                 }
             }
@@ -231,6 +231,8 @@ struct ChangelogView: View {
     }
 }
 
-#Preview {
-    ChangelogView(viewModel: ChangelogViewModel(ledger: nil))
+struct ChangelogView_Previews: PreviewProvider {
+    static var previews: some View {
+        ChangelogView(viewModel: ChangelogViewModel(ledger: nil))
+    }
 }
