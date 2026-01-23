@@ -62,10 +62,12 @@ public enum SkillIndexer {
         var entries: [SkillIndexEntry] = []
 
         func collect(agent: AgentKind, root: URL) {
-            let scanRoots = [ScanRoot(agent: agent, rootURL: root, recursive: recursive, maxDepth: maxDepth)]
+            // Resolve symlinks at the root level
+            let resolvedRoot = root.resolvingSymlinksInPath()
+            let scanRoots = [ScanRoot(agent: agent, rootURL: resolvedRoot, recursive: recursive, maxDepth: maxDepth)]
             let files = SkillsScanner.findSkillFiles(roots: scanRoots, excludeDirNames: Set(excludes), excludeGlobs: excludeGlobs)[scanRoots[0]] ?? []
             for f in files {
-                guard let doc = SkillLoader.load(agent: agent, rootURL: root, skillFileURL: f) else { continue }
+                guard let doc = SkillLoader.load(agent: agent, rootURL: resolvedRoot, skillFileURL: f) else { continue }
                 let name = doc.name ?? f.deletingLastPathComponent().lastPathComponent
                 let desc = (doc.description ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 let attrs = try? FileManager.default.attributesOfItem(atPath: f.path)

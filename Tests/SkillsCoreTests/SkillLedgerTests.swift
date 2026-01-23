@@ -1,5 +1,6 @@
 import XCTest
 import SkillsCore
+import SQLite3
 
 final class SkillLedgerTests: XCTestCase {
     func testLedgerRecordsAndFetchesEvents() async throws {
@@ -656,5 +657,107 @@ final class SkillLedgerTests: XCTestCase {
         XCTAssertEqual(fetched.count, 1)
         XCTAssertEqual(fetched.first?.manifestSHA256, "deadbeefcafe1234")
         XCTAssertEqual(fetched.first?.signerKeyId, "ed25519:master-key")
+    }
+}
+
+final class AnalyticsCacheSchemaTests: XCTestCase {
+    func testAnalyticsCacheTableExists() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let ledgerURL = tempDir.appendingPathComponent("ledger.sqlite3")
+        _ = try SkillLedger(url: ledgerURL)
+
+        // Open the database and check if analytics_cache table exists
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(ledgerURL.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            XCTFail("Failed to open database")
+            return
+        }
+        defer { sqlite3_close(db) }
+
+        // Query sqlite_master to check if table exists
+        let sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='analytics_cache';"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+            XCTFail("Failed to prepare statement")
+            return
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        let result = sqlite3_step(stmt)
+        XCTAssertEqual(result, SQLITE_ROW, "analytics_cache table should exist")
+    }
+
+    func testAnalyticsCacheTableHasCorrectColumns() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let ledgerURL = tempDir.appendingPathComponent("ledger.sqlite3")
+        _ = try SkillLedger(url: ledgerURL)
+
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(ledgerURL.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            XCTFail("Failed to open database")
+            return
+        }
+        defer { sqlite3_close(db) }
+
+        let sql = "PRAGMA table_info(analytics_cache);"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+            XCTFail("Failed to prepare statement")
+            return
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        var columns: [String] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let colName = sqlite3_column_text(stmt, 1) {
+                columns.append(String(cString: colName))
+            }
+        }
+
+        XCTAssertTrue(columns.contains("id"), "Should have id column")
+        XCTAssertTrue(columns.contains("cache_key"), "Should have cache_key column")
+        XCTAssertTrue(columns.contains("generated_at"), "Should have generated_at column")
+        XCTAssertTrue(columns.contains("expires_at"), "Should have expires_at column")
+        XCTAssertTrue(columns.contains("metrics_json"), "Should have metrics_json column")
+    }
+
+    func testAnalyticsCacheIndexesExist() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let ledgerURL = tempDir.appendingPathComponent("ledger.sqlite3")
+        _ = try SkillLedger(url: ledgerURL)
+
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(ledgerURL.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            XCTFail("Failed to open database")
+            return
+        }
+        defer { sqlite3_close(db) }
+
+        let sql = "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='analytics_cache';"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+            XCTFail("Failed to prepare statement")
+            return
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        var indexes: [String] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let indexName = sqlite3_column_text(stmt, 0) {
+                indexes.append(String(cString: indexName))
+            }
+        }
+
+        XCTAssertTrue(indexes.contains("idx_analytics_cache_key"), "Should have index on cache_key")
+        XCTAssertTrue(indexes.contains("idx_analytics_cache_expires"), "Should have index on expires_at")
     }
 }

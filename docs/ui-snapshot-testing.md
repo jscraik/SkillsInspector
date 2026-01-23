@@ -23,6 +23,7 @@ change.
 
 - Run only snapshots: `swift test --parallel --filter UISnapshotsTests`
 - Run full suite: `swift test --parallel`
+- Chart snapshots (`ALLOW_CHARTS_SNAPSHOT=1`) may crash in headless `swift test` with signal 6; if so, run the chart snapshot test in Xcode GUI to capture diagnostics.
 
 ## Updating hashes (when visuals intentionally change)
 

@@ -739,3 +739,24 @@ struct StatusBarView_Previews: PreviewProvider {
         )
     }
 }
+
+struct SkeletonSkillRow: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: DesignTokens.Spacing.xxs) {
+            Circle()
+                .fill(DesignTokens.Colors.Background.secondary)
+                .frame(width: 32, height: 32)
+            
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.hair) {
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .fill(DesignTokens.Colors.Background.secondary)
+                    .frame(width: 120, height: 12)
+                
+                RoundedRectangle(cornerRadius: DesignTokens.Radius.sm)
+                    .fill(DesignTokens.Colors.Background.secondary)
+                    .frame(width: 80, height: 10)
+            }
+        }
+        .padding(DesignTokens.Spacing.xxxs)
+    }
+}

@@ -1,5 +1,4 @@
 import SwiftUI
-import AStudioFoundation
 #if canImport(UIKit)
 import UIKit
 #else

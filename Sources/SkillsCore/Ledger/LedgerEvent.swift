@@ -1,6 +1,74 @@
 import Foundation
 
-public struct LedgerEvent: Identifiable, Sendable {
+public struct LedgerEvent: Identifiable, Sendable, Codable {
+    // MARK: - PII Redaction for Diagnostic Bundles
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case timestamp
+        case eventType
+        case skillName
+        case skillSlug
+        case version
+        case agent
+        case status
+        case note
+        case source
+        case verification
+        case manifestSHA256
+        case targetPath
+        case targets
+        case perTargetResults
+        case signerKeyId
+        case timeoutCount
+        case retryCount
+        case timeoutDuration
+    }
+
+    // Custom encoding to redact PII from file paths
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(eventType, forKey: .eventType)
+        try container.encode(skillName, forKey: .skillName)
+        try container.encodeIfPresent(skillSlug, forKey: .skillSlug)
+        try container.encodeIfPresent(version, forKey: .version)
+        try container.encodeIfPresent(agent, forKey: .agent)
+        try container.encode(status, forKey: .status)
+
+        // Redact PII from note field
+        if let note = note {
+            let redactedNote = TelemetryRedactor.scrubPII(note)
+            try container.encode(redactedNote, forKey: .note)
+        } else {
+            try container.encodeIfPresent(note as String?, forKey: .note)
+        }
+
+        // Redact home directory from source (may contain file paths)
+        if let source = source {
+            try container.encode(TelemetryRedactor.redactPath(source), forKey: .source)
+        } else {
+            try container.encodeIfPresent(source as String?, forKey: .source)
+        }
+
+        try container.encodeIfPresent(verification, forKey: .verification)
+        try container.encodeIfPresent(manifestSHA256, forKey: .manifestSHA256)
+
+        // Redact home directory from targetPath (file path)
+        if let targetPath = targetPath {
+            try container.encode(TelemetryRedactor.redactPath(targetPath), forKey: .targetPath)
+        } else {
+            try container.encodeIfPresent(targetPath as String?, forKey: .targetPath)
+        }
+
+        try container.encodeIfPresent(targets, forKey: .targets)
+        try container.encodeIfPresent(perTargetResults, forKey: .perTargetResults)
+        try container.encodeIfPresent(signerKeyId, forKey: .signerKeyId)
+        try container.encodeIfPresent(timeoutCount, forKey: .timeoutCount)
+        try container.encodeIfPresent(retryCount, forKey: .retryCount)
+        try container.encodeIfPresent(timeoutDuration, forKey: .timeoutDuration)
+    }
     public let id: Int64
     public let timestamp: Date
     public let eventType: LedgerEventType

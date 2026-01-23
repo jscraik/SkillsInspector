@@ -14,6 +14,45 @@ a SwiftPM command plugin so external projects can run the scan in CI. Users
 will scan repo or home skill roots, detect missing/differing
 skills, and view results in text/JSON or an interactive UI.
 
+## Reconciled Scope (2026-01-22)
+
+This section consolidates overlapping ExecPlans into a single correctness-first scope.
+
+### In Scope (Now)
+
+- Stabilize core validation, sync, index, and security scan flows.
+- Close validation gaps for remote verification pipeline (tests + deterministic build).
+- Ensure wiring/settings persistence and multi-root indexing remain correct.
+
+### Out of Scope / Deferred
+
+- CodexSkillManager parity expansion beyond already implemented remote verification flows until tests are green.
+- New UI affordances or additional remote browsing features until correctness gates pass.
+
+### Key Decisions & Tradeoffs
+
+- Prioritize correctness over speed/flexibility for v1 stabilization.
+- Avoid new dependencies unless required to unblock validation.
+
+### Risks & Mitigations
+
+- Risk: Remote verification tests fail due to dependency fetch/build path.
+  Mitigation: Pin/override dependency sources and document deterministic build paths.
+- Risk: Scope drift across multiple ExecPlans.
+  Mitigation: Use this section as the single source of truth; avoid new plan docs.
+
+### Validation Gates (Must Pass)
+
+- `swift test` for core + remote verification paths.
+- CLI smoke: `skillsctl scan`/`sync-check` and remote command help.
+- UI snapshot checks when UI changes are involved.
+
+### Done When
+
+- Remote verification tests pass or have documented, time-boxed mitigations.
+- Core scan/sync/index flows are stable and verified.
+- Documentation linting plan is scheduled or implemented.
+
 ## Progress
 
 - [x] (2026-01-10) Scaffold SwiftPM package structure (Products: SkillsCore,
@@ -56,6 +95,11 @@ skills, and view results in text/JSON or an interactive UI.
 
   output) instead of linking `SkillsCore`, because SwiftPM command plugins
   cannot depend on library targets.
+
+## Decision Log Update (2026-01-22)
+
+- Deferred CodexSkillManager parity expansion until remote verification validation gates pass.
+- Marked remote verification validation task as blocked by dependency fetch/build-path failures.
 
 ## Outcomes & Retrospective
 

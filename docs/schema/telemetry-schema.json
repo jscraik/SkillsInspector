@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sTools Telemetry Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event",
+    "timestamp",
+    "tool_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1"]
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "fix_applied",
+        "fix_failed",
+        "sync_action_confirmed",
+        "sync_action_applied",
+        "sync_check",
+        "remote_install_success",
+        "remote_install_failed"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/fixApplied" },
+        { "$ref": "#/$defs/fixFailed" },
+        { "$ref": "#/$defs/syncActionConfirmed" },
+        { "$ref": "#/$defs/syncActionApplied" },
+        { "$ref": "#/$defs/syncCheck" },
+        { "$ref": "#/$defs/remoteInstallSuccess" },
+        { "$ref": "#/$defs/remoteInstallFailed" }
+      ]
+    }
+  },
+  "$defs": {
+    "fixApplied": {
+      "type": "object",
+      "required": ["rule_id", "file_path", "automated"],
+      "properties": {
+        "rule_id": { "type": "string" },
+        "file_path": { "type": "string" },
+        "automated": { "type": "boolean" },
+        "result": { "type": "string", "enum": ["success"] }
+      },
+      "additionalProperties": false
+    },
+    "fixFailed": {
+      "type": "object",
+      "required": ["rule_id", "file_path", "automated", "error"],
+      "properties": {
+        "rule_id": { "type": "string" },
+        "file_path": { "type": "string" },
+        "automated": { "type": "boolean" },
+        "error": { "type": "string" },
+        "result": { "type": "string", "enum": ["failed", "not_applicable"] }
+      },
+      "additionalProperties": false
+    },
+    "syncActionConfirmed": {
+      "type": "object",
+      "required": ["action", "from_agent", "to_agent", "skill_name"],
+      "properties": {
+        "action": { "type": "string", "enum": ["copy", "bump_align"] },
+        "from_agent": { "type": "string" },
+        "to_agent": { "type": "string" },
+        "skill_name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "syncActionApplied": {
+      "type": "object",
+      "required": ["action", "from_agent", "to_agent", "skill_name", "result"],
+      "properties": {
+        "action": { "type": "string", "enum": ["copy", "bump_align"] },
+        "from_agent": { "type": "string" },
+        "to_agent": { "type": "string" },
+        "skill_name": { "type": "string" },
+        "result": { "type": "string", "enum": ["success", "failed"] }
+      },
+      "additionalProperties": false
+    },
+    "syncCheck": {
+      "type": "object",
+      "required": ["missing_count", "diff_count", "total_issues"],
+      "properties": {
+        "missing_count": { "type": "string" },
+        "diff_count": { "type": "string" },
+        "total_issues": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "remoteInstallSuccess": {
+      "type": "object",
+      "required": ["slug", "version"],
+      "properties": {
+        "slug": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "remoteInstallFailed": {
+      "type": "object",
+      "required": ["slug", "version"],
+      "properties": {
+        "slug": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

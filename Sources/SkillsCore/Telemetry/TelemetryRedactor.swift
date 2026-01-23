@@ -16,19 +16,14 @@ public enum TelemetryRedactor: Sendable {
     }
 
     /// Redact a URL by replacing the home directory with ~
+    /// - Returns: A redacted URL string, ensuring the home directory is always redacted
     public static func redactURL(_ url: URL) -> URL {
-        let homeDir = FileManager.default.homeDirectoryForCurrentUser
-        if url.path.hasPrefix(homeDir.path) {
-            var components = url.pathComponents
-            if homeDir.pathComponents.count < components.count {
-                components.removeFirst(homeDir.pathComponents.count - 1)
-                components[0] = "~"
-                if let redacted = URL(string: components.joined(separator: "/")) {
-                    return redacted
-                }
-            }
-        }
-        return url
+        // Use the path-based redaction which handles home directory replacement
+        let redactedPath = redactPath(url.path)
+
+        // Return a file URL with the redacted path
+        // This ensures the home directory is always redacted, even if URL construction fails
+        return URL(fileURLWithPath: redactedPath)
     }
 
     /// Hash a sensitive identifier (user ID, email, etc.) with salt for privacy
@@ -72,6 +67,14 @@ public enum TelemetryRedactor: Sendable {
     /// Redact a skill name by removing potential PII
     public static func redactSkillName(_ name: String) -> String {
         scrubPII(name)
+    }
+
+    /// Redact hostname to <redacted> for privacy
+    /// Hostnames can contain user-identifiable information (e.g., username-based naming)
+    public static func redactHostName(_ hostName: String) -> String {
+        // Always redact hostnames to prevent potential PII leakage
+        // Hostnames often contain usernames or device identifiers
+        return "<redacted>"
     }
 }
 

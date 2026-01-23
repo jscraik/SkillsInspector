@@ -26,6 +26,10 @@ public enum AppLog {
         case publishing = "Publishing"
         case sync = "Sync"
         case ui = "UI"
+        case diagnostics = "Diagnostics"
+        case analytics = "Analytics"
+        case dependencies = "Dependencies"
+        case security = "Security"
     }
 
     /// Create a logger for a specific category
@@ -43,6 +47,10 @@ public enum AppLog {
     public static let publishing = make(category: .publishing)
     public static let sync = make(category: .sync)
     public static let ui = make(category: .ui)
+    public static let diagnostics = make(category: .diagnostics)
+    public static let analytics = make(category: .analytics)
+    public static let dependencies = make(category: .dependencies)
+    public static let security = make(category: .security)
 }
 
 // MARK: - Legacy Print Bridge

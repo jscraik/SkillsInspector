@@ -120,6 +120,7 @@ struct LegacyContentView: View {
         case .validate:
             ValidateView(
                 viewModel: viewModel,
+                telemetry: dependencies.telemetry,
                 severityFilter: $severityFilter,
                 agentFilter: $agentFilter,
                 searchText: $searchText
@@ -136,6 +137,7 @@ struct LegacyContentView: View {
         case .sync:
             SyncView(
                 viewModel: syncVM,
+                telemetry: dependencies.telemetry,
                 codexRoots: $viewModel.codexRoots,
                 claudeRoot: $viewModel.claudeRoot,
                 copilotRoot: $viewModel.copilotRoot,

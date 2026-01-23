@@ -47,6 +47,95 @@ swift run skillsctl scan --codex ~/.codex/skills --claude ~/.claude/skills
 
 - `--skip-codex` / `--skip-claude`: Process only one agent's skills
 - `--allow-empty`: Exit 0 even when no SKILL.md files found
+- Telemetry event schema: `docs/schema/telemetry-schema.json` (fix + sync + remote install events)
+
+### Telemetry examples
+
+**Fix applied (automated):**
+
+```json
+{
+  "schema_version": "1",
+  "event": "fix_applied",
+  "timestamp": "2026-01-23T01:30:00Z",
+  "tool_version": "0.0.0",
+  "data": {
+    "rule_id": "skill-name-format",
+    "file_path": "/path/to/skill/SKILL.md",
+    "automated": true,
+    "result": "success"
+  }
+}
+```
+
+**Fix failed (not applicable):**
+
+```json
+{
+  "schema_version": "1",
+  "event": "fix_failed",
+  "timestamp": "2026-01-23T01:31:00Z",
+  "tool_version": "0.0.0",
+  "data": {
+    "rule_id": "frontmatter-structure",
+    "file_path": "/path/to/skill/SKILL.md",
+    "automated": true,
+    "error": "Original text mismatch - file may have changed",
+    "result": "not_applicable"
+  }
+}
+```
+
+**Sync action confirmed:**
+
+```json
+{
+  "schema_version": "1",
+  "event": "sync_action_confirmed",
+  "timestamp": "2026-01-23T01:32:00Z",
+  "tool_version": "0.0.0",
+  "data": {
+    "action": "copy",
+    "from_agent": "codex",
+    "to_agent": "claude",
+    "skill_name": "example-skill"
+  }
+}
+```
+
+**Sync action applied:**
+
+```json
+{
+  "schema_version": "1",
+  "event": "sync_action_applied",
+  "timestamp": "2026-01-23T01:33:00Z",
+  "tool_version": "0.0.0",
+  "data": {
+    "action": "bump_align",
+    "from_agent": "claude",
+    "to_agent": "codex",
+    "skill_name": "example-skill",
+    "result": "success"
+  }
+}
+```
+
+**Sync check summary:**
+
+```json
+{
+  "schema_version": "1",
+  "event": "sync_check",
+  "timestamp": "2026-01-23T01:34:00Z",
+  "tool_version": "0.0.0",
+  "data": {
+    "missing_count": "2",
+    "diff_count": "1",
+    "total_issues": "3"
+  }
+}
+```
 
 **Performance:**
 

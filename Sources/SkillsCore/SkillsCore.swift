@@ -38,6 +38,7 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
     public let line: Int?
     public let column: Int?
     public var suggestedFix: SuggestedFix?
+    public var errorContext: ErrorContext?
 
     public init(
         ruleID: RuleID,
@@ -47,7 +48,8 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
         message: String,
         line: Int? = nil,
         column: Int? = nil,
-        suggestedFix: SuggestedFix? = nil
+        suggestedFix: SuggestedFix? = nil,
+        errorContext: ErrorContext? = nil
     ) {
         self.ruleID = ruleID
         self.severity = severity
@@ -57,6 +59,7 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
         self.line = line
         self.column = column
         self.suggestedFix = suggestedFix
+        self.errorContext = errorContext
     }
 }
 

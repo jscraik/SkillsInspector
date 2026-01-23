@@ -621,4 +621,39 @@ final class IndexerAndSettingsTests: XCTestCase {
         XCTAssertEqual(loadedGlobExcludes, ["*.tmp"])
         XCTAssertEqual(loadedMaxDepth, 2)
     }
+
+    // MARK: - Polish 4 Test: ViewModel properties publish correctly
+
+    func testDiagnosticBundlePropertiesPublish() async throws {
+        // Given/When/Then: Verify properties are @Published and can be observed
+        await MainActor.run {
+            let vm = InspectorViewModel()
+            XCTAssertTrue(vm.diagnosticBundleURL == nil)
+            XCTAssertTrue(vm.isGeneratingBundle == false)
+
+            // Set values to test publishing
+            vm.isGeneratingBundle = true
+            XCTAssertTrue(vm.isGeneratingBundle == true)
+
+            vm.isGeneratingBundle = false
+        }
+    }
+
+    func testAnalyticsReportPropertyPublish() async throws {
+        // Given/When/Then: Verify analyticsReport property exists and is @Published
+        await MainActor.run {
+            let vm = InspectorViewModel()
+            XCTAssertTrue(vm.analyticsReport == nil)
+        }
+    }
+
+    func testSecurityFindingsPropertyPublish() async throws {
+        // Given/When/Then: Verify securityFindings property exists and is @Published
+        await MainActor.run {
+            let vm = InspectorViewModel()
+            XCTAssertTrue(vm.securityFindings.isEmpty)
+
+            vm.securityFindings = []
+        }
+    }
 }

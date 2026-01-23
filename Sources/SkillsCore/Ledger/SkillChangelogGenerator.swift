@@ -215,6 +215,9 @@ public struct SkillChangelogGenerator: Sendable {
         case .sync: return "Synced"
         case .appLaunch: return "Launched"
         case .crash: return "Crashed"
+        case .diagnosticBundle: return "Generated diagnostic bundle"
+        case .analyticsQuery: return "Ran analytics query"
+        case .securityScan: return "Ran security scan"
         }
     }
 }

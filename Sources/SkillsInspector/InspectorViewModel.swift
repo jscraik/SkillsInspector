@@ -56,6 +56,12 @@ final class InspectorViewModel: ObservableObject {
     @Published var cacheHits = 0
     @Published var scanError: String?
     @Published var scanSuccessMessage: String?
+    @Published var diagnosticBundleURL: URL?
+    @Published var isGeneratingBundle: Bool = false
+    @Published var analyticsReport: UsageAnalyticsReport?
+    @Published var securityFindings: [Finding] = []
+    @Published var isLoadingAnalytics = false
+    @Published var analyticsError: String?
 
     private var currentScanID: UUID = UUID()
     private var fileWatcher: FileWatcher?
@@ -182,7 +188,7 @@ final class InspectorViewModel: ObservableObject {
                     roots.append(ScanRoot(agent: .copilot, rootURL: copilot, recursive: recursiveFlag))
                 }
             }
-            
+
             // Set up cache
             let cacheManager: CacheManager?
             if let cacheRoot = cacheURL {
@@ -201,11 +207,11 @@ final class InspectorViewModel: ObservableObject {
                 cacheManager: cacheManager,
                 maxConcurrency: ProcessInfo.processInfo.activeProcessorCount
             )
-            
+
             // Generate suggested fixes for findings
             let findingsWithFixes = await withTaskGroup(of: Finding.self) { group in
                 for finding in findings {
-                    group.addTask {
+                    group.addTask { @Sendable in
                         var updatedFinding = finding
                         // Try to load file content and generate fix
                         if let content = try? String(contentsOf: finding.fileURL, encoding: .utf8) {
@@ -214,14 +220,14 @@ final class InspectorViewModel: ObservableObject {
                         return updatedFinding
                     }
                 }
-                
+
                 var result: [Finding] = []
                 for await finding in group {
                     result.append(finding)
                 }
                 return result
             }
-            
+
             // Save cache
             if let cacheManager {
                 await cacheManager.save()
@@ -258,7 +264,7 @@ final class InspectorViewModel: ObservableObject {
         // Ensure callers awaiting scan() get deterministic completion for tests/UI updates.
         await scanTask?.value
     }
-    
+
     private static func findRepoRoot(from url: URL) -> URL? {
         var current = url
         while current.path != "/" {
@@ -270,10 +276,10 @@ final class InspectorViewModel: ObservableObject {
         }
         return nil
     }
-    
+
     private func startWatching() {
         stopWatching()
-        
+
         var roots = codexRoots
         roots.append(claudeRoot)
         if let csm = codexSkillManagerRoot { roots.append(csm) }
@@ -281,12 +287,12 @@ final class InspectorViewModel: ObservableObject {
         fileWatcher = FileWatcher(roots: roots)
         fileWatcher?.onChange = { [weak self] in
             guard let self else { return }
-            
+
             // Debounce: only trigger if 500ms have passed
             let now = Date()
             guard now.timeIntervalSince(self.lastWatchTrigger) > 0.5 else { return }
             self.lastWatchTrigger = now
-            
+
             Task { @MainActor in
                 // File watcher scans are automatic, so they require both app ready AND watch mode enabled
                 guard self.isAppReady && self.allowAutomaticScans else { return }
@@ -295,18 +301,18 @@ final class InspectorViewModel: ObservableObject {
         }
         fileWatcher?.start()
     }
-    
+
     private func stopWatching() {
         fileWatcher?.stop()
         fileWatcher = nil
     }
 
     func cancelScan() {
+        // Only cancel; don't set to nil or isScanning here.
+        // Let scan() handle cleanup to avoid race condition.
         scanTask?.cancel()
-        scanTask = nil
-        isScanning = false
     }
-    
+
     func clearCache() async {
         // Find cache location
         let cacheURL = Self.findRepoRoot(from: codexRoots.first ?? claudeRoot) ?? Self.findRepoRoot(from: claudeRoot)
@@ -391,6 +397,153 @@ final class InspectorViewModel: ObservableObject {
     private static func defaultCopilotRoot(home: URL) -> URL? {
         let candidate = home.appendingPathComponent(".copilot/skills", isDirectory: true)
         return FileManager.default.fileExists(atPath: candidate.path) ? candidate : nil
+    }
+
+    // MARK: - Diagnostic Bundle
+
+    /// Generates a diagnostic bundle containing system info, findings, and ledger events
+    /// - Parameters:
+    ///   - includeLogs: Whether to include log files in the bundle
+    ///   - logHours: Number of hours of logs to include (if includeLogs is true)
+    func generateDiagnosticBundle(includeLogs: Bool = false, logHours: Int = 24) async {
+        isGeneratingBundle = true
+        diagnosticBundleURL = nil
+
+        do {
+            // Create DiagnosticBundleCollector with ledger
+            let ledger = try SkillLedger()
+            let collector = DiagnosticBundleCollector(ledger: ledger)
+
+            // Build scan configuration using the correct initializer
+            let config = DiagnosticBundle.ScanConfiguration(
+                codexRoots: codexRoots.map { $0.path },
+                claudeRoot: claudeRoot.path,
+                codexSkillManagerRoot: codexSkillManagerRoot?.path,
+                copilotRoot: copilotRoot?.path,
+                recursive: recursive,
+                maxDepth: maxDepth,
+                excludes: effectiveExcludes
+            )
+
+            // Collect bundle data
+            let bundle = try await collector.collect(
+                findings: findings,
+                config: config,
+                includeLogs: includeLogs,
+                logHours: logHours
+            )
+
+            // Export to ZIP
+            let exporter = DiagnosticBundleExporter()
+            let outputURL = exporter.defaultOutputURL()
+            _ = try exporter.export(bundle: bundle, to: outputURL)
+
+            await MainActor.run {
+                self.diagnosticBundleURL = outputURL
+                self.isGeneratingBundle = false
+            }
+        } catch {
+            await MainActor.run {
+                self.isGeneratingBundle = false
+                self.scanError = "Failed to generate diagnostic bundle: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    // MARK: - Analytics
+
+    /// Loads usage analytics data (scan frequency, error trends, top skills)
+    /// - Parameter days: Number of days to look back (default: 30)
+    func loadAnalytics(days: Int = 30) async {
+        isLoadingAnalytics = true
+        analyticsError = nil
+
+        do {
+            let analytics = UsageAnalytics()
+
+            // Load all three analytics datasets in parallel
+            async let frequency = analytics.scanFrequency(days: days)
+            async let errors = analytics.errorTrends(byRule: true, days: days)
+            async let skills = analytics.mostScannedSkills(limit: 10, days: days)
+
+            let (freqMetrics, errReport, skillRankings) = try await (frequency, errors, skills)
+
+            // Create the combined analytics report
+            let report = UsageAnalyticsReport(
+                scanFrequency: freqMetrics,
+                errorTrends: errReport,
+                topSkills: skillRankings
+            )
+
+            await MainActor.run {
+                self.analyticsReport = report
+                self.isLoadingAnalytics = false
+            }
+        } catch {
+            await MainActor.run {
+                self.isLoadingAnalytics = false
+                self.analyticsError = "Failed to load analytics: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    // MARK: - Security Scan
+
+    /// Runs a security scan on the configured roots
+    func runSecurityScan() async {
+        isScanning = true
+        securityFindings = []
+        scanError = nil
+
+        do {
+            let scanner = SecurityScanner()
+
+            // Build roots from all configured directories
+            var roots: [ScanRoot] = codexRoots.map { url in
+                ScanRoot(agent: .codex, rootURL: url, recursive: recursive)
+            }
+            roots.append(ScanRoot(agent: .claude, rootURL: claudeRoot, recursive: recursive))
+            if let csm = codexSkillManagerRoot, validateRoot(csm) {
+                roots.append(ScanRoot(agent: .codexSkillManager, rootURL: csm, recursive: recursive))
+            }
+            if let copilot = copilotRoot, validateRoot(copilot) {
+                roots.append(ScanRoot(agent: .copilot, rootURL: copilot, recursive: recursive))
+            }
+
+            var allFindings: [Finding] = []
+
+            // Use SkillsScanner to find skill files, then load each as SkillDoc
+            for root in roots {
+                let skillFiles = SkillsScanner.findSkillFiles(
+                    roots: [root],
+                    excludeDirNames: Set(effectiveExcludes),
+                    excludeGlobs: effectiveGlobExcludes
+                )[root] ?? []
+
+                // Load each skill document and scan for security issues
+                for skillFileURL in skillFiles {
+                    guard let skillDoc = SkillLoader.load(agent: root.agent, rootURL: root.rootURL, skillFileURL: skillFileURL) else {
+                        continue
+                    }
+
+                    let findings = try await scanner.scan(doc: skillDoc)
+                    allFindings.append(contentsOf: findings)
+                }
+            }
+
+            await MainActor.run {
+                self.securityFindings = allFindings.sorted(by: { lhs, rhs in
+                    if lhs.severity != rhs.severity { return lhs.severity.rawValue < rhs.severity.rawValue }
+                    return lhs.ruleID < rhs.ruleID
+                })
+                self.isScanning = false
+            }
+        } catch {
+            await MainActor.run {
+                self.isScanning = false
+                self.scanError = "Security scan failed: \(error.localizedDescription)"
+            }
+        }
     }
 }
 

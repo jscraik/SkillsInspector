@@ -1,5 +1,4 @@
 import SwiftUI
-import AStudioFoundation
 import SkillsCore
 
 /// Container for heavy dependencies with lazy initialization
