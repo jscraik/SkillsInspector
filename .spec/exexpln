@@ -14,6 +14,7 @@ After this change, the repository will be a React/Tauri design system project th
 - [x] (2026-01-30) Scaffold the React + Tauri + Vite + Tailwind v4 project in app/ (root directory is non-empty).
 - [x] (2026-01-30) Integrate Apps SDK UI components and establish token wiring (vendored from GitHub and built locally).
 - [x] (2026-01-30) Add Storybook and Argos visual regression baseline (manual addon-vitest setup applied).
+- [ ] (2026-01-30) Add a GPT widgets Storybook story to validate GPT surfaces alongside core components.
 - [x] (2026-01-30) Update documentation to match the new stack and workflows (README updated; legacy docs remain for reference).
 - [x] (2026-01-30) Validate the new toolchain and confirm Swift artifacts are absent (pnpm build + pnpm build-storybook + rg swift scan).
 
@@ -59,7 +60,7 @@ Milestone 2 removes Swift artifacts from mainline. Delete Swift sources, SwiftPM
 
 Milestone 3 scaffolds the React + Tauri + Vite project in an app/ subdirectory because the repo root is non-empty with docs and assets. Use pnpm as the package manager. Configure Tailwind v4, vendor the Apps SDK UI library as a git submodule, build it locally, and establish token wiring aligned to the migration report. Create a minimal app shell that renders a layout using Apps SDK UI components so the stack is exercised early.
 
-Milestone 4 adds Storybook and Argos. Configure Storybook to render core components from the design system. Add Argos integration to capture visual snapshots. Define a minimal set of stories that prove the baseline.
+Milestone 4 adds Storybook and Argos. Configure Storybook to render core components from the design system and include at least one GPT widgets story. Add Argos integration to capture visual snapshots. Define a minimal set of stories that prove the baseline, including GPT widget surfaces.
 
 Milestone 5 validates the new workflow. Run lint, typecheck, Storybook build, and any Argos snapshot generation. Confirm there are zero Swift files and no SwiftPM config in mainline. Update documentation to match the new commands.
 
@@ -93,6 +94,7 @@ Storybook/Argos steps (Milestone 4):
     cd app
     pnpm dlx storybook@latest init --yes
     pnpm add -D @argos-ci/cli
+    Add a GPT widgets Storybook story that exercises Apps SDK UI patterns for GPT surfaces.
 
 Validation steps (Milestone 5):
     cd app
@@ -105,7 +107,7 @@ Validation steps (Milestone 5):
 
 ## Validation and Acceptance
 
-Acceptance is met when the main branch can run a React/Tauri app and Storybook using pnpm commands, and the repository contains no Swift files or SwiftPM configuration. Specific evidence includes a successful pnpm build, an operational Storybook instance, and file scans showing no *.swift or Package.swift. The README must describe only the React/Tauri stack and its commands.
+Acceptance is met when the main branch can run a React/Tauri app and Storybook using pnpm commands, and the repository contains no Swift files or SwiftPM configuration. Storybook must include at least one GPT widgets story to validate GPT surfaces alongside core components. Specific evidence includes a successful pnpm build, an operational Storybook instance, and file scans showing no *.swift or Package.swift. The README must describe only the React/Tauri stack and its commands.
 
 ## Idempotence and Recovery
 
