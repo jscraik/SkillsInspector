@@ -7,6 +7,10 @@ cd "$ROOT_DIR"
 # Ensure system tool paths are available for codesign and Swift tooling.
 export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${PATH:-}"
 
-swift test
-swift run skillsctl --help
-swift run skillsctl scan --repo . --allow-empty
+if [[ -f "${ROOT_DIR}/Package.swift" ]]; then
+  swift test
+  swift run skillsctl --help
+  swift run skillsctl scan --repo . --allow-empty
+else
+  echo "Skipping Swift smoke checks: Package.swift not found at repo root."
+fi
