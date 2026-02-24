@@ -19,3 +19,6 @@ app/src-tauri/gen/
 .build/
 .swiftpm/
 .tmp/
+
+
+environment.toml
