@@ -146,3 +146,7 @@ See `ai/prompts/.template.yaml` and `ai/sessions/.template.json` for required fi
 ## PR Template
 
 All PRs must use `.github/PULL_REQUEST_TEMPLATE.md` which includes required AI disclosure sections.
+
+## Repository preflight helper
+- Use `scripts/codex-preflight.sh` before multi-step, destructive, or path-sensitive workflows.
+- Source it with `source scripts/codex-preflight.sh` and run `preflight_repo` (or `preflight_js`, `preflight_py`, `preflight_rust`) as a guard before changing repo state.
