@@ -150,3 +150,15 @@ All PRs must use `.github/PULL_REQUEST_TEMPLATE.md` which includes required AI d
 ## Repository preflight helper
 - Use `scripts/codex-preflight.sh` before multi-step, destructive, or path-sensitive workflows.
 - Source it with `source scripts/codex-preflight.sh` and run `preflight_repo` (or `preflight_js`, `preflight_py`, `preflight_rust`) as a guard before changing repo state.
+
+## Mandatory workflow snippet
+1. Explore project first, then invoke skill.
+2. IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any React, Tauri, Apps-SDK-ui, Tailwind, Vite, Storybook + Chat Widget tasks.
+3. Add a Table of Contents for docs.
+
+## Documentation map
+### Table of Contents
+- [Instruction map](docs/agents/01-instruction-map.md)
+- [Tooling and command policy](docs/agents/02-tooling-policy.md)
+- [Validation and checks](docs/agents/03-validation.md)
+- [Contradictions and cleanup](docs/agents/04-contradictions-and-cleanup.md)
