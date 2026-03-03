@@ -2,6 +2,7 @@ name: Docs Lint
 
 on:
   push:
+    branches: [main]
     paths:
       - '**/*.md'
       - '.vale.ini'
@@ -16,7 +17,7 @@ on:
 
 jobs:
   vale:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Vale
@@ -25,6 +26,21 @@ jobs:
       - name: Sync Vale styles
         run: |
           vale sync
-      - name: Run Vale
+      - name: Resolve markdown files in scope
+        id: md
         run: |
-          vale README.md Sources/SkillsCore/SkillsCore.docc/*.md docs/**/*.md
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" \
+              | grep -E '\.md$' > /tmp/vale-files.txt || true
+          else
+            git ls-files '*.md' > /tmp/vale-files.txt
+          fi
+          if [ ! -s /tmp/vale-files.txt ]; then
+            echo "has_files=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_files=true" >> "$GITHUB_OUTPUT"
+      - name: Run Vale
+        if: steps.md.outputs.has_files == 'true'
+        run: |
+          xargs vale < /tmp/vale-files.txt

@@ -2,6 +2,7 @@ name: Markdown Lint
 
 on:
   push:
+    branches: [main]
     paths:
       - '**/*.md'
       - '.markdownlint.yml'
@@ -14,12 +15,27 @@ on:
 
 jobs:
   markdownlint:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install markdownlint-cli2
         run: |
           npm install -g markdownlint-cli2
-      - name: Run markdownlint
+      - name: Resolve markdown files in scope
+        id: md
         run: |
-          markdownlint-cli2 "**/*.md" "!**/.git/**" "!**/.build/**" "!**/.swiftpm/**" "!**/.github/**" "!**/.vale/**"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" \
+              | grep -E '\.md$' > /tmp/md-files.txt || true
+          else
+            git ls-files '*.md' > /tmp/md-files.txt
+          fi
+          if [ ! -s /tmp/md-files.txt ]; then
+            echo "has_files=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_files=true" >> "$GITHUB_OUTPUT"
+      - name: Run markdownlint
+        if: steps.md.outputs.has_files == 'true'
+        run: |
+          xargs markdownlint-cli2 < /tmp/md-files.txt

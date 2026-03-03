@@ -2,7 +2,8 @@
 
 ## Scope
 
-These rules define repository-specific expectations for Greptile and Codex-assisted reviews.
+These rules define repository-specific expectations for Greptile and
+Codex-assisted reviews.
 
 ## Rule set
 
@@ -13,16 +14,18 @@ These rules define repository-specific expectations for Greptile and Codex-assis
 
 ### 2) Governance and docs consistency
 
-When a PR changes policy, tooling, or workflows, reviewers must verify related docs and templates stay aligned:
+When a PR changes policy, tooling, or workflows, reviewers must verify
+related docs and templates stay aligned:
 
-- \/AGENTS.md
-- \/CONTRIBUTING.md (if present)
-- \/.github\/PULL_REQUEST_TEMPLATE.md (if present)
+- `AGENTS.md`
+- `CONTRIBUTING.md` (if present)
+- `.github/PULL_REQUEST_TEMPLATE.md` (if present)
 
 ### 3) Security and evidence expectations
 
 - PRs changing policy or gates must include explicit risk notes and rollback guidance.
-- Any reduction in required checks or review gates is high-risk and requires reviewer justification.
+- Any reduction in required checks or review gates is high-risk and
+  requires reviewer justification.
 
 ### 4) Merge confidence threshold
 
