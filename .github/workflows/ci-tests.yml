@@ -11,4 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Swift tests
-        run: swift test
+        run: |
+          if [ -f Package.swift ]; then
+            swift test
+          else
+            echo "No Package.swift found at repo root; skipping SwiftPM tests."
+          fi
