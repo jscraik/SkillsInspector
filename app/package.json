@@ -21,10 +21,10 @@
   "devDependencies": {
     "@argos-ci/cli": "^4.0.5",
     "@chromatic-com/storybook": "^5.0.0",
-    "@storybook/addon-a11y": "^10.2.3",
-    "@storybook/addon-docs": "^10.2.3",
-    "@storybook/addon-vitest": "^10.2.3",
-    "@storybook/react-vite": "^10.2.3",
+    "@storybook/addon-a11y": "^10.2.10",
+    "@storybook/addon-docs": "^10.2.10",
+    "@storybook/addon-vitest": "^10.2.10",
+    "@storybook/react-vite": "^10.2.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
@@ -35,10 +35,16 @@
     "autoprefixer": "^10.4.23",
     "playwright": "^1.58.0",
     "postcss": "^8.5.6",
-    "storybook": "^10.2.3",
+    "storybook": "^10.2.10",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "overrides": {
+      "lodash": "4.17.23",
+      "rollup": "4.59.0"
+    }
   }
 }
