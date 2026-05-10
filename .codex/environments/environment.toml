@@ -19,6 +19,8 @@ if command -v mise >/dev/null 2>&1; then
 fi
 if [[ -f scripts/prepare-worktree.sh ]]; then
   bash scripts/prepare-worktree.sh
+elif [[ -f app/package.json ]]; then
+  npm --prefix app install
 else
   npm install
 fi
@@ -43,6 +45,8 @@ if command -v mise >/dev/null 2>&1; then
 fi
 if [[ -f scripts/prepare-worktree.sh ]]; then
   bash scripts/prepare-worktree.sh
+elif [[ -f app/package.json ]]; then
+  npm --prefix app install
 else
   npm install
 fi
@@ -74,8 +78,7 @@ icon = "test"
 command = '''
 set -euo pipefail
 
-echo "[codex] no test script found in package.json"
-exit 1
+bash scripts/ci_smoke.sh
 '''
 
 [[actions]]
