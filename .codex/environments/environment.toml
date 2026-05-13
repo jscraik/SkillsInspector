@@ -17,9 +17,7 @@ if command -v mise >/dev/null 2>&1; then
   mise trust --yes .mise.toml || true
   mise install
 fi
-if [[ -f scripts/prepare-worktree.sh ]]; then
-  bash scripts/prepare-worktree.sh
-elif [[ -f app/package.json ]]; then
+if [[ -f app/package.json ]]; then
   npm --prefix app install
 else
   npm install
@@ -43,9 +41,7 @@ if command -v mise >/dev/null 2>&1; then
   mise trust --yes .mise.toml || true
   mise install
 fi
-if [[ -f scripts/prepare-worktree.sh ]]; then
-  bash scripts/prepare-worktree.sh
-elif [[ -f app/package.json ]]; then
+if [[ -f app/package.json ]]; then
   npm --prefix app install
 else
   npm install
@@ -59,7 +55,18 @@ command = '''
 set -euo pipefail
 
 echo "[codex] no run script found in package.json"
-exit 1
+if [[ -f app/package.json ]]; then
+  if npm --prefix app run --silent | grep -q "^  dev$"; then
+    npm --prefix app run dev
+    exit 0
+  fi
+  if npm --prefix app run --silent | grep -q "^  start$"; then
+    npm --prefix app run start
+    exit 0
+  fi
+fi
+echo "[codex] no runnable app script found (expected dev or start)"
+exit 2
 '''
 
 [[actions]]
@@ -69,7 +76,18 @@ command = '''
 set -euo pipefail
 
 echo "[codex] no debug script found in package.json"
-exit 1
+if [[ -f app/package.json ]]; then
+  if npm --prefix app run --silent | grep -q "^  tauri$"; then
+    npm --prefix app run tauri -- dev
+    exit 0
+  fi
+  if npm --prefix app run --silent | grep -q "^  dev$"; then
+    npm --prefix app run dev
+    exit 0
+  fi
+fi
+echo "[codex] no debug-capable app script found (expected tauri or dev)"
+exit 2
 '''
 
 [[actions]]
@@ -178,7 +196,11 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       repo_slug="worktree"
     fi
     short_sha="$(git rev-parse --short HEAD)"
-    branch_base="jscraik/feature/$repo_slug-worktree-$short_sha"
+    git_user_slug="$(git config user.name 2>/dev/null | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+    if [ -z "$git_user_slug" ]; then
+      git_user_slug="codex"
+    fi
+    branch_base="$git_user_slug/feature/$repo_slug-worktree-$short_sha"
     branch_name="$branch_base"
     suffix=1
     while git show-ref --verify --quiet "refs/heads/$branch_name"; do
